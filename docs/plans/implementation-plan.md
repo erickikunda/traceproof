@@ -2,7 +2,9 @@
 
 **Version 0.1 — 9 September 2026**
 **Basis:** [System design v0.2](../architecture/system-design.md).
-**Status:** Proposed delivery plan. No application has been implemented and no benchmark has been executed by producing this document.
+**Status:** Proposed delivery plan. Implementation is underway; see the
+[progress assessment](../development/progress.md) and slice documents for delivered scope.
+No benchmark or production capacity qualification has been completed.
 
 ## 1. Delivery objective
 

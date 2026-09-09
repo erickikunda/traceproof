@@ -204,6 +204,19 @@ and identifiers can still be sensitive: share within the authorized audience. CS
 separate scan and candidate grains, joined by `report_id`; use the scan export even when
 there are no candidates. See [Slice 07 contract](docs/development/slice-07.md).
 
+Compare two exact published versions without rerunning analysis:
+
+```bash
+uv run traceproof compare-reports REPO_ID BASELINE_REPORT_ID CURRENT_REPORT_ID
+uv run traceproof compare-reports REPO_ID BASELINE_REPORT_ID CURRENT_REPORT_ID --format markdown
+```
+
+Slice 08 distinguishes exact repeated observations, tentative unchanged-file matches,
+ambiguous groups and observations present on only one side. Absence never means fixed.
+Unknown or different analysis scope disables tentative matching. See
+[Slice 08](docs/development/slice-08.md) and the
+[implementation progress assessment](docs/development/progress.md).
+
 ## CSV contract
 
 Required columns: `repo_id,source_type,source_uri,owner,classification`.

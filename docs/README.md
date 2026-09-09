@@ -11,5 +11,7 @@
 - [Fifth-slice status](development/slice-05.md): source claim checks and explicit bounded context expansion.
 - [Sixth-slice status](development/slice-06.md): conservative Flask modeled-source mapping and regression coverage.
 - [Seventh-slice status](development/slice-07.md): immutable repository summaries and JSON/HTML/Markdown/CSV exports.
+- [Eighth-slice status](development/slice-08.md): conservative report comparisons and occurrence references.
+- [Progress assessment](development/progress.md): work-package estimates against the full implementation plan.
 
 The design and plan are proposals; the slice status and README describe what actually runs.

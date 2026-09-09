@@ -103,6 +103,20 @@ def report_history_command(
     perform(lambda: report_history(ctx.obj, repo_id, offset, limit))
 
 
+@app.command("compare-reports")
+def compare_reports_command(
+    ctx: typer.Context, repo_id: str, baseline_id: str, current_id: str, format: str = "json"
+):
+    """Compare two exact reports without inferring fixes from missing observations."""
+    from traceproof.comparison import compare_reports, render_comparison
+
+    perform(
+        lambda: render_comparison(
+            compare_reports(ctx.obj, repo_id, baseline_id, current_id), format
+        )
+    )
+
+
 @app.command("query-index")
 def index_query(
     ctx: typer.Context,
