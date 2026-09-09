@@ -171,6 +171,12 @@ steps, within the original total source/envelope caps. Expansion never calls a p
 triage of a child requires an explicit new request and uses the same run budget.
 See [Slice 05 behavior and limitations](docs/development/slice-05.md).
 
+Slice 06 recognizes retained Flask `request` import prefixes when complete file evidence
+fits within those same bounds and no syntactic rebinding is found. Rebuild bundles to
+builder version 3 for file line counts. The gate records its source mapping explicitly;
+unrecognized or incomplete patterns still abstain. This supports review, not automatic
+confirmation or dismissal. See [Slice 06](docs/development/slice-06.md).
+
 ## CSV contract
 
 Required columns: `repo_id,source_type,source_uri,owner,classification`.

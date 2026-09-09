@@ -14,7 +14,7 @@ from traceproof.persistence import Candidate, EvidenceBundle, ScanAttempt, exclu
 from traceproof.python_parser import MAX_BYTES
 from traceproof.sarif import MAX_SARIF_BYTES, bind_location, fingerprint, indexed
 
-BUILDER_VERSION = "2"
+BUILDER_VERSION = "3"
 MAX_LOCATIONS = 8
 MAX_BUNDLE_BYTES = 32 * 1024
 MAX_SOURCE_BYTES = 16 * 1024
@@ -143,6 +143,7 @@ def _build_bundle(store, attempt_id, candidate_fingerprint):
                     **reference,
                     "excerpt_line": start,
                     "excerpt_end_line": end,
+                    "source_line_count": len(lines),
                     "text": text,
                 }
             )

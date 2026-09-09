@@ -151,7 +151,7 @@ def test_gate_is_persisted_with_advisory_decision(store, bundle):
     assert result["state"] == "completed" and result["disposition"] == "needs_review"
     assert result["evidence_gate"]["passed"] and result["verified"] is False
     with store.transaction() as session:
-        assert session.scalar(select(TriageCall)).result["gate_version"] == "1"
+        assert session.scalar(select(TriageCall)).result["gate_version"] == "2"
 
 
 def test_unsupported_rule_skips_paid_work(store, evidence_fixture):

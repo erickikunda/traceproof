@@ -7,7 +7,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-GATE_VERSION = "1"
+GATE_VERSION = "2"
 POLICIES = {
     "py/code-injection": {"class": "code_injection", "sinks": ["eval", "exec"]},
     "py/command-line-injection": {
@@ -43,6 +43,7 @@ def requirements(rule_id):
         "policy": POLICIES.get(rule_id),
         "required": ["source", "sink", "flow", "guard"],
         "negative_requires": "present guard and quoted counterevidence",
+        "modeled_source": "Flask request import prefix with full-file evidence and no rebinding",
         "scope": "quote, syntax and recorded flow consistency only; not runtime proof",
     }
 
@@ -112,6 +113,98 @@ def flow_nodes(bundle, snippet, ranges):
     ]
 
 
+def flask_mapping(bundle, source):
+    """Map only a complete retained import prefix, using complete bounded file context."""
+    if source["flow_step"] == 0:
+        return None
+    snippets = [
+        item
+        for item in bundle["snippets"]
+        if item["path"] == source["path"] and item["sha256"] == source["sha256"]
+    ]
+    counts = {item["source_line_count"] for item in snippets if "source_line_count" in item}
+    if len(counts) != 1:
+        return None
+    total = counts.pop()
+    lines = {}
+    for item in snippets:
+        for number, text in enumerate(
+            io.StringIO(item["text"], newline="").readlines(), item["excerpt_line"]
+        ):
+            if number in lines and lines[number] != text:
+                return None
+            lines[number] = text
+    if set(lines) != set(range(1, total + 1)):
+        return None
+    try:
+        tree = ast.parse("".join(lines[number] for number in range(1, total + 1)))
+    except (SyntaxError, ValueError, RecursionError):
+        return None
+    imports = []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ImportFrom):
+            for alias in node.names:
+                if alias.name == "*":
+                    return None
+                if (alias.asname or alias.name) == "request":
+                    if node.module != "flask" or node.level or alias.name != "request":
+                        return None
+                    imports.append(node)
+        if (
+            isinstance(node, ast.Name)
+            and node.id == "request"
+            and isinstance(node.ctx, (ast.Store, ast.Del))
+        ) or (isinstance(node, ast.arg) and node.arg == "request"):
+            return None
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            if node.name == "request":
+                return None
+        if isinstance(node, ast.Import) and any(
+            (alias.asname or alias.name.split(".")[0]) == "request" for alias in node.names
+        ):
+            return None
+        if isinstance(node, ast.ExceptHandler) and node.name == "request":
+            return None
+        if isinstance(node, (ast.MatchAs, ast.MatchStar)) and node.name == "request":
+            return None
+        if isinstance(node, ast.MatchMapping) and node.rest == "request":
+            return None
+    if len(imports) != 1 or imports[0] not in tree.body:
+        return None
+    imported = imports[0]
+    prefix = [
+        item
+        for item in snippets
+        if item.get("flow_id") == source["flow_id"] and item["flow_step"] < source["flow_step"]
+    ]
+    if {item["flow_step"] for item in prefix} != set(range(source["flow_step"])):
+        return None
+    if any(
+        item["line"] != imported.lineno or item["end_line"] != imported.end_lineno
+        for item in prefix
+    ):
+        return None
+    accesses = [
+        node
+        for node in ast.walk(tree)
+        if (
+            isinstance(node, ast.Attribute)
+            and name(node)
+            in {"request.args", "request.form", "request.data", "request.json", "request.get_json"}
+        )
+        and source["line"] <= node.lineno <= source["end_line"]
+    ]
+    if not accesses:
+        return None
+    return {
+        "kind": "flask_request_import",
+        "flow_id": source["flow_id"],
+        "import_evidence_ids": [item["id"] for item in prefix],
+        "access_evidence_id": source["id"],
+        "binding_proven": False,
+    }
+
+
 def assess_evidence(bundle, decision):
     report = {
         "gate_version": GATE_VERSION,
@@ -121,6 +214,7 @@ def assess_evidence(bundle, decision):
         "checks": [],
         "missing": [],
         "unknowns": [],
+        "source_mappings": [],
         "reachability_proven": False,
         "scope": "quoted syntax and retained SARIF flow, not semantic entailment",
     }
@@ -197,14 +291,22 @@ def assess_evidence(bundle, decision):
                 "reason": reason,
             }
         )
-    linked = any(
-        source["flow_id"] == sink["flow_id"]
-        and source["flow_id"] in flow_ids
-        and source["flow_step"] == 0
-        and sink["flow_step"] == sink["flow_steps"] - 1
-        for source in source_nodes
-        for sink in sink_nodes
-    )
+    linked = False
+    for source in source_nodes:
+        for sink in sink_nodes:
+            if (
+                source["flow_id"] != sink["flow_id"]
+                or source["flow_id"] not in flow_ids
+                or source["flow_step"] > sink["flow_step"]
+                or sink["flow_step"] != sink["flow_steps"] - 1
+            ):
+                continue
+            if source["flow_step"] == 0:
+                linked = True
+            elif mapping := flask_mapping(bundle, source):
+                linked = True
+                if mapping not in report["source_mappings"]:
+                    report["source_mappings"].append(mapping)
     needed = {"source", "sink", "flow", "guard"}
     if decision.verdict == "likely_false_positive":
         needed.add("counterevidence")
