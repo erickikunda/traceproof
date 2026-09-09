@@ -1,0 +1,18 @@
+{
+  "schema_version": "1",
+  "dataset_id": "synthetic-example",
+  "dataset_version": "v1",
+  "repositories": [
+    {
+      "repo_id": "synthetic-repo",
+      "snapshot_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "languages": [
+        "python"
+      ],
+      "weakness_scope": [
+        "CWE-94"
+      ],
+      "label_coverage": "known_positives_only"
+    }
+  ]
+}

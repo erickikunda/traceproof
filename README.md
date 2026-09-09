@@ -254,6 +254,25 @@ artifact without a DB reference. Only manifests referenced by committed records 
 accepted results. Published content is verified and safely reused when intake resumes;
 automatic orphan retention/cleanup is a later feature.
 
+## Benchmark contract preparation
+
+Slice 10 validates separate repository manifests and evaluator-only labels. It does not
+run the benchmark or calculate quality metrics:
+
+```bash
+uv run traceproof benchmark-schema > benchmark-schemas.json
+uv run traceproof benchmark-check examples/benchmark-manifest.json
+uv run traceproof benchmark-check examples/benchmark-manifest.json --labels examples/benchmark-labels.json
+# Optional alignment against snapshots already stored in the selected state directory:
+uv run traceproof benchmark-check /absolute/manifest.json --labels /absolute/labels.json --check-local-snapshots
+```
+
+Examples use synthetic placeholder digests; they pass contract checks but intentionally
+cannot align to real local snapshots. The manifest-only command returns its canonical
+digest for the label file's `manifest_sha256`. Keep both files outside analyzed archives;
+labels must never be submitted through CSV intake or sent to models. See
+[Slice 10 contract and limits](docs/development/slice-10.md).
+
 ## Development
 
 Run the real CodeQL acceptance suite with an approved local `CodeInjection.ql` entry:

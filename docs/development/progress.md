@@ -1,6 +1,6 @@
-# Implementation progress after Slice 09
+# Implementation progress after Slice 10
 
-**Planning estimate: approximately 20–25% of the full implementation plan and 55–60%
+**Planning estimate: approximately 25–30% of the full implementation plan and 60–65%
 of M0–M2.** The rounded conversational estimates are about one quarter overall and
 about three fifths of the laptop milestone scope. These are feature-delivery estimates,
 not percentages of elapsed effort, calendar duration, production readiness or quality.
@@ -12,7 +12,7 @@ rough progress indicator, not an earned-value forecast or release acceptance dec
 
 | Milestone | Packages | Implemented | Partial | Unimplemented | Credit |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| M0: contracts and prerequisites | 8 | 1 | 6 | 1 | 4 / 8 |
+| M0: contracts and prerequisites | 8 | 2 | 6 | 0 | 5 / 8 |
 | M1: intake and durable execution | 7 | 3 | 1 | 3 | 3.5 / 7 |
 | M2: scan-to-report POC | 10 | 4 | 6 | 0 | 7 / 10 |
 | M3: quality and reuse | 9 | 0 | 2 | 7 | 1 / 9 |
@@ -20,9 +20,9 @@ rough progress indicator, not an earned-value forecast or release acceptance dec
 | M5: multiworker and portfolio exports | 8 | 0 | 0 | 8 | 0 / 8 |
 | M6: OpenShift pilot | 7 | 0 | 0 | 7 | 0 / 7 |
 | M7: production qualification | 7 | 0 | 0 | 7 | 0 / 7 |
-| **Total** | **64** | **8** | **15** | **41** | **15.5 / 64 ≈ 24%** |
+| **Total** | **64** | **9** | **15** | **40** | **16.5 / 64 ≈ 26%** |
 
-M0–M2 receive 14.5 / 25 points, or 58%. The source-only CLI path is usable, but the full
+M0–M2 receive 15.5 / 25 points, or 62%. The source-only CLI path is usable, but the full
 milestones include work beyond that narrow demonstration. No entire milestone is
 declared accepted merely because its central demonstration works.
 
@@ -32,7 +32,7 @@ declared accepted merely because its central demonstration works.
 | --- | --- |
 | M0.1–M0.5, M0.8 | Partial: pinned Python/local CodeQL, typed runtime contracts and synthetic tests exist; broader environment qualification, static type checking, complete schemas/adapter contracts and a full requirement-to-test register remain |
 | M0.6 | Implemented local Python scope: reproducible vulnerable/fixed/incomplete fixtures exercised with real CodeQL and report assertions |
-| M0.7 | Unimplemented: evaluator-only benchmark manifest/label interface |
+| M0.7 | Implemented initial local scope: separate manifest/label schemas, strict validation, pinned identities and optional stored-metadata alignment; no dataset registration or evaluation |
 | M1.1, M1.2, M1.5 | Implemented local scope: CSV admission, safe archive snapshots, SQLite single-worker persistence/checkpoints/recovery |
 | M1.4 | Partial: immutable artifacts exist; automated orphan cleanup does not |
 | M1.3, M1.6, M1.7 | Unimplemented: Git acquisition, explicit pause/cancel controls, PostgreSQL contract qualification |

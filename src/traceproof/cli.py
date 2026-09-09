@@ -83,6 +83,39 @@ def acceptance_run_command(
     perform(operation)
 
 
+@app.command("benchmark-schema")
+def benchmark_schema_command():
+    """Print the separate manifest and evaluator-label JSON schemas."""
+    from traceproof.benchmark import BenchmarkLabels, BenchmarkManifest
+
+    perform(
+        lambda: {
+            "manifest": BenchmarkManifest.model_json_schema(),
+            "labels": BenchmarkLabels.model_json_schema(),
+        }
+    )
+
+
+@app.command("benchmark-check")
+def benchmark_check_command(
+    ctx: typer.Context,
+    manifest: Path,
+    labels: Path | None = None,
+    check_local_snapshots: bool = False,
+):
+    """Validate evaluator contracts; never dispatch scans or pass labels to models."""
+    from traceproof.benchmark import check_benchmark
+
+    def operation():
+        result = check_benchmark(manifest, labels, ctx.obj if check_local_snapshots else None)
+        if result["status"] != "valid_contract":
+            typer.echo(render_json(result))
+            raise typer.Exit(1)
+        return result
+
+    perform(operation)
+
+
 @app.command("publish-report")
 def publish_report_command(
     ctx: typer.Context, repo_id: str, run_id: str | None = None, attempt_id: str | None = None

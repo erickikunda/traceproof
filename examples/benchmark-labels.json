@@ -1,0 +1,21 @@
+{
+  "schema_version": "1",
+  "dataset_id": "synthetic-example",
+  "label_set_version": "v1",
+  "manifest_sha256": "5433e46e8e5e1a9050b1d96433d14e43dd8c59a4886c26a7e92fc3452bdf038b",
+  "labels": [
+    {
+      "label_id": "injection-1",
+      "repo_id": "synthetic-repo",
+      "snapshot_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "root_cause_id": "eval-request",
+      "cwe": "CWE-94",
+      "path": "app.py",
+      "file_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "line": 5,
+      "end_line": 5,
+      "symbol": "run",
+      "adjudication_reference": "Synthetic placeholder; replace with approved adjudication evidence"
+    }
+  ]
+}
