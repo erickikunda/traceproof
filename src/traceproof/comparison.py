@@ -7,7 +7,7 @@ from traceproof.bundles import canonical
 from traceproof.domain import TraceProofError
 from traceproof.reports import get_report, markdown_cell
 
-COMPARISON_VERSION = "1"
+COMPARISON_VERSION = "2"
 
 
 def identity(value):
@@ -46,6 +46,8 @@ def compatibility(before, after):
             gaps.append(f"{label}:analysis_incomplete")
         if report.get("candidate_count") is None:
             gaps.append(f"{label}:candidate_count_unknown")
+        if report.get("static_review_readiness", {}).get("state") != "ready_for_review":
+            gaps.append(f"{label}:static_review_readiness_unknown_or_incomplete")
     for key in ("profile", "query_sha256"):
         if not before.get(key) or not after.get(key) or before[key] != after[key]:
             gaps.append(f"{key}:unknown_or_different")

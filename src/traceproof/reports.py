@@ -22,6 +22,7 @@ from traceproof.persistence import (
     TriageCall,
     exclusive_worker,
 )
+from traceproof.readiness import static_readiness
 
 MAX_ROWS = 10000
 MAX_REPORT_BYTES = 8 * 1024 * 1024
@@ -149,6 +150,7 @@ def projection(session, repo_id, run_id, attempt_id):
         raise TraceProofError("Stored candidate count does not reconcile; report not published")
     return {
         "schema_version": "1",
+        "projection_version": "2",
         "report_kind": "repository_summary",
         "repo_id": repo_id,
         "run_id": run.id,
@@ -167,6 +169,7 @@ def projection(session, repo_id, run_id, attempt_id):
         "verified_finding_count": None,
         "security_verdict": "not_adjudicated",
         "coverage_verified": False,
+        "static_review_readiness": static_readiness(session, run.snapshot_id, scan),
         "diagnostic_errors": scan.get("diagnostic_errors"),
         "diagnostic_warnings": scan.get("diagnostic_warnings"),
         "unmapped_candidates": scan.get("unmapped_candidates"),
@@ -333,6 +336,9 @@ def render_report(report, format="json"):
                 "coverage_verified",
             )
         }
+        common["static_review_readiness"] = report.get("static_review_readiness", {}).get(
+            "state", "unknown"
+        )
         fields = list(common)
         if format == "candidates-csv":
             fields += [
@@ -345,7 +351,7 @@ def render_report(report, format="json"):
                 "latest_simulated",
             ]
             rows = [
-                {**common, **{key: item[key] for key in fields if key not in common}}
+                {**common, **{key: item.get(key) for key in fields if key not in common}}
                 for item in report["candidates"]
             ]
         else:
@@ -358,9 +364,11 @@ def render_report(report, format="json"):
     # Render every summary field, including history, without treating untrusted text as markup.
     pretty = json.dumps(report, indent=2, ensure_ascii=False)
     notice = "NOT ADJUDICATED — candidates are not verified vulnerabilities."
+    readiness = report.get("static_review_readiness", {}).get("state", "unknown")
     summary = (
         f"Repository: {report['repo_id']} | Analysis: {report['analysis_status']} | "
-        f"Candidates: {report['candidate_count']} | Coverage verified: false"
+        f"Candidates: {report['candidate_count']} | Coverage verified: false | "
+        f"Static review readiness: {readiness}"
     )
     headings = ["Rule", "Location", "Adjudication", "Latest advisory", "Mode", "Triage calls"]
     rows = [
@@ -370,9 +378,9 @@ def render_report(report, format="json"):
             item["adjudication"],
             item["latest_advisory"],
             "replay"
-            if item["latest_simulated"] is True
+            if item.get("latest_simulated") is True
             else "live"
-            if item["latest_simulated"] is False
+            if item.get("latest_simulated") is False
             else "unknown / not triaged",
             len(item["triage_history"]),
         ]

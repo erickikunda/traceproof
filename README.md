@@ -256,6 +256,25 @@ automatic orphan retention/cleanup is a later feature.
 
 ## Development
 
+Run the real CodeQL acceptance suite with an approved local `CodeInjection.ql` entry:
+
+```bash
+uv run traceproof acceptance-run work/acceptance-001 /absolute/CodeInjection.ql --timeout 300
+```
+
+The output directory must be new. The runner creates its own SQLite state and synthetic
+vulnerable/fixed/incomplete archives, publishes reports in all five formats, and writes
+`acceptance.json`. It uses no model calls, performs no query downloads, and exits nonzero
+when assertions fail. The incomplete fixture deliberately skips CodeQL after its Python
+index is blocked. This explicit gate applies to the acceptance runner; individual
+operator commands remain separately callable.
+
+Published reports now include `static_review_readiness`, which joins the current Python
+index and static-analysis diagnostics. `ready_for_review` is not verified coverage,
+adjudication or a clean security verdict. Historical reports without that field show
+unknown readiness; republish to capture current stored index state. See
+[Slice 09](docs/development/slice-09.md).
+
 ```bash
 uv run pytest
 uv run ruff check .

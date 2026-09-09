@@ -1,4 +1,4 @@
-# Implementation progress after Slice 08
+# Implementation progress after Slice 09
 
 **Planning estimate: approximately 20–25% of the full implementation plan and 55–60%
 of M0–M2.** The rounded conversational estimates are about one quarter overall and
@@ -12,7 +12,7 @@ rough progress indicator, not an earned-value forecast or release acceptance dec
 
 | Milestone | Packages | Implemented | Partial | Unimplemented | Credit |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| M0: contracts and prerequisites | 8 | 0 | 7 | 1 | 3.5 / 8 |
+| M0: contracts and prerequisites | 8 | 1 | 6 | 1 | 4 / 8 |
 | M1: intake and durable execution | 7 | 3 | 1 | 3 | 3.5 / 7 |
 | M2: scan-to-report POC | 10 | 4 | 6 | 0 | 7 / 10 |
 | M3: quality and reuse | 9 | 0 | 2 | 7 | 1 / 9 |
@@ -20,9 +20,9 @@ rough progress indicator, not an earned-value forecast or release acceptance dec
 | M5: multiworker and portfolio exports | 8 | 0 | 0 | 8 | 0 / 8 |
 | M6: OpenShift pilot | 7 | 0 | 0 | 7 | 0 / 7 |
 | M7: production qualification | 7 | 0 | 0 | 7 | 0 / 7 |
-| **Total** | **64** | **7** | **16** | **41** | **15 / 64 ≈ 23%** |
+| **Total** | **64** | **8** | **15** | **41** | **15.5 / 64 ≈ 24%** |
 
-M0–M2 receive 14 / 25 points, or 56%. The source-only CLI path is usable, but the full
+M0–M2 receive 14.5 / 25 points, or 58%. The source-only CLI path is usable, but the full
 milestones include work beyond that narrow demonstration. No entire milestone is
 declared accepted merely because its central demonstration works.
 
@@ -30,7 +30,8 @@ declared accepted merely because its central demonstration works.
 
 | Packages | Status and evidence/remaining scope |
 | --- | --- |
-| M0.1–M0.6, M0.8 | Partial: pinned Python/local CodeQL, typed runtime contracts and synthetic tests exist; broader environment qualification, static type checking, complete schemas/adapter contracts, fixed-fixture demonstrations and a full requirement-to-test register remain |
+| M0.1–M0.5, M0.8 | Partial: pinned Python/local CodeQL, typed runtime contracts and synthetic tests exist; broader environment qualification, static type checking, complete schemas/adapter contracts and a full requirement-to-test register remain |
+| M0.6 | Implemented local Python scope: reproducible vulnerable/fixed/incomplete fixtures exercised with real CodeQL and report assertions |
 | M0.7 | Unimplemented: evaluator-only benchmark manifest/label interface |
 | M1.1, M1.2, M1.5 | Implemented local scope: CSV admission, safe archive snapshots, SQLite single-worker persistence/checkpoints/recovery |
 | M1.4 | Partial: immutable artifacts exist; automated orphan cleanup does not |
@@ -54,7 +55,7 @@ and local locking are not substitutes for PostgreSQL reservations, Redis coordin
 or OpenShift isolation. The largest enterprise and operational risks are still ahead.
 
 The next priorities are complete evidence/coverage and finding-state contracts,
-synthetic vulnerable/fixed end-to-end acceptance fixtures, then benchmark evaluation
+benchmark evaluation
 and enterprise-compatible model integration. Update this assessment as acceptance
 evidence accumulates; do not increment the percentage simply because another slice
 has been numbered or committed.

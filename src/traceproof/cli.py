@@ -66,6 +66,23 @@ def index_run(ctx: typer.Context, run_id: str):
     perform(operation)
 
 
+@app.command("acceptance-run")
+def acceptance_run_command(
+    output_dir: Path, query: Path, timeout: Annotated[int, typer.Option(min=1, max=3600)] = 300
+):
+    """Run real CodeQL on isolated synthetic fixtures; no paid model calls."""
+    from traceproof.acceptance import run_acceptance
+
+    def operation():
+        result = run_acceptance(output_dir, query, timeout)
+        if not result["passed"]:
+            typer.echo(render_json(result))
+            raise typer.Exit(1)
+        return result
+
+    perform(operation)
+
+
 @app.command("publish-report")
 def publish_report_command(
     ctx: typer.Context, repo_id: str, run_id: str | None = None, attempt_id: str | None = None

@@ -33,6 +33,7 @@ def pair(monkeypatch):
         "profile": "standard",
         "query_sha256": "query",
         "candidate_count": 1,
+        "static_review_readiness": {"state": "ready_for_review"},
         "candidates": [candidate],
     }
     after = copy.deepcopy(before)
@@ -133,6 +134,20 @@ def test_failed_empty_scan_never_resolves_missing_candidate(pair):
     assert result["current_candidate_count"] is None
     assert result["rows"][0]["status"] == "baseline_only"
     assert not result["rows"][0]["resolution_verified"]
+
+
+@pytest.mark.parametrize("readiness", [None, {"state": "incomplete"}])
+def test_missing_or_incomplete_readiness_disables_tentative_matching(pair, readiness):
+    _, after = pair
+    after["snapshot_id"] = "snapshot-b"
+    after["candidates"][0]["fingerprint"] = "b"
+    if readiness is None:
+        after.pop("static_review_readiness")
+    else:
+        after["static_review_readiness"] = readiness
+    result = compare()
+    assert not result["anchor_matching_enabled"]
+    assert "current:static_review_readiness_unknown_or_incomplete" in result["scope_gaps"]
 
 
 def test_markdown_escapes_candidate_text(pair):
