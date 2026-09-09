@@ -1,0 +1,16 @@
+.idea/
+.venv/
+.traceproof/
+.pytest_cache/
+.ruff_cache/
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+.env
+.env.*
+!.env.example
+work/
+.cocoindex_code/
+# CocoIndex Code (ccc)
+/.cocoindex_code/

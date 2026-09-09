@@ -1,0 +1,36 @@
+[build-system]
+requires = ["hatchling>=1.27,<2"]
+build-backend = "hatchling.build"
+
+[project]
+name = "traceproof"
+version = "0.1.0"
+description = "Evidence-driven, LLM-assisted vulnerability discovery"
+readme = "README.md"
+requires-python = ">=3.12,<3.15"
+dependencies = [
+  "alembic>=1.16,<2",
+  "pydantic>=2.11,<3",
+  "sqlalchemy>=2.0.41,<2.1",
+  "typer>=0.16,<1",
+]
+
+[project.scripts]
+traceproof = "traceproof.cli:app"
+
+[dependency-groups]
+dev = ["pytest>=8.4,<10", "ruff>=0.12,<1"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.ruff.lint.per-file-ignores]
+"src/traceproof/cli.py" = ["B008"]
