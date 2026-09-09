@@ -134,6 +134,20 @@ class TriageCall(Base):
     result: Mapped[dict] = mapped_column(JSON)
 
 
+class PublishedReport(Base):
+    __tablename__ = "published_reports"
+    __table_args__ = (
+        UniqueConstraint("run_id", "version"),
+        UniqueConstraint("run_id", "input_digest"),
+    )
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    run_id: Mapped[str] = mapped_column(ForeignKey("runs.id"), index=True)
+    version: Mapped[int]
+    input_digest: Mapped[str] = mapped_column(String(64))
+    created_at: Mapped[str] = mapped_column(String(40))
+    content: Mapped[dict] = mapped_column(JSON)
+
+
 class Store:
     def __init__(self, root: Path):
         self.root = root.resolve()

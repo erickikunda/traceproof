@@ -10,5 +10,6 @@
 - [Fourth-slice status](development/slice-04.md): immutable context bundles, advisory triage and budget accounting.
 - [Fifth-slice status](development/slice-05.md): source claim checks and explicit bounded context expansion.
 - [Sixth-slice status](development/slice-06.md): conservative Flask modeled-source mapping and regression coverage.
+- [Seventh-slice status](development/slice-07.md): immutable repository summaries and JSON/HTML/Markdown/CSV exports.
 
 The design and plan are proposals; the slice status and README describe what actually runs.

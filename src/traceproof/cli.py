@@ -49,7 +49,7 @@ def init(ctx: typer.Context):
 
     def operation():
         ctx.obj.initialize()
-        return {"state_dir": str(ctx.obj.root), "schema": "0004", "status": "initialized"}
+        return {"state_dir": str(ctx.obj.root), "schema": "0005", "status": "initialized"}
 
     perform(operation)
 
@@ -64,6 +64,43 @@ def index_run(ctx: typer.Context, run_id: str):
             return build_index(ctx.obj, run_id)
 
     perform(operation)
+
+
+@app.command("publish-report")
+def publish_report_command(
+    ctx: typer.Context, repo_id: str, run_id: str | None = None, attempt_id: str | None = None
+):
+    """Materialize an immutable summary from stored state; no analysis or model calls."""
+    from traceproof.reports import publish_report
+
+    perform(lambda: publish_report(ctx.obj, repo_id, run_id, attempt_id))
+
+
+@app.command("get-report")
+def get_report_command(
+    ctx: typer.Context,
+    repo_id: str,
+    report_id: str | None = None,
+    run_id: str | None = None,
+    format: str = "json",
+):
+    """Retrieve an exact report or the latest published version of the selected run."""
+    from traceproof.reports import get_report, render_report
+
+    perform(lambda: render_report(get_report(ctx.obj, repo_id, report_id, run_id), format))
+
+
+@app.command("report-history")
+def report_history_command(
+    ctx: typer.Context,
+    repo_id: str,
+    offset: Annotated[int, typer.Option(min=0)] = 0,
+    limit: Annotated[int, typer.Option(min=1, max=1000)] = 100,
+):
+    """List published report IDs without running analysis."""
+    from traceproof.reports import report_history
+
+    perform(lambda: report_history(ctx.obj, repo_id, offset, limit))
 
 
 @app.command("query-index")

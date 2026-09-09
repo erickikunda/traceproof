@@ -50,7 +50,7 @@ Rejected or failed archives need a corrected input and a new submission key.
 
 ## Index and retrieve coverage
 
-Run `traceproof init` again to upgrade an existing database to schema `0004`.
+Run `traceproof init` again to upgrade an existing database to schema `0005`.
 Then use a captured run:
 
 ```bash
@@ -176,6 +176,33 @@ fits within those same bounds and no syntactic rebinding is found. Rebuild bundl
 builder version 3 for file line counts. The gate records its source mapping explicitly;
 unrecognized or incomplete patterns still abstain. This supports review, not automatic
 confirmation or dismissal. See [Slice 06](docs/development/slice-06.md).
+
+## Published repository reports
+
+Slice 07 combines one scan attempt and its advisory history into an immutable summary.
+Run `init` to apply migration 0005, then:
+
+```bash
+uv run traceproof publish-report REPO_ID
+uv run traceproof report-history REPO_ID
+uv run traceproof get-report REPO_ID --report-id REPORT_ID --format html > report.html
+uv run traceproof get-report REPO_ID --report-id REPORT_ID --format markdown > report.md
+uv run traceproof get-report REPO_ID --report-id REPORT_ID > report.json
+uv run traceproof get-report REPO_ID --report-id REPORT_ID --format scan-csv > scan.csv
+uv run traceproof get-report REPO_ID --report-id REPORT_ID --format candidates-csv > candidates.csv
+```
+
+Publishing reads stored state without source access or model calls. Identical state
+reuses its report; later decisions create a new version. Use `--run-id` and `--attempt-id`
+on publication for historical scans. Exact report retrieval enforces repository ownership.
+Without an ID, retrieval selects the latest published version of the latest admitted run
+and refuses to hide a newer analysis attempt behind an older report.
+
+Reports show unreviewed candidates, replay/live status and unknown coverage. Default
+summaries omit source excerpts, model prose and raw diagnostics. Paths, rules, metadata
+and identifiers can still be sensitive: share within the authorized audience. CSV has
+separate scan and candidate grains, joined by `report_id`; use the scan export even when
+there are no candidates. See [Slice 07 contract](docs/development/slice-07.md).
 
 ## CSV contract
 
