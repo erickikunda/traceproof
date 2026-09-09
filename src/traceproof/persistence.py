@@ -64,6 +64,32 @@ class ImportItem(Base):
     attempts: Mapped[int] = mapped_column(default=0)
 
 
+class SourceIndex(Base):
+    __tablename__ = "source_indexes"
+    __table_args__ = (UniqueConstraint("snapshot_id", "version"),)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    snapshot_id: Mapped[str] = mapped_column(ForeignKey("snapshots.id"))
+    version: Mapped[str] = mapped_column(String(100))
+    state: Mapped[str] = mapped_column(String(30))
+    report: Mapped[dict | None] = mapped_column(JSON)
+
+
+class IndexedFile(Base):
+    __tablename__ = "indexed_files"
+    __table_args__ = (UniqueConstraint("index_id", "path"),)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    index_id: Mapped[str] = mapped_column(ForeignKey("source_indexes.id"), index=True)
+    path: Mapped[str] = mapped_column(String(512))
+    result: Mapped[dict] = mapped_column(JSON)
+
+
+class CodeqlAttempt(Base):
+    __tablename__ = "codeql_attempts"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    run_id: Mapped[str] = mapped_column(ForeignKey("runs.id"), index=True)
+    result: Mapped[dict] = mapped_column(JSON)
+
+
 class Store:
     def __init__(self, root: Path):
         self.root = root.resolve()

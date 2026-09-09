@@ -176,10 +176,22 @@ def import_status(store: Store, import_id: str) -> dict:
 
 
 def run_status(store: Store, run_id: str) -> dict:
+    from traceproof.indexing import VERSION
+    from traceproof.persistence import SourceIndex
+
     with store.transaction() as session:
         run = session.get(Run, run_id)
         if run is None:
             raise TraceProofError("Run not found")
+        index = (
+            session.scalar(
+                select(SourceIndex).where(
+                    SourceIndex.snapshot_id == run.snapshot_id, SourceIndex.version == VERSION
+                )
+            )
+            if run.snapshot_id
+            else None
+        )
         return {
             "schema_version": "1",
             "run_id": run.id,
@@ -189,7 +201,9 @@ def run_status(store: Store, run_id: str) -> dict:
             "snapshot_id": run.snapshot_id,
             "analysis_performed": False,
             "report_status": "not_available",
-            "message": "Intake only; security analysis and reports are not implemented",
+            "index_status": index.state if index else "not_started",
+            "coverage_report_status": "available" if index and index.report else "not_available",
+            "message": "Security analysis and vulnerability reports are not implemented",
         }
 
 

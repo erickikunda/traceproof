@@ -28,6 +28,9 @@ def test_migration_repeatable(store):
         "runs",
         "import_items",
         "alembic_version",
+        "source_indexes",
+        "indexed_files",
+        "codeql_attempts",
     }
     with store.engine.connect() as conn:
         assert conn.exec_driver_sql("PRAGMA foreign_keys").scalar() == 1
