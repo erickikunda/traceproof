@@ -7,7 +7,7 @@ from pathlib import Path
 
 from alembic import command
 from alembic.config import Config
-from sqlalchemy import JSON, ForeignKey, String, UniqueConstraint, create_engine, event
+from sqlalchemy import JSON, BigInteger, ForeignKey, String, UniqueConstraint, create_engine, event
 from sqlalchemy.engine import URL
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 
@@ -105,6 +105,33 @@ class Candidate(Base):
     attempt_id: Mapped[str] = mapped_column(ForeignKey("scan_attempts.id"), index=True)
     fingerprint: Mapped[str] = mapped_column(String(64))
     evidence: Mapped[dict] = mapped_column(JSON)
+
+
+class EvidenceBundle(Base):
+    __tablename__ = "evidence_bundles"
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    candidate_id: Mapped[str] = mapped_column(ForeignKey("candidates.id"), index=True)
+    content: Mapped[dict] = mapped_column(JSON)
+
+
+class TriageBudget(Base):
+    __tablename__ = "triage_budgets"
+    run_id: Mapped[str] = mapped_column(ForeignKey("runs.id"), primary_key=True)
+    limit_micro_usd: Mapped[int] = mapped_column(BigInteger)
+
+
+class TriageCall(Base):
+    __tablename__ = "triage_calls"
+    __table_args__ = (UniqueConstraint("run_id", "request_key"),)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    run_id: Mapped[str] = mapped_column(ForeignKey("runs.id"), index=True)
+    bundle_id: Mapped[str] = mapped_column(ForeignKey("evidence_bundles.id"))
+    request_key: Mapped[str] = mapped_column(String(200))
+    request_sha256: Mapped[str] = mapped_column(String(64))
+    created_at: Mapped[str] = mapped_column(String(40))
+    state: Mapped[str] = mapped_column(String(40))
+    charged_micro_usd: Mapped[int] = mapped_column(BigInteger)
+    result: Mapped[dict] = mapped_column(JSON)
 
 
 class Store:

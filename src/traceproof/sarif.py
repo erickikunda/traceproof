@@ -17,6 +17,54 @@ def indexed(items, index):
     return items[index]
 
 
+def bind_location(physical, run, manifest, tree, file_records=None):
+    """Bind a SARIF location to the snapshot; line validation is a separate step."""
+    artifact = physical.get("artifactLocation", {})
+    if "uri" not in artifact and "index" in artifact:
+        artifact = indexed(run["artifacts"], artifact["index"])["location"]
+    uri = urlsplit(artifact.get("uri", ""))
+    path = PurePosixPath(unquote(uri.path))
+    if uri.scheme == "file" and not uri.netloc:
+        try:
+            path = path.relative_to(tree.as_posix())
+        except ValueError:
+            return None
+    if (
+        uri.scheme not in {"", "file"}
+        or uri.netloc
+        or uri.query
+        or uri.fragment
+        or path.is_absolute()
+        or ".." in path.parts
+        or artifact.get("uriBaseId") not in {None, "%SRCROOT%"}
+    ):
+        return None
+    record = (
+        file_records.get(str(path))
+        if file_records is not None
+        else next((file for file in manifest.files if file.path == str(path)), None)
+    )
+    region = physical.get("region", {})
+    line, end = region.get("startLine"), region.get("endLine", region.get("startLine"))
+    if record and type(line) is int and type(end) is int and 1 <= line <= end:
+        return {
+            "snapshot_id": manifest.snapshot_id,
+            "path": record.path,
+            "sha256": record.sha256,
+            "line": line,
+            "end_line": end,
+        }
+    return None
+
+
+def fingerprint(snapshot_id, driver, rule, result):
+    return hashlib.sha256(
+        json.dumps(
+            [snapshot_id, driver.get("name"), rule, result], sort_keys=True, separators=(",", ":")
+        ).encode()
+    ).hexdigest()
+
+
 def normalize(raw, manifest, tree):
     if len(raw) > MAX_SARIF_BYTES:
         raise TraceProofError("SARIF exceeds the 16 MiB limit")
@@ -27,7 +75,7 @@ def normalize(raw, manifest, tree):
         candidates, seen = [], set()
         errors = warnings = raw_count = 0
         complete = True
-        files = {file.path: file for file in manifest.files}
+        file_records = {file.path: file for file in manifest.files}
         for run in doc["runs"]:
             driver = run["tool"]["driver"]
             invocations = run.get("invocations", [])
@@ -55,55 +103,16 @@ def normalize(raw, manifest, tree):
                 locations = result.get("locations", [])
                 if locations:
                     physical = locations[0].get("physicalLocation", {})
-                    artifact = physical.get("artifactLocation", {})
-                    if "uri" not in artifact and "index" in artifact:
-                        artifact = indexed(run["artifacts"], artifact["index"])["location"]
-                    uri = urlsplit(artifact.get("uri", ""))
-                    path = PurePosixPath(unquote(uri.path))
-                    if uri.scheme == "file" and not uri.netloc:
-                        try:
-                            path = path.relative_to(tree.as_posix())
-                        except ValueError:
-                            path = PurePosixPath("/unmapped")
-                    base = artifact.get("uriBaseId")
-                    valid = (
-                        uri.scheme in {"", "file"}
-                        and not uri.netloc
-                        and not uri.query
-                        and not uri.fragment
-                        and not path.is_absolute()
-                        and ".." not in path.parts
-                        and base in {None, "%SRCROOT%"}
-                    )
-                    record = files.get(str(path)) if valid else None
-                    region = physical.get("region", {})
-                    line, end = (
-                        region.get("startLine"),
-                        region.get("endLine", region.get("startLine")),
-                    )
-                    if record and type(line) is int and type(end) is int and 1 <= line <= end:
-                        # File binding only; source-evidence separately validates the line range.
-                        evidence = {
-                            "snapshot_id": manifest.snapshot_id,
-                            "path": record.path,
-                            "sha256": record.sha256,
-                            "line": line,
-                            "end_line": end,
-                        }
+                    evidence = bind_location(physical, run, manifest, tree, file_records)
+                    if evidence:
                         location_status = "snapshot_bound"
-                fingerprint = hashlib.sha256(
-                    json.dumps(
-                        [manifest.snapshot_id, driver.get("name"), rule, result],
-                        sort_keys=True,
-                        separators=(",", ":"),
-                    ).encode()
-                ).hexdigest()
-                if fingerprint in seen:
+                identity = fingerprint(manifest.snapshot_id, driver, rule, result)
+                if identity in seen:
                     continue
-                seen.add(fingerprint)
+                seen.add(identity)
                 candidates.append(
                     {
-                        "fingerprint": fingerprint,
+                        "fingerprint": identity,
                         "rule_id": rule,
                         "tool_name": driver.get("name", "unknown"),
                         "tool_version": driver.get(

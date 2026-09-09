@@ -33,6 +33,9 @@ def test_migration_repeatable(store):
         "codeql_attempts",
         "scan_attempts",
         "candidates",
+        "evidence_bundles",
+        "triage_budgets",
+        "triage_calls",
     }
     with store.engine.connect() as conn:
         assert conn.exec_driver_sql("PRAGMA foreign_keys").scalar() == 1

@@ -7,5 +7,6 @@
 - [First-slice status](development/slice-01.md): implemented behavior, validation and remaining work.
 - [Second-slice status](development/slice-02.md): Python inventory, coverage reports and CodeQL diagnostics.
 - [Third-slice status](development/slice-03.md): call candidates, bounded evidence and CodeQL security queries.
+- [Fourth-slice status](development/slice-04.md): immutable context bundles, advisory triage and budget accounting.
 
 The design and plan are proposals; the slice status and README describe what actually runs.

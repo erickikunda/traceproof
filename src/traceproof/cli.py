@@ -49,7 +49,7 @@ def init(ctx: typer.Context):
 
     def operation():
         ctx.obj.initialize()
-        return {"state_dir": str(ctx.obj.root), "schema": "0003", "status": "initialized"}
+        return {"state_dir": str(ctx.obj.root), "schema": "0004", "status": "initialized"}
 
     perform(operation)
 
@@ -194,6 +194,66 @@ def scan_report_command(
         return scan_report_markdown(report) if format == "markdown" else report
 
     perform(operation)
+
+
+@app.command("build-bundle")
+def bundle_build(ctx: typer.Context, attempt_id: str, fingerprint: str):
+    """Materialize bounded primary/flow evidence for one static candidate."""
+    from traceproof.bundles import build_bundle
+
+    perform(lambda: build_bundle(ctx.obj, attempt_id, fingerprint))
+
+
+@app.command("bundle-status")
+def bundle_status(ctx: typer.Context, bundle_id: str):
+    """Retrieve a materialized evidence bundle without reading source or invoking a model."""
+    from traceproof.bundles import get_bundle
+
+    perform(lambda: get_bundle(ctx.obj, bundle_id))
+
+
+@app.command("triage-budget")
+def budget_set(ctx: typer.Context, run_id: str, micro_usd: int):
+    """Set an immutable per-run triage cap; 1,000,000 micro-USD equals one USD."""
+    from traceproof.triage import set_budget
+
+    perform(lambda: set_budget(ctx.obj, run_id, micro_usd))
+
+
+@app.command("triage")
+def triage_command(
+    ctx: typer.Context, bundle_id: str, config: Path, key: str, replay: Path | None = None
+):
+    """Triage one bundle using explicit policy; replay is offline, openai is opt-in live."""
+    from traceproof.models import OpenAIAdapter, ReplayAdapter, read_config
+    from traceproof.triage import triage
+
+    def operation():
+        policy = read_config(config)
+        if policy.provider == "replay":
+            if replay is None:
+                raise TraceProofError("Replay policy requires --replay RESPONSE_JSON")
+            adapter = ReplayAdapter(replay)
+        else:
+            if replay is not None:
+                raise TraceProofError("A live policy cannot use a replay fixture")
+            adapter = OpenAIAdapter(policy)
+        return triage(ctx.obj, bundle_id, policy, adapter, key)
+
+    perform(operation)
+
+
+@app.command("triage-report")
+def triage_status(
+    ctx: typer.Context,
+    run_id: str,
+    offset: Annotated[int, typer.Option(min=0)] = 0,
+    limit: Annotated[int, typer.Option(min=1, max=1000)] = 100,
+):
+    """Retrieve advisory decisions and the durable cost ledger without model calls."""
+    from traceproof.triage import triage_report
+
+    perform(lambda: triage_report(ctx.obj, run_id, offset, limit))
 
 
 @app.command("import-csv")

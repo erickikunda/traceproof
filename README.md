@@ -3,9 +3,9 @@
 Evidence-driven, LLM-assisted vulnerability discovery.
 
 **Implemented slices:** local CSV/archive intake, verified source snapshots, resumable
-Python indexing, conservative call candidates, bounded source evidence, CodeQL extraction
-and local security queries, and JSON/Markdown coverage/candidate reports.
-**Not yet implemented:** verified vulnerability adjudication, proven reachability, LLM calls,
+Python indexing, conservative call candidates, bounded evidence bundles, CodeQL security
+queries, advisory triage with replay/opt-in OpenAI adapters, cost reservations, and reports.
+**Not yet implemented:** verified vulnerability adjudication, proven reachability,
 benchmark execution, Git/GCS retrieval, API hosting or OpenShift workers.
 A `snapshotted` run means source is ready for analysis; it is not a clean security scan.
 
@@ -49,7 +49,7 @@ Rejected or failed archives need a corrected input and a new submission key.
 
 ## Index and retrieve coverage
 
-Run `traceproof init` again to upgrade an existing database to schema `0003`.
+Run `traceproof init` again to upgrade an existing database to schema `0004`.
 Then use a captured run:
 
 ```bash
@@ -123,6 +123,36 @@ GitHub 2.27.0 bundle. Normal extraction now works with baseline counting enabled
 `--skip-baseline` remains an optional diagnostic fallback and records the omitted baseline.
 See [Slice 03 status](docs/development/slice-03.md) for the tested scope and limitations.
 
+## Evidence bundles and advisory triage
+
+Use an attempt ID and candidate fingerprint from `scan-report`:
+
+```bash
+uv run traceproof build-bundle ATTEMPT_ID CANDIDATE_FINGERPRINT
+uv run traceproof bundle-status BUNDLE_ID
+uv run traceproof triage-budget RUN_ID 100000
+uv run traceproof triage BUNDLE_ID examples/triage-replay-config.json demo-triage-1 \
+  --replay examples/triage-replay-response.json
+uv run traceproof triage-report RUN_ID
+```
+
+The example is entirely offline. It uses fictional usage/rates to test the cost ledger,
+and returns an explicit abstention. `100000` micro-USD is a $0.10 accounting cap; no money
+is spent by replay. A run budget is fixed once configured. Reusing a triage key with the
+same bundle/config/fixture retrieves its result without another invocation.
+
+Bundles include primary, flow and related locations, capped at eight locations, 16 KiB
+of source and a 32 KiB envelope. Gaps remain visible; partial bundles skip model invocation.
+Triage decisions are advisory (`needs_review`, `likely_false_positive`, `abstain`) and
+never suppress or confirm a candidate. Invalid citations/refusals/incomplete outputs
+abstain. Missing usage, interrupted calls and ambiguous failures retain the reservation.
+
+The live OpenAI Responses adapter requires an operator-authored configuration with the
+approved HTTPS endpoint/host, model ID, allowed classifications, explicit source-transmission
+opt-in, pricing, and a named API-key environment variable. There is no built-in model choice
+or price. Live network behavior is tested with mocks; **no live provider call was made**.
+See [Slice 04 configuration and limits](docs/development/slice-04.md).
+
 ## CSV contract
 
 Required columns: `repo_id,source_type,source_uri,owner,classification`.
@@ -150,8 +180,8 @@ are read-only; verification detects modification. This is not a sandbox against 
 owning OS user. State and archives must be trusted local storage accessible only to the
 operator; no multi-user authentication or hostile-code execution is provided.
 
-The worker never executes source, build scripts or archive commands. There are no
-provider credentials or LLM calls in this slice. Use public/synthetic data on the personal
+The intake/index workers never execute source or build scripts. Offline replay requires
+no provider credentials; live triage requires explicit configuration. Use public/synthetic data on the personal
 laptop unless you have explicit authorization for other material. Do not commit runtime
 state, credentials or benchmark answers.
 
@@ -177,4 +207,5 @@ See [documentation](docs/README.md), [system design](docs/architecture/system-de
 [implementation plan](docs/plans/implementation-plan.md), and
 [Slice 01 status](docs/development/slice-01.md) and
 [Slice 02 status](docs/development/slice-02.md).
-The current implementation is described in [Slice 03 status](docs/development/slice-03.md).
+See [Slice 03 status](docs/development/slice-03.md) for static analysis and the current
+[Slice 04 status](docs/development/slice-04.md) for evidence bundles and triage.

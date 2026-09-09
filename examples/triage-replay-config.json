@@ -1,0 +1,7 @@
+{
+  "provider": "replay",
+  "model": "deterministic-fixture-v1",
+  "allowed_classifications": ["synthetic"],
+  "input_micro_usd_per_1k": 1000,
+  "output_micro_usd_per_1k": 2000
+}

@@ -24,7 +24,7 @@ def source_evidence(store, run_id, path, line, end_line, sha256=None):
         raise TraceProofError("Evidence source changed")
     try:
         encoding = tokenize.detect_encoding(io.BytesIO(raw).readline)[0]
-        lines = raw.decode(encoding).splitlines(keepends=True)
+        lines = io.StringIO(raw.decode(encoding), newline="").readlines()
     except (SyntaxError, UnicodeError, LookupError):
         raise TraceProofError("Evidence encoding is unsupported") from None
     if end_line > len(lines):
