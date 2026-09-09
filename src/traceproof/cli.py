@@ -212,6 +212,45 @@ def bundle_status(ctx: typer.Context, bundle_id: str):
     perform(lambda: get_bundle(ctx.obj, bundle_id))
 
 
+@app.command("expand-bundle")
+def bundle_expand(ctx: typer.Context, bundle_id: str, request: Path):
+    """Add explicitly requested context within the original bundle's fixed byte budget."""
+    from traceproof.expansion import expand_bundle, read_expansion
+
+    perform(lambda: expand_bundle(ctx.obj, bundle_id, read_expansion(request)))
+
+
+@app.command("evidence-policy")
+def evidence_policy(ctx: typer.Context, rule_id: str):
+    """Show supported evidence obligations for a CodeQL rule."""
+    from traceproof.claims import requirements
+
+    perform(lambda: requirements(rule_id))
+
+
+@app.command("check-evidence")
+def evidence_check(ctx: typer.Context, bundle_id: str, decision: Path):
+    """Validate a decision's claims against a materialized bundle; no provider invocation."""
+    from pydantic import ValidationError
+
+    from traceproof.bundles import get_bundle
+    from traceproof.claims import assess_evidence
+    from traceproof.models import Decision
+
+    def operation():
+        with decision.open("rb") as handle:
+            raw = handle.read(32 * 1024 + 1)
+        if len(raw) > 32 * 1024:
+            raise TraceProofError("Decision exceeds the 32 KiB limit")
+        try:
+            parsed = Decision.model_validate_json(raw)
+        except ValidationError:
+            raise TraceProofError("Decision does not match the supported claim schema") from None
+        return assess_evidence(get_bundle(ctx.obj, bundle_id), parsed)
+
+    perform(operation)
+
+
 @app.command("triage-budget")
 def budget_set(ctx: typer.Context, run_id: str, micro_usd: int):
     """Set an immutable per-run triage cap; 1,000,000 micro-USD equals one USD."""

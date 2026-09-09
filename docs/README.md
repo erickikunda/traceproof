@@ -8,5 +8,6 @@
 - [Second-slice status](development/slice-02.md): Python inventory, coverage reports and CodeQL diagnostics.
 - [Third-slice status](development/slice-03.md): call candidates, bounded evidence and CodeQL security queries.
 - [Fourth-slice status](development/slice-04.md): immutable context bundles, advisory triage and budget accounting.
+- [Fifth-slice status](development/slice-05.md): source claim checks and explicit bounded context expansion.
 
 The design and plan are proposals; the slice status and README describe what actually runs.

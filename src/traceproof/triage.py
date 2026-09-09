@@ -9,6 +9,7 @@ from pydantic import ValidationError
 from sqlalchemy import func, select
 
 from traceproof.bundles import canonical, get_bundle
+from traceproof.claims import GATE_VERSION, assess_evidence, requirements
 from traceproof.domain import TraceProofError
 from traceproof.intake import now
 from traceproof.models import PROMPT_VERSION, Adapter, Decision, ModelConfig, request_body
@@ -105,6 +106,7 @@ def triage(store, bundle_id: str, config: ModelConfig, adapter: Adapter, key: st
                     "config": config.model_dump(),
                     "adapter": adapter.identity,
                     "prompt_version": PROMPT_VERSION,
+                    "gate_version": GATE_VERSION,
                 }
             )
         ).hexdigest()
@@ -140,6 +142,8 @@ def triage(store, bundle_id: str, config: ModelConfig, adapter: Adapter, key: st
             state = "running"
             if bundle["status"] != "ready" or not bundle["snippets"]:
                 state, reservation = "incomplete_evidence", 0
+            elif not requirements(bundle["rule_id"])["supported"]:
+                state, reservation = "unsupported_rule", 0
             elif spent + reservation > budget.limit_micro_usd:
                 state, reservation = "budget_exhausted", 0
             identity = str(uuid4())
@@ -151,6 +155,7 @@ def triage(store, bundle_id: str, config: ModelConfig, adapter: Adapter, key: st
                 "candidate_fingerprint": bundle["candidate_fingerprint"],
                 "request_sha256": digest,
                 "prompt_version": PROMPT_VERSION,
+                "gate_version": GATE_VERSION,
                 "provider": config.provider,
                 "model": config.model,
                 "created_at": now(),
@@ -206,6 +211,11 @@ def triage(store, bundle_id: str, config: ModelConfig, adapter: Adapter, key: st
                     state = "invalid_rationale"
                 else:
                     result.update(decision=decision.model_dump(), disposition=decision.verdict)
+                    gate = assess_evidence(bundle, decision)
+                    result["evidence_gate"] = gate
+                    if decision.verdict != "abstain" and not gate["passed"]:
+                        state = "evidence_rejected"
+                        result["disposition"] = "abstain"
             elif reply.status == "completed":
                 state = "invalid_output"
             if charged > reservation:

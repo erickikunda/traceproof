@@ -14,7 +14,7 @@ from traceproof.persistence import Candidate, EvidenceBundle, ScanAttempt, exclu
 from traceproof.python_parser import MAX_BYTES
 from traceproof.sarif import MAX_SARIF_BYTES, bind_location, fingerprint, indexed
 
-BUILDER_VERSION = "1"
+BUILDER_VERSION = "2"
 MAX_LOCATIONS = 8
 MAX_BUNDLE_BYTES = 32 * 1024
 MAX_SOURCE_BYTES = 16 * 1024
@@ -79,19 +79,29 @@ def _build_bundle(store, attempt_id, candidate_fingerprint):
         sarif_run, result = matched
         # Preserve primary locations and every flow in SARIF order; cap materialized snippets.
         locations = [
-            ("primary", item.get("physicalLocation", {})) for item in result.get("locations", [])
+            ("primary", item.get("physicalLocation", {}), {})
+            for item in result.get("locations", [])
         ]
-        for flow in result.get("codeFlows", []):
-            for thread in flow.get("threadFlows", []):
+        for flow_number, flow in enumerate(result.get("codeFlows", [])):
+            for thread_number, thread in enumerate(flow.get("threadFlows", [])):
+                steps = thread.get("locations", [])
                 locations.extend(
-                    ("flow", item.get("location", {}).get("physicalLocation", {}))
-                    for item in thread.get("locations", [])
+                    (
+                        "flow",
+                        item.get("location", {}).get("physicalLocation", {}),
+                        {
+                            "flow_id": f"F{flow_number}T{thread_number}",
+                            "flow_step": step,
+                            "flow_steps": len(steps),
+                        },
+                    )
+                    for step, item in enumerate(steps)
                 )
         for location in result.get("relatedLocations", []):
-            locations.append(("related", location.get("physicalLocation", {})))
+            locations.append(("related", location.get("physicalLocation", {}), {}))
         references = [
-            (role, bind_location(location, sarif_run, manifest, tree))
-            for role, location in locations[:MAX_LOCATIONS]
+            (role, bind_location(location, sarif_run, manifest, tree), metadata)
+            for role, location, metadata in locations[:MAX_LOCATIONS]
         ]
     except (KeyError, TypeError, ValueError, IndexError, AttributeError, RecursionError):
         raise TraceProofError("Cannot interpret candidate SARIF evidence") from None
@@ -102,7 +112,7 @@ def _build_bundle(store, attempt_id, candidate_fingerprint):
         gaps.append("no_locations")
     if len(locations) > MAX_LOCATIONS:
         gaps.append("location_limit")
-    for position, (role, reference) in enumerate(references):
+    for position, (role, reference, metadata) in enumerate(references):
         if reference is None:
             gaps.append(f"location_{position}:unmapped")
             continue
@@ -129,6 +139,7 @@ def _build_bundle(store, attempt_id, candidate_fingerprint):
                 {
                     "id": f"E{position + 1}",
                     "role": role,
+                    **metadata,
                     **reference,
                     "excerpt_line": start,
                     "excerpt_end_line": end,
@@ -148,6 +159,7 @@ def _build_bundle(store, attempt_id, candidate_fingerprint):
     content = {
         "schema_version": "1",
         "builder_version": BUILDER_VERSION,
+        "expansion_depth": 0,
         "run_id": run.id,
         "repo_id": run.repo_id,
         "snapshot_id": manifest.snapshot_id,

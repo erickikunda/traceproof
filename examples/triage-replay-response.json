@@ -4,7 +4,8 @@
     "verdict": "abstain",
     "rationale": "This offline fixture exercises orchestration only; no security assessment was performed.",
     "evidence_ids": [],
-    "counterevidence": "A real evidence-based review is still required."
+    "counterevidence": "A real evidence-based review is still required.",
+    "claims": []
   },
   "usage": {"input_tokens": 500, "output_tokens": 80}
 }

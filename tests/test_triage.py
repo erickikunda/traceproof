@@ -35,7 +35,12 @@ from traceproof.triage import cost_micro_usd, set_budget, triage, triage_report
 
 @pytest.fixture
 def evidence_fixture(store, archive, manifest):
-    def make(flow_count=1, uri="app.py", source="def f(x):\n    return eval(x)\n"):
+    def make(
+        flow_count=1,
+        uri="app.py",
+        source="def f(x):\n    return eval(x)\n",
+        rule_id="py/code-injection",
+    ):
         with zipfile.ZipFile(archive, "w") as out:
             out.writestr("app.py", source)
         batch = submit(store, manifest([row(archive)]), archive.parent, str(uuid4()))
@@ -43,7 +48,7 @@ def evidence_fixture(store, archive, manifest):
         _, snapshot, tree = verified_source(store, run_id)
         physical = {"artifactLocation": {"uri": uri}, "region": {"startLine": 2}}
         result = {
-            "ruleId": "py/code-injection",
+            "ruleId": rule_id,
             "message": {"text": "Untrusted input"},
             "locations": [{"physicalLocation": physical}],
             "codeFlows": [
@@ -183,7 +188,8 @@ def test_reservation_usage_idempotency_and_candidate_immutability(store, ready):
     set_budget(store, run, 100000)
     adapter = FakeAdapter()
     first = triage(store, bundle["bundle_id"], policy(), adapter, "key")
-    assert first["state"] == "completed" and first["accounted_micro_usd"] == 140
+    assert first["state"] == "evidence_rejected" and first["accounted_micro_usd"] == 140
+    assert first["disposition"] == "abstain"
     assert first["reserved_micro_usd"] > 140
     assert triage(store, bundle["bundle_id"], policy(), adapter, "key") == first
     assert adapter.calls == 1

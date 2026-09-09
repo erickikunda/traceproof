@@ -4,7 +4,8 @@ Evidence-driven, LLM-assisted vulnerability discovery.
 
 **Implemented slices:** local CSV/archive intake, verified source snapshots, resumable
 Python indexing, conservative call candidates, bounded evidence bundles, CodeQL security
-queries, advisory triage with replay/opt-in OpenAI adapters, cost reservations, and reports.
+queries, advisory triage with replay/opt-in OpenAI adapters, source claim checks,
+bounded context expansion, cost reservations, and reports.
 **Not yet implemented:** verified vulnerability adjudication, proven reachability,
 benchmark execution, Git/GCS retrieval, API hosting or OpenShift workers.
 A `snapshotted` run means source is ready for analysis; it is not a clean security scan.
@@ -152,6 +153,23 @@ approved HTTPS endpoint/host, model ID, allowed classifications, explicit source
 opt-in, pricing, and a named API-key environment variable. There is no built-in model choice
 or price. Live network behavior is tested with mocks; **no live provider call was made**.
 See [Slice 04 configuration and limits](docs/development/slice-04.md).
+
+Slice 05 adds quoted source/sink/flow/guard claims for `py/code-injection` and
+`py/command-line-injection`. Failed claims abstain; unsupported rules skip the provider.
+Checks establish narrow syntax and retained flow consistency, not vulnerability truth.
+Rebuild old bundles for flow metadata, and use a new triage key for the updated prompt.
+
+```bash
+uv run traceproof evidence-policy py/code-injection
+uv run traceproof check-evidence BUNDLE_ID /absolute/decision.json
+uv run traceproof expand-bundle BUNDLE_ID /absolute/expansion.json
+```
+
+Expansion requests are JSON arrays of `path`, `line`, `end_line`, and `reason` objects.
+They create immutable child bundles with at most four requested ranges per step and two
+steps, within the original total source/envelope caps. Expansion never calls a provider;
+triage of a child requires an explicit new request and uses the same run budget.
+See [Slice 05 behavior and limitations](docs/development/slice-05.md).
 
 ## CSV contract
 
