@@ -276,6 +276,8 @@ these assertions do not set independent verification or benchmark precision. Sum
 exports omit reviewer labels and notes; the explicit history command includes them.
 See [Slice 12 contract](docs/development/slice-12.md).
 
+Anthropic Messages is also available through an explicit `provider: "anthropic"` model policy. Configure the approved endpoint, model, pricing and `api_key_env` explicitly; all live transmission remains opt-in. See [Slice 13 contract](docs/development/slice-13.md) for setup and accounting limits.
+
 ## Benchmark contract preparation
 
 Slice 10 validates separate repository manifests and evaluator-only labels. It does not

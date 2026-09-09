@@ -58,7 +58,7 @@ class Reply(StrictModel):
 
 
 class ModelConfig(StrictModel):
-    provider: Literal["replay", "openai"]
+    provider: Literal["replay", "openai", "anthropic"]
     model: str = Field(min_length=1, max_length=200)
     endpoint: str = ""
     allowed_endpoint_hosts: list[str] = Field(default_factory=list)
@@ -73,7 +73,7 @@ class ModelConfig(StrictModel):
 
     @model_validator(mode="after")
     def live_policy(self):
-        if self.provider == "openai":
+        if self.provider != "replay":
             url = urlsplit(self.endpoint)
             if (
                 url.scheme != "https"
@@ -107,6 +107,23 @@ def request_body(bundle, config):
     schema = Decision.model_json_schema()
     # Live Structured Outputs requires every property. Legacy replay may omit claims locally.
     schema["required"] = list(schema["properties"])
+    if config.provider == "anthropic":
+        return {
+            "model": config.model,
+            "max_tokens": config.max_output_tokens,
+            "system": INSTRUCTIONS,
+            "messages": [
+                {
+                    "role": "user",
+                    "content": canonical(
+                        {"bundle": bundle, "requirements": requirements(bundle["rule_id"])}
+                    ).decode(),
+                }
+            ],
+            "output_config": {
+                "format": {"type": "json_schema", "schema": anthropic_schema(schema)}
+            },
+        }
     return {
         "model": config.model,
         "store": False,
@@ -153,9 +170,7 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
         raise TraceProofError("Provider redirect rejected")
 
 
-class OpenAIAdapter:
-    identity = "openai-responses-v1"
-
+class LiveAdapter:
     def __init__(self, config):
         self.config = config
 
@@ -195,7 +210,7 @@ class OpenAIAdapter:
         request = urllib.request.Request(
             config.endpoint,
             data=canonical(body),
-            headers={"Authorization": "Bearer " + secret, "Content-Type": "application/json"},
+            headers=self.headers(secret),
             method="POST",
         )
         # No retries: a timeout may already have incurred a charge.
@@ -203,7 +218,85 @@ class OpenAIAdapter:
             raw = response.read(128 * 1024 + 1)
         if len(raw) > 128 * 1024:
             raise TraceProofError("Provider output exceeds 128 KiB")
-        return parse_openai_response(raw)
+        return self.parse(raw)
+
+
+class OpenAIAdapter(LiveAdapter):
+    identity = "openai-responses-v1"
+    parse = staticmethod(lambda raw: parse_openai_response(raw))
+
+    def headers(self, secret):
+        return {"Authorization": "Bearer " + secret, "Content-Type": "application/json"}
+
+
+class AnthropicAdapter(LiveAdapter):
+    identity = "anthropic-messages-v1"
+    parse = staticmethod(lambda raw: parse_anthropic_response(raw))
+
+    def headers(self, secret):
+        return {
+            "x-api-key": secret,
+            "anthropic-version": "2023-06-01",
+            "Content-Type": "application/json",
+        }
+
+
+def live_adapter(config):
+    if config.provider == "openai":
+        return OpenAIAdapter(config)
+    if config.provider == "anthropic":
+        return AnthropicAdapter(config)
+    raise TraceProofError("Replay requires an explicit fixture")
+
+
+def anthropic_schema(value):
+    """Relax wire constraints only; Decision retains full local validation."""
+    if isinstance(value, list):
+        return [anthropic_schema(item) for item in value]
+    if not isinstance(value, dict):
+        return value
+    constraints = {"minimum", "maximum", "minLength", "maxLength", "minItems", "maxItems"}
+    result = {key: anthropic_schema(item) for key, item in value.items() if key not in constraints}
+    bounds = {key: item for key, item in value.items() if key in constraints}
+    if bounds:
+        result["description"] = (
+            result.get("description", "") + " Constraints: " + json.dumps(bounds)
+        )
+    return result
+
+
+def parse_anthropic_response(raw):
+    doc = json.loads(raw)
+    usage_doc = doc.get("usage")
+    usage = None
+    if usage_doc is not None:
+        usage = Usage.model_validate(
+            {key: usage_doc[key] for key in ("input_tokens", "output_tokens")}
+        )
+        # No cache is requested. Unexpected cache charges have no configured tariff.
+        for key in ("cache_creation_input_tokens", "cache_read_input_tokens"):
+            value = usage_doc.get(key, 0)
+            if type(value) is not int or value < 0:
+                raise ValueError("Invalid cache usage")
+            if value:
+                usage = None
+    if doc.get("stop_reason") == "refusal":
+        return Reply(status="refused", usage=usage)
+    if doc.get("stop_reason") != "end_turn":
+        return Reply(status="incomplete", usage=usage)
+    try:
+        content = doc["content"]
+        if (
+            doc.get("type") != "message"
+            or doc.get("role") != "assistant"
+            or len(content) != 1
+            or content[0]["type"] != "text"
+        ):
+            raise ValueError()
+        decision = Decision.model_validate_json(content[0]["text"])
+        return Reply(status="completed", decision=decision, usage=usage)
+    except (ValidationError, ValueError, KeyError, TypeError):
+        return Reply(status="invalid_output", usage=usage)
 
 
 def parse_openai_response(raw):
@@ -240,7 +333,7 @@ if __name__ == "__main__":
         if len(raw_input) > 96 * 1024:
             raise ValueError()
         payload = json.loads(raw_input)
-        adapter = OpenAIAdapter(ModelConfig.model_validate(payload["config"]))
+        adapter = live_adapter(ModelConfig.model_validate(payload["config"]))
         sys.stdout.buffer.write(canonical(adapter._invoke_https(payload["body"]).model_dump()))
     except Exception:
         # Never echo provider errors, headers, source or secrets from the child process.

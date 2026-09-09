@@ -403,8 +403,8 @@ def budget_set(ctx: typer.Context, run_id: str, micro_usd: int):
 def triage_command(
     ctx: typer.Context, bundle_id: str, config: Path, key: str, replay: Path | None = None
 ):
-    """Triage one bundle using explicit policy; replay is offline, openai is opt-in live."""
-    from traceproof.models import OpenAIAdapter, ReplayAdapter, read_config
+    """Triage one bundle; replay is offline and live providers require explicit opt-in."""
+    from traceproof.models import ReplayAdapter, live_adapter, read_config
     from traceproof.triage import triage
 
     def operation():
@@ -416,7 +416,7 @@ def triage_command(
         else:
             if replay is not None:
                 raise TraceProofError("A live policy cannot use a replay fixture")
-            adapter = OpenAIAdapter(policy)
+            adapter = live_adapter(policy)
         return triage(ctx.obj, bundle_id, policy, adapter, key)
 
     perform(operation)

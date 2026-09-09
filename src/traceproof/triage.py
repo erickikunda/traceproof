@@ -91,7 +91,7 @@ def triage(store, bundle_id: str, config: ModelConfig, adapter: Adapter, key: st
         bundle = get_bundle(store, bundle_id)
         if bundle["classification"] not in config.allowed_classifications:
             raise TraceProofError("Bundle classification is not allowed by model policy")
-        if config.provider == "openai":
+        if config.provider != "replay":
             if not config.allow_source_transmission:
                 raise TraceProofError("Live source transmission is disabled")
             if not os.environ.get(config.api_key_env):
