@@ -90,6 +90,23 @@ class CodeqlAttempt(Base):
     result: Mapped[dict] = mapped_column(JSON)
 
 
+class ScanAttempt(Base):
+    __tablename__ = "scan_attempts"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    run_id: Mapped[str] = mapped_column(ForeignKey("runs.id"), index=True)
+    created_at: Mapped[str] = mapped_column(String(40))
+    report: Mapped[dict] = mapped_column(JSON)
+
+
+class Candidate(Base):
+    __tablename__ = "candidates"
+    __table_args__ = (UniqueConstraint("attempt_id", "fingerprint"),)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    attempt_id: Mapped[str] = mapped_column(ForeignKey("scan_attempts.id"), index=True)
+    fingerprint: Mapped[str] = mapped_column(String(64))
+    evidence: Mapped[dict] = mapped_column(JSON)
+
+
 class Store:
     def __init__(self, root: Path):
         self.root = root.resolve()

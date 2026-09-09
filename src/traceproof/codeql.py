@@ -15,7 +15,7 @@ from traceproof.indexing import verified_source
 from traceproof.persistence import CodeqlAttempt
 
 
-def extract(store, run_id, timeout=300):
+def extract(store, run_id, timeout=300, skip_baseline=False):
     """Caller holds exclusive_worker; attempts and artifacts are never overwritten."""
     if not 1 <= timeout <= 3600:
         raise TraceProofError("Extraction timeout must be between 1 and 3600 seconds")
@@ -36,6 +36,7 @@ def extract(store, run_id, timeout=300):
         "timeout_seconds": timeout,
         "build_mode": "none",
         "language": "python",
+        "baseline_requested": not skip_baseline,
     }
     with store.transaction() as session:
         for prior in session.scalars(select(CodeqlAttempt).where(CodeqlAttempt.run_id == run_id)):
@@ -77,6 +78,8 @@ def extract(store, run_id, timeout=300):
             "--ram=2048",
             f"--common-caches={root / 'cache'}",
         ]
+        if skip_baseline:
+            command.append("--no-calculate-baseline")
         # Raw extractor output can contain source and remains in protected local artifacts.
         # This POC requires an operator-controlled disk quota for the whole state directory.
         with (root / "extract.log").open("wb") as log:

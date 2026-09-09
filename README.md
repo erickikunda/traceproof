@@ -3,9 +3,10 @@
 Evidence-driven, LLM-assisted vulnerability discovery.
 
 **Implemented slices:** local CSV/archive intake, verified source snapshots, resumable
-Python syntax indexing, JSON/Markdown coverage reports, and optional CodeQL extraction.
-**Not yet implemented:** vulnerability detection, resolved call graphs, LLM calls,
-vulnerability reports, benchmark execution, Git/GCS retrieval, API hosting or OpenShift workers.
+Python indexing, conservative call candidates, bounded source evidence, CodeQL extraction
+and local security queries, and JSON/Markdown coverage/candidate reports.
+**Not yet implemented:** verified vulnerability adjudication, proven reachability, LLM calls,
+benchmark execution, Git/GCS retrieval, API hosting or OpenShift workers.
 A `snapshotted` run means source is ready for analysis; it is not a clean security scan.
 
 ## Quick start
@@ -48,7 +49,7 @@ Rejected or failed archives need a corrected input and a new submission key.
 
 ## Index and retrieve coverage
 
-Run `traceproof init` again to upgrade an existing Slice 01 database to schema `0002`.
+Run `traceproof init` again to upgrade an existing database to schema `0003`.
 Then use a captured run:
 
 ```bash
@@ -81,6 +82,46 @@ still returns a durable diagnostic record with CLI exit code zero. Extraction su
 does not verify coverage or run security queries. Raw logs can contain source and stay
 under the local state directory. Provide a disk quota when using this opt-in command;
 automatic artifact cleanup and a production container sandbox are not implemented.
+
+## Source evidence and security-query candidates
+
+Re-run `index-run` to build the v2 index required by `call-context`. Old indexes are
+retained; retrieve an old coverage report with `repo-report --run-id RUN_ID --index-id INDEX_ID`.
+
+```bash
+uv run traceproof call-context RUN_ID project/app.py --module-root project
+uv run traceproof source-evidence RUN_ID project/app.py 1 20
+uv run traceproof codeql-analyze EXTRACTION_ID /absolute/approved/query.ql --timeout 600
+uv run traceproof scan-report REPO_ID
+uv run traceproof scan-report REPO_ID --run-id RUN_ID --attempt-id ATTEMPT_ID --format markdown
+```
+
+The call-context view adds conservative candidates for direct top-level functions and
+absolute imports under an explicit module root. Shadowing, ambiguous modules, decorators
+and dynamic behavior leave gaps. `static_candidate` never means proven reachability.
+Evidence reads verify digests and reject ranges over 200 lines or 32 KiB; add `--sha256`
+to require a previously returned evidence digest.
+
+`codeql-analyze` accepts an operator-controlled local `.ql` or `.qls` entry, uses
+`--no-download`, and atomically publishes unreviewed candidates with diagnostics.
+Install approved query packs separately. For a personal-laptop synthetic test, this
+version was exercised:
+
+```bash
+codeql pack download codeql/python-queries@1.8.10 --dir=work/codeql-packs --common-caches=work/codeql-download-cache
+# Pass this local query to codeql-analyze:
+# work/codeql-packs/codeql/python-queries/1.8.10/Security/CWE-094/CodeInjection.ql
+```
+
+Inspect `status` even when the command exits zero: timeouts, failed queries and invalid
+SARIF are durable reports. Zero candidates is not a clean verdict. Reports select the
+latest admitted run/latest attempt without falling back to earlier successes. Raw SARIF
+and logs remain in protected state storage; report text can contain sensitive tool output.
+
+The original CodeQL installation's `scc` hang was resolved by reinstalling the official
+GitHub 2.27.0 bundle. Normal extraction now works with baseline counting enabled.
+`--skip-baseline` remains an optional diagnostic fallback and records the omitted baseline.
+See [Slice 03 status](docs/development/slice-03.md) for the tested scope and limitations.
 
 ## CSV contract
 
@@ -136,3 +177,4 @@ See [documentation](docs/README.md), [system design](docs/architecture/system-de
 [implementation plan](docs/plans/implementation-plan.md), and
 [Slice 01 status](docs/development/slice-01.md) and
 [Slice 02 status](docs/development/slice-02.md).
+The current implementation is described in [Slice 03 status](docs/development/slice-03.md).

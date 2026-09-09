@@ -28,7 +28,8 @@ def configure(
 
 def perform(operation):
     try:
-        typer.echo(render_json(operation()))
+        result = operation()
+        typer.echo(result if isinstance(result, str) else render_json(result))
     except TraceProofError as exc:
         typer.echo(render_json({"error": str(exc)}), err=True)
         raise typer.Exit(1) from exc
@@ -48,7 +49,7 @@ def init(ctx: typer.Context):
 
     def operation():
         ctx.obj.initialize()
-        return {"state_dir": str(ctx.obj.root), "schema": "0002", "status": "initialized"}
+        return {"state_dir": str(ctx.obj.root), "schema": "0003", "status": "initialized"}
 
     perform(operation)
 
@@ -79,13 +80,19 @@ def index_query(
 
 
 @app.command("repo-report")
-def repo_report(ctx: typer.Context, repo_id: str, run_id: str | None = None, format: str = "json"):
+def repo_report(
+    ctx: typer.Context,
+    repo_id: str,
+    run_id: str | None = None,
+    format: str = "json",
+    index_id: str | None = None,
+):
     """Retrieve coverage for a repo's latest admitted run, or an explicit historical run."""
     if format == "json":
-        perform(lambda: repository_report(ctx.obj, repo_id, run_id))
+        perform(lambda: repository_report(ctx.obj, repo_id, run_id, index_id))
     elif format == "markdown":
         try:
-            typer.echo(report_markdown(repository_report(ctx.obj, repo_id, run_id)))
+            typer.echo(report_markdown(repository_report(ctx.obj, repo_id, run_id, index_id)))
         except (TraceProofError, OSError, SQLAlchemyError):
             typer.echo(
                 "Cannot retrieve report; check repository, run, and initialization.", err=True
@@ -98,7 +105,12 @@ def repo_report(ctx: typer.Context, repo_id: str, run_id: str | None = None, for
 
 @app.command("codeql-extract")
 def codeql_extract(
-    ctx: typer.Context, run_id: str, timeout: Annotated[int, typer.Option(min=1, max=3600)] = 300
+    ctx: typer.Context,
+    run_id: str,
+    timeout: Annotated[int, typer.Option(min=1, max=3600)] = 300,
+    skip_baseline: Annotated[
+        bool, typer.Option(help="Skip optional CodeQL line-count baseline")
+    ] = False,
 ):
     """Opt-in local Python extraction; creates diagnostics, not security findings."""
     from traceproof.codeql import extract
@@ -106,7 +118,7 @@ def codeql_extract(
     def operation():
         ctx.obj.require_initialized()
         with exclusive_worker(ctx.obj.root):
-            return extract(ctx.obj, run_id, timeout)
+            return extract(ctx.obj, run_id, timeout, skip_baseline)
 
     perform(operation)
 
@@ -117,6 +129,71 @@ def codeql_status(ctx: typer.Context, attempt_id: str):
     from traceproof.codeql import extraction_status
 
     perform(lambda: extraction_status(ctx.obj, attempt_id))
+
+
+@app.command("source-evidence")
+def evidence(
+    ctx: typer.Context, run_id: str, path: str, line: int, end_line: int, sha256: str | None = None
+):
+    """Read at most 200 lines/32 KiB from verified snapshot source."""
+    from traceproof.evidence import source_evidence
+
+    perform(lambda: source_evidence(ctx.obj, run_id, path, line, end_line, sha256))
+
+
+@app.command("call-context")
+def calls(
+    ctx: typer.Context,
+    run_id: str,
+    path: str,
+    module_root: str = ".",
+    offset: Annotated[int, typer.Option(min=0)] = 0,
+    limit: Annotated[int, typer.Option(min=1, max=1000)] = 100,
+):
+    """Retrieve conservative direct/import candidates; does not prove reachability."""
+    from traceproof.calls import call_context
+
+    perform(lambda: call_context(ctx.obj, run_id, path, module_root, offset, limit))
+
+
+@app.command("codeql-analyze")
+def codeql_analyze(
+    ctx: typer.Context,
+    extraction_id: str,
+    queries: Path,
+    timeout: Annotated[int, typer.Option(min=1, max=3600)] = 600,
+):
+    """Run an operator-provided local query/suite; publish unreviewed SARIF candidates."""
+    from traceproof.scanning import analyze
+
+    def operation():
+        ctx.obj.require_initialized()
+        with exclusive_worker(ctx.obj.root):
+            return analyze(ctx.obj, extraction_id, queries, timeout)
+
+    perform(operation)
+
+
+@app.command("scan-report")
+def scan_report_command(
+    ctx: typer.Context,
+    repo_id: str,
+    run_id: str | None = None,
+    attempt_id: str | None = None,
+    format: str = "json",
+    offset: Annotated[int, typer.Option(min=0)] = 0,
+    limit: Annotated[int, typer.Option(min=1, max=1000)] = 100,
+):
+    """Read the latest static-analysis attempt, or an explicitly selected attempt."""
+    from traceproof.scanning import scan_report, scan_report_markdown
+
+    def operation():
+        if format not in {"json", "markdown"}:
+            raise TraceProofError("Format must be json or markdown")
+        report = scan_report(ctx.obj, repo_id, run_id, attempt_id, offset, limit)
+        return scan_report_markdown(report) if format == "markdown" else report
+
+    perform(operation)
 
 
 @app.command("import-csv")

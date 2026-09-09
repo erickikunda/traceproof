@@ -15,7 +15,7 @@ from traceproof.persistence import IndexedFile, Run, Snapshot, SourceIndex
 from traceproof.python_parser import MAX_BYTES
 
 VERSION = (
-    f"python-ast-v1-py{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
+    f"python-ast-v2-py{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
 )
 
 
@@ -146,11 +146,11 @@ def build_index(store, run_id):
     return coverage_report(store, run_id)
 
 
-def published_index(session, snapshot_id):
+def published_index(session, snapshot_id, index_id=None):
     index = session.scalar(
         select(SourceIndex).where(
             SourceIndex.snapshot_id == snapshot_id,
-            SourceIndex.version == VERSION,
+            SourceIndex.id == index_id if index_id else SourceIndex.version == VERSION,
             SourceIndex.state == "published",
         )
     )
@@ -159,14 +159,14 @@ def published_index(session, snapshot_id):
     return index
 
 
-def coverage_report(store, run_id):
+def coverage_report(store, run_id, index_id=None):
     run, snapshot = snapshot_for_run(store, run_id)
     with store.transaction() as session:
-        index = published_index(session, snapshot.id)
+        index = published_index(session, snapshot.id, index_id)
         return {**index.report, "run_id": run.id, "repo_id": run.repo_id}
 
 
-def repository_report(store, repo_id, run_id=None):
+def repository_report(store, repo_id, run_id=None, index_id=None):
     with store.transaction() as session:
         query = select(Run).where(Run.repo_id == repo_id)
         if run_id:
@@ -176,7 +176,7 @@ def repository_report(store, repo_id, run_id=None):
             raise TraceProofError("Repository/run not found")
         selected = run.id
     # Latest admitted run is intentional: never silently return an older successful run.
-    return coverage_report(store, selected)
+    return coverage_report(store, selected, index_id)
 
 
 def query_index(store, run_id, kind="symbols", path=None, offset=0, limit=100):

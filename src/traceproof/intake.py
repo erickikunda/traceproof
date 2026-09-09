@@ -177,7 +177,7 @@ def import_status(store: Store, import_id: str) -> dict:
 
 def run_status(store: Store, run_id: str) -> dict:
     from traceproof.indexing import VERSION
-    from traceproof.persistence import SourceIndex
+    from traceproof.persistence import ScanAttempt, SourceIndex
 
     with store.transaction() as session:
         run = session.get(Run, run_id)
@@ -192,6 +192,12 @@ def run_status(store: Store, run_id: str) -> dict:
             if run.snapshot_id
             else None
         )
+        scan = session.scalar(
+            select(ScanAttempt)
+            .where(ScanAttempt.run_id == run.id)
+            .order_by(ScanAttempt.created_at.desc(), ScanAttempt.id.desc())
+            .limit(1)
+        )
         return {
             "schema_version": "1",
             "run_id": run.id,
@@ -199,11 +205,12 @@ def run_status(store: Store, run_id: str) -> dict:
             "state": run.state,
             "profile": run.profile,
             "snapshot_id": run.snapshot_id,
-            "analysis_performed": False,
-            "report_status": "not_available",
+            "analysis_performed": bool(scan and scan.report["status"] in {"completed", "partial"}),
+            "report_status": "static_candidates_available" if scan else "not_available",
+            "scan_status": scan.report["status"] if scan else "not_started",
             "index_status": index.state if index else "not_started",
             "coverage_report_status": "available" if index and index.report else "not_available",
-            "message": "Security analysis and vulnerability reports are not implemented",
+            "message": "CodeQL candidates are unreviewed; adjudication is not implemented",
         }
 
 

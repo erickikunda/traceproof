@@ -4,6 +4,7 @@ import ast
 import json
 import resource
 import sys
+from collections import Counter
 
 MAX_BYTES = 1024 * 1024
 MAX_NODES = 50_000
@@ -65,7 +66,48 @@ def parse(source: bytes) -> dict:
                 visit(child, scope)
 
         visit(tree, "<module>")
-        return {"status": "parsed", "symbols": symbols, "calls": calls}
+        bindings = Counter()
+        unsafe = False
+        for node in ast.walk(tree):
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+                bindings[node.name] += 1
+            elif isinstance(node, ast.Name) and isinstance(node.ctx, (ast.Store, ast.Del)):
+                bindings[node.id] += 1
+            elif isinstance(node, ast.arg):
+                bindings[node.arg] += 1
+            elif isinstance(node, (ast.Import, ast.ImportFrom)):
+                for alias in node.names:
+                    bindings[alias.asname or alias.name.split(".")[0]] += 1
+                    unsafe |= alias.name == "*"
+            elif isinstance(node, (ast.ExceptHandler, ast.MatchAs, ast.MatchStar)) and node.name:
+                bindings[node.name] += 1
+            elif isinstance(node, ast.MatchMapping) and node.rest:
+                bindings[node.rest] += 1
+            if isinstance(node, (ast.Global, ast.Nonlocal)):
+                unsafe = True
+            if isinstance(node, ast.Call) and isinstance(node.func, ast.Name):
+                unsafe |= node.func.id in {"exec", "eval", "globals", "locals", "setattr"}
+        exports, imports = {}, {}
+        for node in tree.body:
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                if not node.decorator_list and bindings[node.name] == 1:
+                    exports[node.name] = {"line": node.lineno, "end_line": node.end_lineno}
+            if isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
+                for alias in node.names:
+                    name = alias.asname or alias.name
+                    if bindings[name] == 1:
+                        imports[name] = {"module": node.module, "symbol": alias.name}
+            if isinstance(node, ast.Import):
+                for alias in node.names:
+                    name = alias.asname or alias.name.split(".")[0]
+                    if bindings[name] == 1:
+                        imports[alias.asname or alias.name] = {"module": alias.name, "symbol": None}
+        return {
+            "status": "parsed",
+            "symbols": symbols,
+            "calls": calls,
+            "bindings": {"exports": exports, "imports": imports, "unsafe": unsafe},
+        }
     except (SyntaxError, ValueError, UnicodeError):
         return {"status": "parse_error", "symbols": [], "calls": []}
     except (RecursionError, MemoryError):
