@@ -125,10 +125,8 @@ def read_contract(path, contract):
         ) from None
 
 
-def check_benchmark(manifest_path, labels_path=None, store=None):
-    manifest = read_contract(manifest_path, BenchmarkManifest)
+def validate_pair(manifest, labels):
     manifest_digest = hashlib.sha256(canonical(manifest.model_dump())).hexdigest()
-    labels = read_contract(labels_path, BenchmarkLabels) if labels_path else None
     repositories = {item.repo_id: item for item in manifest.repositories}
     if labels:
         if labels.dataset_id != manifest.dataset_id or labels.manifest_sha256 != manifest_digest:
@@ -143,6 +141,14 @@ def check_benchmark(manifest_path, labels_path=None, store=None):
                 raise TraceProofError(
                     "Label repository, snapshot or weakness is outside manifest scope"
                 )
+    return manifest_digest
+
+
+def check_benchmark(manifest_path, labels_path=None, store=None):
+    manifest = read_contract(manifest_path, BenchmarkManifest)
+    labels = read_contract(labels_path, BenchmarkLabels) if labels_path else None
+    manifest_digest = validate_pair(manifest, labels)
+    repositories = {item.repo_id: item for item in manifest.repositories}
     issues = []
     aligned = 0
     if store is not None:

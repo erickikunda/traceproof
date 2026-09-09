@@ -273,6 +273,19 @@ digest for the label file's `manifest_sha256`. Keep both files outside analyzed 
 labels must never be submitted through CSV intake or sent to models. See
 [Slice 10 contract and limits](docs/development/slice-10.md).
 
+Slice 11 adds an offline scorecard over exact stored reports:
+
+```bash
+uv run traceproof benchmark-evaluate /absolute/manifest.json /absolute/labels.json /absolute/evaluation-plan.json
+uv run traceproof benchmark-evaluate /absolute/manifest.json /absolute/labels.json /absolute/evaluation-plan.json --format markdown
+```
+
+The plan pins the manifest, query digest, CodeQL version, profile, supported rules and
+one report ID per selected repository. `benchmark-schema` includes its schema. Missing
+reports remain explicit cases. Scores measure provisional candidate-location matches;
+precision and confirmed recall remain unknown. No scans or model calls are dispatched.
+See [Slice 11 scope and score interpretation](docs/development/slice-11.md).
+
 ## Development
 
 Run the real CodeQL acceptance suite with an approved local `CodeInjection.ql` entry:

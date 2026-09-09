@@ -14,6 +14,7 @@
 - [Eighth-slice status](development/slice-08.md): conservative report comparisons and occurrence references.
 - [Ninth-slice status](development/slice-09.md): real CodeQL acceptance fixtures and explicit static-review readiness.
 - [Tenth-slice status](development/slice-10.md): separate benchmark manifest/label contracts and offline alignment checks.
+- [Eleventh-slice status](development/slice-11.md): pinned offline candidate-location scorecards with explicit uncertainty.
 - [Progress assessment](development/progress.md): work-package estimates against the full implementation plan.
 
 The design and plan are proposals; the slice status and README describe what actually runs.

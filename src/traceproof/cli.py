@@ -87,13 +87,25 @@ def acceptance_run_command(
 def benchmark_schema_command():
     """Print the separate manifest and evaluator-label JSON schemas."""
     from traceproof.benchmark import BenchmarkLabels, BenchmarkManifest
+    from traceproof.evaluation import EvaluationPlan
 
     perform(
         lambda: {
             "manifest": BenchmarkManifest.model_json_schema(),
             "labels": BenchmarkLabels.model_json_schema(),
+            "evaluation_plan": EvaluationPlan.model_json_schema(),
         }
     )
+
+
+@app.command("benchmark-evaluate")
+def benchmark_evaluate_command(
+    ctx: typer.Context, manifest: Path, labels: Path, plan: Path, format: str = "json"
+):
+    """Compare stored reports to evaluator-only labels without running scans."""
+    from traceproof.evaluation import evaluate_benchmark, render_scorecard
+
+    perform(lambda: render_scorecard(evaluate_benchmark(ctx.obj, manifest, labels, plan), format))
 
 
 @app.command("benchmark-check")
