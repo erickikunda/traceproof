@@ -49,7 +49,7 @@ def init(ctx: typer.Context):
 
     def operation():
         ctx.obj.initialize()
-        return {"state_dir": str(ctx.obj.root), "schema": "0005", "status": "initialized"}
+        return {"state_dir": str(ctx.obj.root), "schema": "0006", "status": "initialized"}
 
     perform(operation)
 
@@ -64,6 +64,33 @@ def index_run(ctx: typer.Context, run_id: str):
             return build_index(ctx.obj, run_id)
 
     perform(operation)
+
+
+@app.command("record-review")
+def record_review_command(
+    ctx: typer.Context, repo_id: str, attempt_id: str, fingerprint: str, request: Path, key: str
+):
+    """Append an explicit operator assertion against exact candidate evidence."""
+    from traceproof.reviews import read_review, record_review
+
+    perform(
+        lambda: record_review(ctx.obj, repo_id, attempt_id, fingerprint, read_review(request), key)
+    )
+
+
+@app.command("review-history")
+def review_history_command(
+    ctx: typer.Context,
+    repo_id: str,
+    attempt_id: str,
+    fingerprint: str,
+    offset: Annotated[int, typer.Option(min=0)] = 0,
+    limit: Annotated[int, typer.Option(min=1, max=1000)] = 100,
+):
+    """Retrieve operator notes and revision without running analysis."""
+    from traceproof.reviews import review_history
+
+    perform(lambda: review_history(ctx.obj, repo_id, attempt_id, fingerprint, offset, limit))
 
 
 @app.command("acceptance-run")

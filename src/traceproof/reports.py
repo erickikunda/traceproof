@@ -5,6 +5,7 @@ import hashlib
 import html
 import io
 import json
+from collections import Counter
 
 from sqlalchemy import func, select
 
@@ -15,6 +16,7 @@ from traceproof.persistence import (
     Candidate,
     EvidenceBundle,
     ImportItem,
+    OperatorReview,
     PublishedReport,
     Run,
     ScanAttempt,
@@ -23,6 +25,7 @@ from traceproof.persistence import (
     exclusive_worker,
 )
 from traceproof.readiness import static_readiness
+from traceproof.reviews import verified_review
 
 MAX_ROWS = 10000
 MAX_REPORT_BYTES = 8 * 1024 * 1024
@@ -118,11 +121,41 @@ def projection(session, repo_id, run_id, attempt_id):
             "accounted_micro_usd": call.charged_micro_usd,
         }
         history.setdefault(bundle_candidates[call.bundle_id], []).append(entry)
+    review_records = (
+        bounded(
+            session,
+            select(OperatorReview)
+            .join(Candidate)
+            .where(Candidate.attempt_id == attempt.id)
+            .order_by(OperatorReview.revision),
+        )
+        if attempt
+        else []
+    )
+    operator_history = {}
+    for record in review_records:
+        review = verified_review(record)
+        operator_history.setdefault(record.candidate_id, []).append(
+            {
+                key: review[key]
+                for key in (
+                    "review_id",
+                    "revision",
+                    "state",
+                    "created_at",
+                    "bundle_id",
+                    "evidence_ids",
+                    "reviewer_authenticated",
+                    "independently_verified",
+                )
+            }
+        )
     rows = []
     for candidate in candidates:
         evidence = candidate.evidence
         location = evidence.get("evidence") or {}
         decisions = history.get(candidate.id, [])
+        reviews = operator_history.get(candidate.id, [])
         rows.append(
             {
                 "fingerprint": candidate.fingerprint,
@@ -136,6 +169,8 @@ def projection(session, repo_id, run_id, attempt_id):
                 "location_status": evidence.get("location_status"),
                 "suppressed_by_tool": evidence.get("suppressed", False),
                 "adjudication": "unreviewed",
+                "operator_review_state": reviews[-1]["state"] if reviews else "not_reviewed",
+                "operator_review_history": reviews,
                 "triage_history": decisions,
                 "latest_advisory": decisions[-1]["disposition"] if decisions else "not_triaged",
                 "latest_simulated": decisions[-1]["simulated"] if decisions else None,
@@ -150,7 +185,7 @@ def projection(session, repo_id, run_id, attempt_id):
         raise TraceProofError("Stored candidate count does not reconcile; report not published")
     return {
         "schema_version": "1",
-        "projection_version": "3",
+        "projection_version": "4",
         "report_kind": "repository_summary",
         "repo_id": repo_id,
         "run_id": run.id,
@@ -166,6 +201,7 @@ def projection(session, repo_id, run_id, attempt_id):
         "execution_complete": scan.get("execution_complete", False),
         "candidate_count": candidate_count,
         "candidate_rows": len(rows),
+        "operator_review_counts": dict(Counter(row["operator_review_state"] for row in rows)),
         "verified_finding_count": None,
         "security_verdict": "not_adjudicated",
         "coverage_verified": False,
@@ -189,7 +225,7 @@ def projection(session, repo_id, run_id, attempt_id):
         "cost_scope": "selected attempt only; accounted amounts are not provider invoices",
         "candidates": rows,
         "limitations": [
-            "Candidates are unreviewed; advisory decisions do not confirm or dismiss them.",
+            "Raw candidates stay unreviewed; operator reviews are separate assertions.",
             "Zero candidates is not a clean security verdict; coverage is not proven.",
             "Source excerpts, model prose and raw diagnostics are excluded from this summary.",
             "Freshness describes publication time; exact report retrieval is immutable.",
@@ -350,6 +386,7 @@ def render_report(report, format="json"):
                 "adjudication",
                 "latest_advisory",
                 "latest_simulated",
+                "operator_review_state",
             ]
             rows = [
                 {**common, **{key: item.get(key) for key in fields if key not in common}}
@@ -364,19 +401,28 @@ def render_report(report, format="json"):
         return output.getvalue()
     # Render every summary field, including history, without treating untrusted text as markup.
     pretty = json.dumps(report, indent=2, ensure_ascii=False)
-    notice = "NOT ADJUDICATED — candidates are not verified vulnerabilities."
+    notice = "NOT INDEPENDENTLY VERIFIED — operator reviews are separate assertions."
     readiness = report.get("static_review_readiness", {}).get("state", "unknown")
     summary = (
         f"Repository: {report['repo_id']} | Analysis: {report['analysis_status']} | "
         f"Candidates: {report['candidate_count']} | Coverage verified: false | "
         f"Static review readiness: {readiness}"
     )
-    headings = ["Rule", "Location", "Adjudication", "Latest advisory", "Mode", "Triage calls"]
+    headings = [
+        "Rule",
+        "Location",
+        "Static status",
+        "Operator review",
+        "Latest advisory",
+        "Mode",
+        "Triage calls",
+    ]
     rows = [
         [
             item["rule_id"],
             f"{item['path'] or 'unmapped'}:{item['line'] or '?'}",
             item["adjudication"],
+            item.get("operator_review_state", "not_reviewed"),
             item["latest_advisory"],
             "replay"
             if item.get("latest_simulated") is True

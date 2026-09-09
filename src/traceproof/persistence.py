@@ -148,6 +148,21 @@ class PublishedReport(Base):
     content: Mapped[dict] = mapped_column(JSON)
 
 
+class OperatorReview(Base):
+    __tablename__ = "operator_reviews"
+    __table_args__ = (
+        UniqueConstraint("candidate_id", "revision"),
+        UniqueConstraint("candidate_id", "request_key"),
+    )
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    candidate_id: Mapped[str] = mapped_column(ForeignKey("candidates.id"), index=True)
+    bundle_id: Mapped[str] = mapped_column(ForeignKey("evidence_bundles.id"))
+    revision: Mapped[int]
+    request_key: Mapped[str] = mapped_column(String(200))
+    request_sha256: Mapped[str] = mapped_column(String(64))
+    content: Mapped[dict] = mapped_column(JSON)
+
+
 class Store:
     def __init__(self, root: Path):
         self.root = root.resolve()

@@ -144,7 +144,7 @@ def test_html_markdown_escape_and_format_agreement(store, scanned):
     markdown = render_report(report, "markdown")
     assert "<script>" not in html and "<script>" not in markdown
     assert "[link](https://bad)" not in markdown.split("```text")[0]
-    assert html.count("<td>") == 6
+    assert html.count("<td>") == 7
     for format in ["json", "markdown", "html", "scan-csv", "candidates-csv"]:
         assert report["report_id"] in render_report(report, format)
     assert len(list(csv.DictReader(io.StringIO(render_report(report, "scan-csv"))))) == 1
@@ -175,7 +175,7 @@ def test_report_size_limit_is_atomic(store, scanned, monkeypatch):
 def test_report_cli_and_migration(store, scanned):
     runner = CliRunner()
     base = ["--state-dir", str(store.root)]
-    assert json.loads(runner.invoke(app, [*base, "init"]).output)["schema"] == "0005"
+    assert json.loads(runner.invoke(app, [*base, "init"]).output)["schema"] == "0006"
     result = runner.invoke(app, [*base, "publish-report", scanned[0]])
     assert result.exit_code == 0, result.output
     identity = json.loads(result.output)["report_id"]

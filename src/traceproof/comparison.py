@@ -7,7 +7,7 @@ from traceproof.bundles import canonical
 from traceproof.domain import TraceProofError
 from traceproof.reports import get_report, markdown_cell
 
-COMPARISON_VERSION = "2"
+COMPARISON_VERSION = "3"
 
 
 def identity(value):
@@ -26,6 +26,7 @@ def reference(report, candidate):
         "latest_advisory": candidate["latest_advisory"],
         "latest_simulated": candidate.get("latest_simulated"),
         "adjudication": "unreviewed",
+        "operator_review_state": candidate.get("operator_review_state", "not_reviewed"),
     }
 
 
@@ -189,6 +190,7 @@ def render_comparison(report, format="json"):
                 "; ".join(
                     f"{item['rule_id']} at {item['path']}:{item['line']} "
                     f"({item['latest_advisory']}, replay={item['latest_simulated']})"
+                    f" operator review={item['operator_review_state']}"
                     for item in row[side]
                 )
                 or "none"

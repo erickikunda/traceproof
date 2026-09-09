@@ -37,6 +37,7 @@ def test_migration_repeatable(store):
         "triage_budgets",
         "triage_calls",
         "published_reports",
+        "operator_reviews",
     }
     with store.engine.connect() as conn:
         assert conn.exec_driver_sql("PRAGMA foreign_keys").scalar() == 1

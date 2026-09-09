@@ -50,7 +50,7 @@ Rejected or failed archives need a corrected input and a new submission key.
 
 ## Index and retrieve coverage
 
-Run `traceproof init` again to upgrade an existing database to schema `0005`.
+Run `traceproof init` again to upgrade an existing database to schema `0006`.
 Then use a captured run:
 
 ```bash
@@ -180,7 +180,7 @@ confirmation or dismissal. See [Slice 06](docs/development/slice-06.md).
 ## Published repository reports
 
 Slice 07 combines one scan attempt and its advisory history into an immutable summary.
-Run `init` to apply migration 0005, then:
+Run `init` to apply the latest migration, then:
 
 ```bash
 uv run traceproof publish-report REPO_ID
@@ -253,6 +253,28 @@ An abrupt process death can leave unpublished `.stage-*` directories or a publis
 artifact without a DB reference. Only manifests referenced by committed records are
 accepted results. Published content is verified and safely reused when intake resumes;
 automatic orphan retention/cleanup is a later feature.
+
+## Operator review history
+
+Slice 12 adds explicit operator assertions against a candidate's exact evidence bundle.
+Run `init` for migration 0006. Save a review request JSON, then:
+
+```bash
+uv run traceproof review-history REPO_ID ATTEMPT_ID CANDIDATE_FINGERPRINT
+uv run traceproof record-review REPO_ID ATTEMPT_ID CANDIDATE_FINGERPRINT /absolute/review.json REVIEW_KEY
+uv run traceproof publish-report REPO_ID
+```
+
+Requests contain `reviewer_label`, `state` (`confirmed`, `false_positive`, `needs_review`,
+or `deferred`), `rationale`, `bundle_id`, `evidence_ids`, and `expected_revision` (initially
+zero). Use the current revision from history for the next review. Retrying the same key
+and request returns the original entry; stale or conflicting writes fail.
+
+Review history is append-only. Raw candidates stay visible and unchanged; reports show
+operator review separately from model advice. Reviewer identity is self-declared, and
+these assertions do not set independent verification or benchmark precision. Summary
+exports omit reviewer labels and notes; the explicit history command includes them.
+See [Slice 12 contract](docs/development/slice-12.md).
 
 ## Benchmark contract preparation
 
