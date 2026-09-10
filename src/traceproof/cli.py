@@ -49,7 +49,7 @@ def init(ctx: typer.Context):
 
     def operation():
         ctx.obj.initialize()
-        return {"state_dir": str(ctx.obj.root), "schema": "0007", "status": "initialized"}
+        return {"state_dir": str(ctx.obj.root), "schema": "0008", "status": "initialized"}
 
     perform(operation)
 
@@ -475,11 +475,16 @@ def evidence_check(ctx: typer.Context, bundle_id: str, decision: Path):
 
 
 @app.command("triage-budget")
-def budget_set(ctx: typer.Context, run_id: str, micro_usd: int):
+def budget_set(
+    ctx: typer.Context,
+    run_id: str,
+    micro_usd: int,
+    max_requests: Annotated[int | None, typer.Option(min=0, max=10000)] = None,
+):
     """Set an immutable per-run triage cap; 1,000,000 micro-USD equals one USD."""
     from traceproof.triage import set_budget
 
-    perform(lambda: set_budget(ctx.obj, run_id, micro_usd))
+    perform(lambda: set_budget(ctx.obj, run_id, micro_usd, max_requests))
 
 
 @app.command("triage")

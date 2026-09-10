@@ -242,7 +242,7 @@ def test_report_size_limit_is_atomic(store, scanned, monkeypatch):
 def test_report_cli_and_migration(store, scanned):
     runner = CliRunner()
     base = ["--state-dir", str(store.root)]
-    assert json.loads(runner.invoke(app, [*base, "init"]).output)["schema"] == "0007"
+    assert json.loads(runner.invoke(app, [*base, "init"]).output)["schema"] == "0008"
     result = runner.invoke(app, [*base, "publish-report", scanned[0]])
     assert result.exit_code == 0, result.output
     identity = json.loads(result.output)["report_id"]

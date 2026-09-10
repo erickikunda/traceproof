@@ -1,4 +1,7 @@
-# Implementation progress after Slice 23
+# Implementation progress after Slice 24
+
+Slice 24 adds durable request limits alongside monetary budgets, including zero-priced
+local inference. This strengthens the existing local controls without new package credit.
 
 Slice 23 adds local Ollama inference for POC testing; no additional detection-quality
 or enterprise-qualification credit is claimed.

@@ -118,6 +118,7 @@ class TriageBudget(Base):
     __tablename__ = "triage_budgets"
     run_id: Mapped[str] = mapped_column(ForeignKey("runs.id"), primary_key=True)
     limit_micro_usd: Mapped[int] = mapped_column(BigInteger)
+    max_requests: Mapped[int] = mapped_column(default=100, server_default="100")
 
 
 class TriageCall(Base):

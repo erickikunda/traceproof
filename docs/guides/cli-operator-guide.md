@@ -1,6 +1,6 @@
 # TraceProof CLI user and operator guide
 
-**Scope:** laptop POC through Slice 23, SQLite schema 0007. Commands are run from the repository checkout on Linux/macOS using Python 3.12+. This guide describes implemented behavior. Git/GCS acquisition, HTTP API hosting, distributed workers, authenticated reviewers and OpenShift deployment are future work.
+**Scope:** laptop POC through Slice 24, SQLite schema 0008. Commands are run from the repository checkout on Linux/macOS using Python 3.12+. This guide describes implemented behavior. Git/GCS acquisition, HTTP API hosting, distributed workers, authenticated reviewers and OpenShift deployment are future work.
 
 ## Start here
 
@@ -127,6 +127,14 @@ uv run traceproof triage-report RUN_ID
 ```
 
 The supplied replay is offline, uses fictional rates/usage and abstains. `100000` micro-USD equals $0.10 in the ledger, not a replay charge. The run budget cannot be changed once set. Partial bundles, unsupported rules and exhausted budgets prevent provider invocation. Reusing the same triage key with identical inputs retrieves the recorded result; a different request needs a different key and may consume budget.
+
+Each new budget also has a fixed request limit, default 100. Configure it at creation
+with `triage-budget RUN_ID 0 --max-requests 20` for a zero-priced local run, for example.
+All distinct recorded requests count, including skipped or failed ones. A repeated key
+does not consume another slot. The ledger exposes `max_requests` and `remaining_requests`;
+exhaustion blocks new keys without invoking a provider. Migration 0008 gives existing
+budgets a 100-request limit and preserves their history. See
+[request-limit details](../development/slice-24.md).
 
 Evidence bundles have fixed source/envelope limits. Missing context stays explicit. Model proposals are `needs_review`, `likely_false_positive` or `abstain`. The evidence gate supports narrow code-injection and command-injection claims; acceptance is not independent proof of exploitation. No model proposal removes a raw candidate.
 

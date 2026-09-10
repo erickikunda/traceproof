@@ -25,9 +25,13 @@ def cost_micro_usd(input_tokens, output_tokens, config):
     ) // 1000
 
 
-def set_budget(store, run_id, limit_micro_usd):
+def set_budget(store, run_id, limit_micro_usd, max_requests=None):
     if type(limit_micro_usd) is not int or not 0 <= limit_micro_usd <= 10**12:
         raise TraceProofError("Budget must be an integer between 0 and 10^12 micro-USD")
+    if max_requests is not None and (
+        type(max_requests) is not int or not 0 <= max_requests <= 10000
+    ):
+        raise TraceProofError("Request limit must be an integer between 0 and 10000")
     store.require_initialized()
     with exclusive_worker(store.root), store.transaction() as session:
         if session.get(Run, run_id) is None:
@@ -35,8 +39,18 @@ def set_budget(store, run_id, limit_micro_usd):
         existing = session.get(TriageBudget, run_id)
         if existing and existing.limit_micro_usd != limit_micro_usd:
             raise TraceProofError("Run budget is already fixed; changing it is not supported")
+        if existing and max_requests is not None and existing.max_requests != max_requests:
+            raise TraceProofError(
+                "Run request limit is already fixed; changing it is not supported"
+            )
         if existing is None:
-            session.add(TriageBudget(run_id=run_id, limit_micro_usd=limit_micro_usd))
+            session.add(
+                TriageBudget(
+                    run_id=run_id,
+                    limit_micro_usd=limit_micro_usd,
+                    max_requests=100 if max_requests is None else max_requests,
+                )
+            )
     return triage_report(store, run_id)
 
 
@@ -74,6 +88,8 @@ def triage_report(store, run_id, offset=0, limit=100):
             "overrun_micro_usd": max(0, charged - budget.limit_micro_usd),
             "verified_finding_count": None,
             "total": total,
+            "max_requests": budget.max_requests,
+            "remaining_requests": max(0, budget.max_requests - total),
             "offset": offset,
             "limit": limit,
             "calls": [
@@ -140,6 +156,11 @@ def triage(store, bundle_id: str, config: ModelConfig, adapter: Adapter, key: st
             budget = session.get(TriageBudget, run_id)
             if budget is None:
                 raise TraceProofError("Configure a run triage budget before requesting triage")
+            requests = session.scalar(
+                select(func.count()).select_from(TriageCall).where(TriageCall.run_id == run_id)
+            )
+            if requests >= budget.max_requests:
+                raise TraceProofError("Run triage request limit exhausted; no provider was invoked")
             spent = session.scalar(
                 select(func.coalesce(func.sum(TriageCall.charged_micro_usd), 0)).where(
                     TriageCall.run_id == run_id

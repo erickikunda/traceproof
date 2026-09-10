@@ -64,7 +64,7 @@ Rejected or failed archives need a corrected input and a new submission key.
 
 ## Index and retrieve coverage
 
-Run `traceproof init` again to upgrade an existing database to schema `0007`.
+Run `traceproof init` again to upgrade an existing database to schema `0008`.
 Then use a captured run:
 
 ```bash
@@ -160,6 +160,10 @@ The example is entirely offline. It uses fictional usage/rates to test the cost 
 and returns an explicit abstention. `100000` micro-USD is a $0.10 accounting cap; no money
 is spent by replay. A run budget is fixed once configured. Reusing a triage key with the
 same bundle/config/fixture retrieves its result without another invocation.
+
+Budgets also cap distinct triage requests (default 100). Set `--max-requests` when creating
+a budget, including zero-priced Ollama runs. Migration 0008 preserves history and assigns
+existing budgets a 100-request cap. See [Slice 24](docs/development/slice-24.md).
 
 Bundles include primary, flow and related locations, capped at eight locations, 16 KiB
 of source and a 32 KiB envelope. Gaps remain visible; partial bundles skip model invocation.
