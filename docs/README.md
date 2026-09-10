@@ -66,3 +66,5 @@ The design and plan are proposals; the slice status and README describe what act
 - [Slice 42](development/slice-42.md): complete Java context from bounded evidence expansions.
 
 - [Slice 43](development/slice-43.md): explicit copied-source Java profile for Maven/Gradle layouts.
+
+- [Slice 44](development/slice-44.md): opt-in automatic single-language selection.

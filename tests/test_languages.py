@@ -116,3 +116,34 @@ def test_skip_existing_does_not_cross_java_profiles(store, scanned, tmp_path, mo
     monkeypatch.setattr(pipeline, "verified_source", reached)
     with pytest.raises(TraceProofError, match="Different profile"):
         pipeline.scan_run(store, scanned[1], query, language="java", skip_existing=True)
+
+
+@pytest.mark.parametrize(
+    "paths,expected",
+    [
+        (["app.py", "README.md"], "python"),
+        (["src/C.java", "pom.xml"], "java"),
+    ],
+)
+def test_auto_selects_single_supported_language(paths, expected):
+    from traceproof.languages import select_language
+
+    assert select_language(manifest(*paths), "auto") == expected
+
+
+@pytest.mark.parametrize(
+    "paths", [["a.py", "C.java"], ["C.java", "web.ts"], ["main.go"], ["README.md"]]
+)
+def test_auto_rejects_mixed_unsupported_or_empty_inventory(paths):
+    from traceproof.languages import select_language
+
+    with pytest.raises(TraceProofError, match="Automatic selection"):
+        select_language(manifest(*paths), "auto")
+
+
+def test_auto_skip_resolves_to_existing_language(store, scanned, tmp_path):
+    query = tmp_path / "q.ql"
+    query.write_text("// query")
+    result = pipeline.scan_run(store, scanned[1], query, language="auto", skip_existing=True)
+    assert result["status"] == "skipped_existing_attempt"
+    assert result["language"] == "python" and result["requested_language"] == "auto"

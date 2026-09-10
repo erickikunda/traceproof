@@ -71,6 +71,8 @@ Slice 42 supports complete Java context assembled from bounded evidence expansio
 Slice 43 adds Java-only copied-source scanning for Maven/Gradle layouts; builds remain
 unqualified. Next: establish isolated build execution and approved dependency access
 for L1. If externally blocked, continue C#/ASP.NET L2 as specified above.
+Slice 44 adds opt-in single-language auto selection. L6 still requires query routing,
+per-language fan-out and consolidated repository reporting.
 Keep existing operator entry points and add options only where language selection or
 safe build-profile selection requires them.
 

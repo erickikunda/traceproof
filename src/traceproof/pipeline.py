@@ -7,7 +7,7 @@ from traceproof.codeql_resources import resource_settings
 from traceproof.domain import TraceProofError
 from traceproof.indexing import build_index, verified_source
 from traceproof.java_index import build_java_index
-from traceproof.languages import adapter_for, validate_extraction_scope, validate_profile
+from traceproof.languages import select_language, validate_extraction_scope, validate_selection
 from traceproof.persistence import Run, ScanAttempt, exclusive_worker
 from traceproof.reports import publish_report
 from traceproof.scanning import analyze, query_entry
@@ -27,13 +27,17 @@ def scan_run(
     java_profile="dependency-free",
 ):
     resources = resource_settings(threads, ram_mb)
-    adapter_for(language)
-    validate_profile(language, java_profile)
+    validate_selection(language, java_profile)
+    requested_language = language
     if not 1 <= extraction_timeout <= 3600 or not 1 <= query_timeout <= 3600:
         raise TraceProofError("Stage timeouts must be between 1 and 3600 seconds")
     store.require_initialized()
     query = query_entry(store, queries)
     with exclusive_worker(store.root):
+        if language == "auto":
+            _, manifest, _ = verified_source(store, run_id)
+            language = select_language(manifest, language)
+            validate_selection(language, java_profile)
         with store.transaction() as session:
             run = session.get(Run, run_id)
             if run is None:
@@ -60,6 +64,8 @@ def scan_run(
                 if previous is not None:
                     return {
                         "schema_version": "1",
+                        "language": language,
+                        "requested_language": requested_language,
                         "repo_id": repo_id,
                         "run_id": run_id,
                         "status": "skipped_existing_attempt",
@@ -81,6 +87,7 @@ def scan_run(
             "model_calls": 0,
             "security_completion_verified": False,
             "language": language,
+            "requested_language": requested_language,
         }
         if language == "python":
             index = build_index(store, run_id)
@@ -97,7 +104,7 @@ def scan_run(
             store,
             run_id,
             timeout=extraction_timeout,
-            language=language,
+            language=requested_language,
             java_profile=java_profile,
             **resources,
         )

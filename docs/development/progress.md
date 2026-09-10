@@ -1,4 +1,4 @@
-# Implementation progress after Slice 43
+# Implementation progress after Slice 44
 
 ## Priority reset — 10 September 2026
 
@@ -32,6 +32,9 @@ evidence expansions. Build qualification and broader language coverage remain op
 Slice 43 adds explicit Java-only copied-source extraction for Maven/Gradle layouts.
 This does not qualify builds; isolated build execution and approved dependencies remain
 prerequisites. L1 remains partial.
+
+Slice 44 adds opt-in automatic selection for one detected supported source language.
+Mixed-language execution and query routing remain pending.
 
 ## Historical delivery assessment
 

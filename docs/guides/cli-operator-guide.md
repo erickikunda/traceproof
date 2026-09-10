@@ -1,6 +1,6 @@
 # TraceProof CLI user and operator guide
 
-**Scope:** laptop POC through Slice 43, SQLite schema 0009. Commands are run from the repository checkout on Linux/macOS using Python 3.12+. This guide describes implemented behavior. Git/GCS acquisition, HTTP API hosting, distributed workers, authenticated reviewers and OpenShift deployment are future work.
+**Scope:** laptop POC through Slice 44, SQLite schema 0009. Commands are run from the repository checkout on Linux/macOS using Python 3.12+. This guide describes implemented behavior. Git/GCS acquisition, HTTP API hosting, distributed workers, authenticated reviewers and OpenShift deployment are future work.
 
 ## Evidence gate version 3
 
@@ -596,3 +596,13 @@ Kotlin and other files are omitted. Inspect omitted-file counts and unresolved d
 generated-code coverage in language_scope. This is not a qualified Maven/Gradle build
 or an OS/network sandbox. Default dependency-free behavior is unchanged. Batch skips
 are profile-specific, so switching profiles may perform a fresh scan. No migration.
+
+### Automatic language selection (Slice 44)
+
+`--language auto` works on extraction, scan-run and scan-import. Exactly one detected
+source language must be present and supported (Python/Java); mixed and unsupported
+inventories require an explicit choice. Python remains the default when omitted.
+Supply the correct query yourself; auto does not choose queries or run all languages.
+For Java build layouts, add `--java-profile source-only` explicitly. Reports retain
+whether language selection was automatic. scan-import applies one query across its
+page, so group repositories by query applicability. No migration or build execution.

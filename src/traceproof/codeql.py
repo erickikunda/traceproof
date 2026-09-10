@@ -16,7 +16,12 @@ from traceproof.codeql_resources import resource_settings
 from traceproof.domain import TraceProofError
 from traceproof.indexing import verified_source
 from traceproof.java_index import build_java_index
-from traceproof.languages import adapter_for, validate_extraction_scope
+from traceproof.languages import (
+    adapter_for,
+    select_language,
+    validate_extraction_scope,
+    validate_selection,
+)
 from traceproof.persistence import CodeqlAttempt
 
 
@@ -33,11 +38,15 @@ def extract(
 ):
     """Caller holds exclusive_worker; attempts and artifacts are never overwritten."""
     resources = resource_settings(threads, ram_mb)
-    adapter = adapter_for(language)
+    validate_selection(language, java_profile)
     if not 1 <= timeout <= 3600:
         raise TraceProofError("Extraction timeout must be between 1 and 3600 seconds")
     run, manifest, tree = verified_source(store, run_id)
+    requested_language = language
+    language = select_language(manifest, language)
+    adapter = adapter_for(language)
     scope = validate_extraction_scope(manifest, language, java_profile)
+    scope["language_selection"] = "automatic" if requested_language == "auto" else "explicit"
     if language == "java":
         scope["syntax_index"] = build_java_index(store, run_id)
     attempt_id = str(uuid4())

@@ -7,7 +7,7 @@ from traceproof.domain import TraceProofError
 from traceproof.history import validate_page
 from traceproof.import_controls import control_status
 from traceproof.intake import import_status
-from traceproof.languages import adapter_for, validate_profile
+from traceproof.languages import validate_selection
 from traceproof.pipeline import scan_run
 from traceproof.scanning import query_entry
 
@@ -28,8 +28,7 @@ def scan_import(
     java_profile="dependency-free",
 ):
     resources = resource_settings(threads, ram_mb)
-    adapter_for(language)
-    validate_profile(language, java_profile)
+    validate_selection(language, java_profile)
     validate_page(offset, limit)
     if not 1 <= extraction_timeout <= 3600 or not 1 <= query_timeout <= 3600:
         raise TraceProofError("Stage timeouts must be between 1 and 3600 seconds")

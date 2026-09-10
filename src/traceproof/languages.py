@@ -52,6 +52,31 @@ def adapter_for(language):
     return ADAPTERS[language]
 
 
+def select_language(manifest, requested):
+    if requested != "auto":
+        adapter_for(requested)
+        return requested
+    detected = sorted(
+        {EXTENSIONS.get(PurePosixPath(file.path).suffix.lower()) for file in manifest.files}
+        - {None}
+    )
+    if len(detected) != 1 or detected[0] not in ADAPTERS:
+        names = ", ".join(detected) or "none"
+        raise TraceProofError(
+            f"Automatic selection requires one supported source language; detected: {names}. "
+            "Choose an explicit language for partial coverage."
+        )
+    return detected[0]
+
+
+def validate_selection(language, java_profile):
+    if language == "auto":
+        if java_profile not in {"dependency-free", "source-only"}:
+            raise TraceProofError("Unknown Java profile")
+    else:
+        validate_profile(language, java_profile)
+
+
 def language_scope(manifest, language):
     adapter = adapter_for(language)
     counts = Counter(

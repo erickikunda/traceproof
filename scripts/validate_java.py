@@ -34,6 +34,7 @@ def main(fixture="java"):
         "--java-profile", choices=["dependency-free", "source-only"], default="dependency-free"
     )
     parser.add_argument("--project-layout", choices=["flat", "maven", "gradle"], default="flat")
+    parser.add_argument("--auto-language", action="store_true")
     args = parser.parse_args()
     if args.project_layout != "flat" and args.java_profile != "source-only":
         parser.error("Project layouts require the source-only profile")
@@ -84,7 +85,13 @@ def main(fixture="java"):
             with exclusive_worker(store.root):
                 captured = process(store, ArtifactStore(store.root), batch)
             run = captured["items"][0]["run_id"]
-            result = scan_run(store, run, query, language="java", java_profile=args.java_profile)
+            result = scan_run(
+                store,
+                run,
+                query,
+                language="auto" if args.auto_language else "java",
+                java_profile=args.java_profile,
+            )
             if case == "incomplete":
                 checks = {
                     "parse_blocked": result["status"] == "blocked"
@@ -112,6 +119,8 @@ def main(fixture="java"):
                 "candidate_count": report["candidate_count"] == expected,
                 "query_completed": report["analysis_status"] == "completed",
                 "java_scope": report["language"] == "java",
+                "language_selection": report["language_scope"]["language_selection"]
+                == ("automatic" if args.auto_language else "explicit"),
                 "syntax_index": report["language_scope"]["syntax_index"]["syntax_gate"] == "ready",
                 "honest_readiness": report["static_review_readiness"]["state"] == "incomplete",
                 "no_model_calls": report["triage_call_count"] == 0,
