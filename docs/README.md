@@ -70,3 +70,9 @@ The design and plan are proposals; the slice status and README describe what act
 - [Slice 44](development/slice-44.md): opt-in automatic single-language selection.
 
 - [Slice 45](development/slice-45.md): initial C# extraction/reporting and explicit download boundary.
+
+- [Slice 46](development/slice-46.md): pinned C# dependencies and resolved classic fixture miss.
+
+Current C# status: initial source-only extraction plus pinned SDK/reference profiles;
+the classic fixture passes with matching references. C# LLM and broad framework
+qualification remain pending. See Slice 46.

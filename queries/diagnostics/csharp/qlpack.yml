@@ -1,0 +1,4 @@
+name: traceproof/csharp-diagnostics
+version: 0.0.1
+dependencies:
+  codeql/csharp-all: "7.3.0"

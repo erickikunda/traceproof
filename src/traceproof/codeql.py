@@ -13,6 +13,8 @@ from uuid import uuid4
 from sqlalchemy import select
 
 from traceproof.codeql_resources import resource_settings
+from traceproof.csharp_dependencies import environment as dependency_environment
+from traceproof.csharp_dependencies import load_profile
 from traceproof.domain import TraceProofError
 from traceproof.indexing import verified_source
 from traceproof.java_index import build_java_index
@@ -36,6 +38,7 @@ def extract(
     language="python",
     java_profile="dependency-free",
     allow_csharp_downloads=False,
+    csharp_dependency_profile=None,
 ):
     """Caller holds exclusive_worker; attempts and artifacts are never overwritten."""
     resources = resource_settings(threads, ram_mb)
@@ -46,6 +49,11 @@ def extract(
     requested_language = language
     language = select_language(manifest, language)
     adapter = adapter_for(language)
+    if csharp_dependency_profile is not None and language != "csharp":
+        raise TraceProofError("C# dependency profiles require the csharp language")
+    dependency_profile = (
+        load_profile(csharp_dependency_profile) if csharp_dependency_profile else None
+    )
     if language == "csharp" and not allow_csharp_downloads:
         raise TraceProofError(
             "C# extraction may download a .NET SDK and NuGet dependencies; "
@@ -57,6 +65,14 @@ def extract(
         scope["extractor_downloads_allowed"] = True
     if language == "java":
         scope["syntax_index"] = build_java_index(store, run_id)
+    if dependency_profile:
+        scope["dependency_profile"] = {
+            "id": dependency_profile["id"],
+            "sdk_version": dependency_profile["sdk_version"],
+            "codeql_version": dependency_profile["codeql_version"],
+            "file_count": dependency_profile["file_count"],
+            "network_denial_verified": False,
+        }
     attempt_id = str(uuid4())
     root = store.root / "codeql" / attempt_id
     root.mkdir(parents=True, mode=0o700)
@@ -107,6 +123,26 @@ def extract(
             "TMPDIR": str(root),
             "LANG": "en_US.UTF-8",
         }
+        if dependency_profile:
+            env.update(dependency_environment(dependency_profile, root))
+            env["PATH"] = str(dependency_profile["sdk"]) + os.pathsep + env["PATH"]
+            try:
+                sdk = subprocess.run(
+                    [str(dependency_profile["sdk"] / "dotnet"), "--version"],
+                    cwd=root,
+                    env=env,
+                    capture_output=True,
+                    timeout=10,
+                    check=True,
+                )
+                result["sdk_version_observed"] = sdk.stdout.decode().strip()
+            except (OSError, subprocess.SubprocessError, UnicodeError):
+                result["sdk_version_observed"] = "unknown"
+            if result["sdk_version_observed"] != dependency_profile["sdk_version"]:
+                result["status"] = "dependency_toolchain_mismatch"
+                with store.transaction() as session:
+                    session.get(CodeqlAttempt, attempt_id).result = result
+                return result
         try:
             version = subprocess.run(
                 [executable, "version", "--format=json"],
@@ -119,6 +155,11 @@ def extract(
             result["codeql_version"] = json.loads(version.stdout)["version"]
         except (OSError, subprocess.SubprocessError, ValueError, KeyError):
             result["codeql_version"] = "unknown"
+        if dependency_profile and result["codeql_version"] != dependency_profile["codeql_version"]:
+            result["status"] = "dependency_toolchain_mismatch"
+            with store.transaction() as session:
+                session.get(CodeqlAttempt, attempt_id).result = result
+            return result
         command = [
             executable,
             "database",
@@ -157,6 +198,9 @@ def extract(
                 result["status"] = "launch_failed"
         try:
             verified_source(store, run_id)
+            if dependency_profile:
+                if load_profile(dependency_profile["path"])["id"] != dependency_profile["id"]:
+                    raise TraceProofError("Dependency profile changed")
             if extraction_tree != tree:
                 for file in manifest.files:
                     if file.path.lower().endswith(copy_suffix):

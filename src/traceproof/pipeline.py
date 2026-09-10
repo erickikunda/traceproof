@@ -4,6 +4,7 @@ from sqlalchemy import func, select
 
 from traceproof.codeql import extract
 from traceproof.codeql_resources import resource_settings
+from traceproof.csharp_dependencies import load_profile
 from traceproof.domain import TraceProofError
 from traceproof.indexing import build_index, verified_source
 from traceproof.java_index import build_java_index
@@ -31,6 +32,7 @@ def scan_run(
     language="python",
     java_profile="dependency-free",
     allow_csharp_downloads=False,
+    csharp_dependency_profile=None,
 ):
     resources = resource_settings(threads, ram_mb)
     validate_selection(language, java_profile)
@@ -44,6 +46,11 @@ def scan_run(
             _, manifest, _ = verified_source(store, run_id)
             language = select_language(manifest, language)
             validate_selection(language, java_profile)
+        dependency_id = None
+        if csharp_dependency_profile is not None:
+            if language != "csharp":
+                raise TraceProofError("C# dependency profiles require csharp")
+            dependency_id = load_profile(csharp_dependency_profile)["id"]
         with store.transaction() as session:
             run = session.get(Run, run_id)
             if run is None:
@@ -54,6 +61,13 @@ def scan_run(
                     select(ScanAttempt)
                     .where(
                         ScanAttempt.run_id == run_id,
+                        func.coalesce(
+                            ScanAttempt.report["language_scope"]["dependency_profile"][
+                                "id"
+                            ].as_string(),
+                            "",
+                        )
+                        == (dependency_id or ""),
                         func.coalesce(ScanAttempt.report["language"].as_string(), "python")
                         == language,
                         func.coalesce(
@@ -116,6 +130,7 @@ def scan_run(
             language=requested_language,
             java_profile=java_profile,
             allow_csharp_downloads=allow_csharp_downloads,
+            csharp_dependency_profile=csharp_dependency_profile,
             **resources,
         )
         result.update(

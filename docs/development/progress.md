@@ -1,4 +1,4 @@
-# Implementation progress after Slice 45
+# Implementation progress after Slice 46
 
 ## Priority reset — 10 September 2026
 
@@ -39,6 +39,11 @@ Mixed-language execution and query routing remain pending.
 Slice 45 starts L2 with opt-in C# source-only extraction/reporting. SDK/NuGet behavior
 requires explicit download consent. Classic ASP.NET detection qualification has a known
 miss; C# evidence and both ASP.NET framework lanes remain unqualified.
+
+Slice 46 resolves the specific classic ASP.NET fixture miss with pinned framework
+references and SDK. The classic vulnerable/fixed pair now passes under externally
+enforced macOS network denial (1/0 candidates). Application-managed isolation, Linux
+container qualification and broader C# evidence/framework qualification remain open.
 
 ## Historical delivery assessment
 

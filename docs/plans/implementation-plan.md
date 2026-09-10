@@ -71,8 +71,10 @@ Slice 42 supports complete Java context assembled from bounded evidence expansio
 Slice 43 adds Java-only copied-source scanning for Maven/Gradle layouts; builds remain
 unqualified. Next: establish isolated build execution and approved dependency access
 for L1. If externally blocked, continue C#/ASP.NET L2 as specified above.
-Slice 45 begins L2 C# extraction/reporting; classic ASP.NET has a known qualification
-miss, and SDK/feed policy plus C# evidence support remain open.
+Slices 45–46 add C# extraction/reporting and pinned SDK/reference profiles. The classic
+fixture miss is resolved with matching references; the pair passes under macOS network
+denial. Next: application-managed isolation and enforced offline Linux container validation,
+private-feed/Windows-worker integration and broader C# evidence remain open.
 Slice 44 adds opt-in single-language auto selection. L6 still requires query routing,
 per-language fan-out and consolidated repository reporting.
 Keep existing operator entry points and add options only where language selection or

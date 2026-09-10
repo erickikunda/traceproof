@@ -45,6 +45,7 @@ def main(fixture="java"):
     )
     parser.add_argument("--project-layout", choices=["flat", "maven", "gradle"], default="flat")
     parser.add_argument("--auto-language", action="store_true")
+    parser.add_argument("--csharp-dependency-profile", type=Path)
     args = parser.parse_args()
     if args.project_layout != "flat" and args.java_profile != "source-only":
         parser.error("Project layouts require the source-only profile")
@@ -102,6 +103,7 @@ def main(fixture="java"):
                 language="auto" if args.auto_language else language,
                 java_profile=args.java_profile,
                 allow_csharp_downloads=csharp,
+                csharp_dependency_profile=args.csharp_dependency_profile,
             )
             if case == "incomplete":
                 checks = {

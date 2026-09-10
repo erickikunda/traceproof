@@ -1,6 +1,6 @@
 # TraceProof CLI user and operator guide
 
-**Scope:** laptop POC through Slice 45, SQLite schema 0009. Commands are run from the repository checkout on Linux/macOS using Python 3.12+. This guide describes implemented behavior. Git/GCS acquisition, HTTP API hosting, distributed workers, authenticated reviewers and OpenShift deployment are future work.
+**Scope:** laptop POC through Slice 46, SQLite schema 0009. Commands are run from the repository checkout on Linux/macOS using Python 3.12+. This guide describes implemented behavior. Git/GCS acquisition, HTTP API hosting, distributed workers, authenticated reviewers and OpenShift deployment are future work.
 
 ## Evidence gate version 3
 
@@ -613,5 +613,23 @@ Select --language csharp (or auto for a C#-only snapshot) and provide a compatib
 C# query plus --allow-csharp-downloads. CodeQL may download an SDK and access NuGet;
 without the opt-in, extraction is blocked. Only .cs files enter the copied source tree.
 Project files, binaries and Razor views are omitted. Reports remain incomplete,
-and C# LLM triage is unsupported. Classic ASP.NET has a known fixture miss; this is
-not qualified ASP.NET coverage. See Slice 45 for reproduction and bank prerequisites.
+and C# LLM triage is unsupported. Classic ASP.NET misses the fixture without matching references; Slice 46 below
+resolves it for the pinned net48 profile. Broader ASP.NET coverage remains unqualified. See Slice 45 for reproduction and bank prerequisites.
+
+### Pinned C# dependencies (Slice 46)
+
+Use --csharp-dependency-profile PATH with C# extraction/scan commands. SDK and reference
+files are verified against the manifest; see Slice 46 for pin_csharp_dependencies.py.
+The local working example is work/slice46-dependencies/profile.json. The matching net48
+profile resolves the known classic fixture miss. Select profiles matching the target
+framework; this does not qualify arbitrary projects. SDK/CodeQL version mismatches fail.
+Profile changes prevent reuse of an earlier profile's scan attempt.
+
+Keep --allow-csharp-downloads: ordinary CLI scans do not enforce network denial. The
+classic fixture pair passed under an external macOS sandbox with networking denied
+(see Slice 46 for reproduction); this does not enable isolation for other invocations.
+Reports retain network_denial_verified=false because the application does not attest
+the external sandbox. Linux/OpenShift container validation remains pending.
+Mount SDK/reference directories read-only in deployment and give each scan writable
+scratch. The macOS SDK is not portable to a Linux/OpenShift worker. Reports remain
+incomplete and C# LLM advice is still unsupported. No migration.
