@@ -47,6 +47,7 @@ def test_publish_reuse_history_and_input_free_retrieval(store, evaluation, tmp_p
     assert result.exit_code == 0 and "CWE-94" in result.output
     for format in [
         "json",
+        "html",
         "markdown",
         "summary-csv",
         "repositories-csv",

@@ -40,3 +40,4 @@ The design and plan are proposals; the slice status and README describe what act
 
 - [Twenty-seventh-slice status](development/slice-27.md): verified original SARIF export for exact query attempts.
 - [Twenty-eighth-slice status](development/slice-28.md): explicit, recorded CodeQL thread and RAM settings.
+- [Twenty-ninth-slice status](development/slice-29.md): self-contained HTML benchmark scorecards for sharing.

@@ -275,6 +275,10 @@ def evaluate_benchmark(store, manifest_path, labels_path, plan_path):
 
 
 def render_scorecard(report, format="json"):
+    if format == "html":
+        from traceproof.scorecard_html import render_html
+
+        return render_html(report)
     if format == "json":
         return canonical(report).decode()
     if format in {
@@ -287,7 +291,7 @@ def render_scorecard(report, format="json"):
         return scorecard_csv(report, format)
     if format != "markdown":
         raise TraceProofError(
-            "Scorecard format must be json, markdown, summary-csv, repositories-csv, "
+            "Scorecard format must be json, markdown, html, summary-csv, repositories-csv, "
             "labels-csv, candidates-csv or weaknesses-csv"
         )
     metric = report["candidate_recall_proxy"]

@@ -1,4 +1,7 @@
-# Implementation progress after Slice 28
+# Implementation progress after Slice 29
+
+Slice 29 adds a self-contained HTML benchmark scorecard. M4.7 remains partial at the full
+acceptance level; no bank benchmark or additional package credit is claimed.
 
 Slice 28 adds configurable, recorded CodeQL resource requests. This prepares local
 tuning but does not qualify capacity or container enforcement; package credit is unchanged.

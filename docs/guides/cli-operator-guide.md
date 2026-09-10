@@ -1,6 +1,24 @@
 # TraceProof CLI user and operator guide
 
-**Scope:** laptop POC through Slice 28, SQLite schema 0008. Commands are run from the repository checkout on Linux/macOS using Python 3.12+. This guide describes implemented behavior. Git/GCS acquisition, HTTP API hosting, distributed workers, authenticated reviewers and OpenShift deployment are future work.
+**Scope:** laptop POC through Slice 29, SQLite schema 0008. Commands are run from the repository checkout on Linux/macOS using Python 3.12+. This guide describes implemented behavior. Git/GCS acquisition, HTTP API hosting, distributed workers, authenticated reviewers and OpenShift deployment are future work.
+
+## Share a benchmark scorecard
+
+```bash
+uv run traceproof benchmark-history DATASET_ID
+uv run traceproof benchmark-get DATASET_ID SCORECARD_ID --format html > scorecard.html
+```
+
+Open the exported HTML in a browser. It requires no server, JavaScript or external assets.
+The top-level metric is a provisional candidate-location recall proxy, not confirmed recall.
+Check evaluation completion and repository scope gaps before interpreting it. Precision
+and confirmed recall remain unknown. Expand label/candidate details and provenance as
+needed, and expand them before printing. Dataset identities may be sensitive; share with
+the appropriate audience. JSON and CSV remain available for dashboards.
+
+`benchmark-get` retrieves the exact saved publication without reevaluation. The same HTML
+format works on `benchmark-evaluate`, which does evaluate its supplied inputs. See the
+[Slice 29 contract](../development/slice-29.md).
 
 ## Tune CodeQL resources
 

@@ -405,3 +405,6 @@ CodeQL output for a SARIF viewer. Raw output may contain sensitive details; see
 
 CodeQL stage and pipeline commands accept `--threads` and `--ram-mb` for explicit
 resource tuning, with existing defaults preserved. See [Slice 28](docs/development/slice-28.md).
+
+Use `benchmark-get DATASET_ID SCORECARD_ID --format html` for a self-contained benchmark
+scorecard with explicit provisional metrics and scope gaps. See [Slice 29](docs/development/slice-29.md).
