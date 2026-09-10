@@ -25,6 +25,42 @@ MAX_CANDIDATES = 20000
 MAX_PAIR_CHECKS = 1000000
 
 
+def weakness_metrics(label_rows, scope_cwes, declared_cwes=()):
+    """Partition declared labels; never drop unavailable evaluations from denominators."""
+    groups = defaultdict(list)
+    for row in label_rows:
+        groups[row["cwe"]].append(row)
+    result = []
+    for cwe in sorted(set(groups) | set(scope_cwes) | set(declared_cwes)):
+        rows = groups[cwe]
+        counts = Counter(row["status"] for row in rows)
+        total = len(rows)
+        result.append(
+            {
+                "cwe": cwe,
+                "selected_rule_scope": cwe in scope_cwes,
+                "label_count": total,
+                "label_counts": {
+                    key: counts[key]
+                    for key in ("matched_location", "not_observed", "ambiguous", "not_evaluable")
+                },
+                "status": "no_labels"
+                if not total
+                else "incomplete"
+                if counts["ambiguous"] or counts["not_evaluable"]
+                else "evaluated",
+                "candidate_recall_proxy_numerator": counts["matched_location"],
+                "candidate_recall_proxy_denominator": total,
+                "candidate_recall_proxy_value": counts["matched_location"] / total
+                if total
+                else None,
+                "precision": None,
+                "confirmed_recall": None,
+            }
+        )
+    return result
+
+
 class ReportSelection(StrictContract):
     repo_id: Identifier
     report_id: Digest
@@ -187,7 +223,7 @@ def evaluate_benchmark(store, manifest_path, labels_path, plan_path):
     total = len(label_rows)
     body = {
         "schema_version": "1",
-        "evaluator_version": "1",
+        "evaluator_version": "2",
         "report_kind": "candidate_location_scorecard",
         "manifest_sha256": manifest_digest,
         "labels_sha256": hashlib.sha256(canonical(labels.model_dump())).hexdigest(),
@@ -216,6 +252,11 @@ def evaluate_benchmark(store, manifest_path, labels_path, plan_path):
         and not counts["not_evaluable"],
         "precision": None,
         "confirmed_recall": None,
+        "weaknesses": weakness_metrics(
+            label_rows,
+            scope_cwes,
+            {cwe for repository in manifest.repositories for cwe in repository.weakness_scope},
+        ),
         "repositories": repository_rows,
         "labels": label_rows,
         "candidates": candidate_rows,
@@ -236,12 +277,18 @@ def evaluate_benchmark(store, manifest_path, labels_path, plan_path):
 def render_scorecard(report, format="json"):
     if format == "json":
         return canonical(report).decode()
-    if format in {"summary-csv", "repositories-csv", "labels-csv", "candidates-csv"}:
+    if format in {
+        "summary-csv",
+        "repositories-csv",
+        "labels-csv",
+        "candidates-csv",
+        "weaknesses-csv",
+    }:
         return scorecard_csv(report, format)
     if format != "markdown":
         raise TraceProofError(
             "Scorecard format must be json, markdown, summary-csv, repositories-csv, "
-            "labels-csv or candidates-csv"
+            "labels-csv, candidates-csv or weaknesses-csv"
         )
     metric = report["candidate_recall_proxy"]
     lines = [
@@ -267,12 +314,38 @@ def render_scorecard(report, format="json"):
             )
             + " |"
         )
+    if "weaknesses" in report:
+        lines.extend(
+            [
+                "",
+                "## Results by weakness class",
+                "",
+                "| CWE | Status | Matched / declared labels | Recall proxy |",
+                "| --- | --- | --- | --- |",
+            ]
+        )
+        for row in report["weaknesses"]:
+            lines.append(
+                "| "
+                + " | ".join(
+                    markdown_cell(value)
+                    for value in (
+                        row["cwe"],
+                        row["status"],
+                        f"{row['candidate_recall_proxy_numerator']} / {row['label_count']}",
+                        row["candidate_recall_proxy_value"],
+                    )
+                )
+                + " |"
+            )
     lines.extend(["", *["- " + item for item in report["limitations"]]])
     return "\n".join(lines) + "\n"
 
 
 def scorecard_csv(report, format):
     """Separate data grains with stable provenance; blank cells preserve unknown values."""
+    if format == "weaknesses-csv" and "weaknesses" not in report:
+        raise TraceProofError("Weakness metrics unavailable in this legacy scorecard; reevaluate")
     common = {
         "export_schema_version": "1",
         "grain": format.removesuffix("-csv"),
@@ -321,6 +394,18 @@ def scorecard_csv(report, format):
             ],
             "labels": ["repo_id", "label_id", "cwe", "status", "reasons", "candidate_fingerprints"],
             "candidates": ["repo_id", "fingerprint", "status", "adjudication"],
+            "weaknesses": [
+                "cwe",
+                "selected_rule_scope",
+                "label_count",
+                "label_counts",
+                "status",
+                "candidate_recall_proxy_numerator",
+                "candidate_recall_proxy_denominator",
+                "candidate_recall_proxy_value",
+                "precision",
+                "confirmed_recall",
+            ],
         }[grain]
         rows = report[grain]
     output = io.StringIO(newline="")

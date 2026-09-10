@@ -323,6 +323,10 @@ The evaluator also supports `--format summary-csv`, `repositories-csv`, `labels-
 and `candidates-csv` for dashboard ingestion. Keep the summary and join details using the
 scorecard identity. See [Slice 17 CSV contracts](docs/development/slice-17.md).
 
+Evaluator version 2 adds per-CWE proxy metrics in JSON, Markdown and
+`--format weaknesses-csv`. Classes without labels remain unknown, and missing evaluations
+stay in denominators. See [Slice 18](docs/development/slice-18.md).
+
 ## Development
 
 Run the real CodeQL acceptance suite with an approved local `CodeInjection.ql` entry:

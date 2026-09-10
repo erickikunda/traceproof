@@ -1,6 +1,6 @@
 # TraceProof CLI user and operator guide
 
-**Scope:** laptop POC through Slice 17, SQLite schema 0006. Commands are run from the repository checkout on Linux/macOS using Python 3.12+. This guide describes implemented behavior. Git/GCS acquisition, HTTP API hosting, distributed workers, authenticated reviewers and OpenShift deployment are future work.
+**Scope:** laptop POC through Slice 18, SQLite schema 0006. Commands are run from the repository checkout on Linux/macOS using Python 3.12+. This guide describes implemented behavior. Git/GCS acquisition, HTTP API hosting, distributed workers, authenticated reviewers and OpenShift deployment are future work.
 
 ## Start here
 
@@ -202,6 +202,14 @@ detail tables. Null metrics are blank, zero remains zero, and lists/count maps a
 cells. Empty detail tables have headers only, so retain the summary. These exports expose
 evaluator labels and matching metadata; share only with the authorized evaluation audience.
 See [benchmark CSV contracts](../development/slice-17.md).
+
+Evaluator version 2 also reports results by CWE in JSON and Markdown. Use
+`--format weaknesses-csv` to export those rows. Class denominators retain missing,
+ambiguous and unsupported labels. `no_labels` means no measurable recall value;
+`incomplete` means unresolved evaluation gaps; `evaluated` may still include misses.
+Do not average class percentages: sum numerators and denominators for the overall proxy.
+Join using scorecard ID and CWE. Reevaluation creates new scorecard IDs; legacy results
+are unchanged. See [per-class metrics](../development/slice-18.md).
 
 ## Recovery and routine operations
 

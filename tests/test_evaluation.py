@@ -14,7 +14,7 @@ from typer.testing import CliRunner
 from traceproof.bundles import canonical
 from traceproof.cli import app
 from traceproof.domain import TraceProofError
-from traceproof.evaluation import evaluate_benchmark, render_scorecard
+from traceproof.evaluation import evaluate_benchmark, render_scorecard, weakness_metrics
 from traceproof.indexing import build_index
 from traceproof.persistence import (
     Candidate,
@@ -29,6 +29,51 @@ from traceproof.reports import publish_report
 
 def csv_rows(report, format):
     return list(csv.DictReader(io.StringIO(render_scorecard(report, format))))
+
+
+def test_weakness_partition_preserves_gaps_and_no_label_classes():
+    rows = [
+        {"cwe": "CWE-94", "status": status}
+        for status in ["matched_location", "not_observed", "ambiguous", "not_evaluable"]
+    ] + [{"cwe": "CWE-999", "status": "not_evaluable"}]
+    metrics = weakness_metrics(rows, {"CWE-94", "CWE-78"}, {"CWE-22"})
+    by_cwe = {row["cwe"]: row for row in metrics}
+    assert sum(row["label_count"] for row in metrics) == 5
+    assert sum(row["candidate_recall_proxy_numerator"] for row in metrics) == 1
+    assert by_cwe["CWE-94"]["candidate_recall_proxy_value"] == 0.25
+    assert by_cwe["CWE-94"]["status"] == "incomplete"
+    assert by_cwe["CWE-999"]["selected_rule_scope"] is False
+    for cwe in ["CWE-78", "CWE-22"]:
+        assert by_cwe[cwe]["status"] == "no_labels"
+        assert by_cwe[cwe]["candidate_recall_proxy_value"] is None
+
+
+def test_weakness_formats_and_reconciliation(evaluation):
+    report = evaluation[3]()
+    assert report["evaluator_version"] == "2"
+    metric = report["weaknesses"][0]
+    assert (
+        metric["candidate_recall_proxy_numerator"] == report["candidate_recall_proxy"]["numerator"]
+    )
+    assert metric["candidate_recall_proxy_denominator"] == report["label_count"]
+    row = csv_rows(report, "weaknesses-csv")[0]
+    assert row["cwe"] == "CWE-94" and row["scorecard_id"] == report["scorecard_id"]
+    assert row["precision"] == row["confirmed_recall"] == ""
+    assert "Results by weakness class" in render_scorecard(report, "markdown")
+    evaluation[2]["reports"] = []
+    missing = evaluation[3]()["weaknesses"][0]
+    assert missing["candidate_recall_proxy_denominator"] == 1
+    assert missing["status"] == "incomplete"
+
+
+def test_legacy_scorecard_rendering_does_not_invent_metrics(evaluation):
+    report = evaluation[3]()
+    del report["weaknesses"]
+    report["evaluator_version"] = "1"
+    assert "Results by weakness class" not in render_scorecard(report, "markdown")
+    assert csv_rows(report, "summary-csv")
+    with pytest.raises(TraceProofError, match="legacy"):
+        render_scorecard(report, "weaknesses-csv")
 
 
 def test_csv_grains_reconcile_and_preserve_scorecard(evaluation):
