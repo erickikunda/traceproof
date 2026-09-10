@@ -1,4 +1,4 @@
-"""Run real Python/Java/Spring acceptance in a restricted Linux container and export its reports."""
+"""Run language fixture suites in a restricted Linux container and export reports."""
 
 import argparse
 import json
@@ -17,14 +17,30 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("output", type=Path, help="New local output directory")
     parser.add_argument("--image", default="traceproof:linux-poc")
-    parser.add_argument("--suite", choices=["python", "java", "spring"], default="python")
+    parser.add_argument(
+        "--suite",
+        choices=["python", "java", "spring", "csharp", "csharp-classic"],
+        default="python",
+    )
     parser.add_argument("--project-layout", choices=["flat", "maven", "gradle"], default="flat")
     args = parser.parse_args()
-    if args.suite == "python" and args.project_layout != "flat":
+    if args.suite not in ("java", "spring") and args.project_layout != "flat":
         parser.error("Project layouts apply only to Java/Spring")
     if args.suite == "python":
         scan = f"traceproof acceptance-run /work/acceptance {QUERY} --timeout 300"
         results_file = "acceptance.json"
+    elif args.suite.startswith("csharp"):
+        script = args.suite.replace("-", "_")
+        query = (
+            "/opt/codeql-bundle/codeql/qlpacks/codeql/csharp-queries/1.9.3/"
+            "Security Features/CWE-089/SqlInjection.ql"
+        )
+        scan = (
+            f"/opt/traceproof-venv/bin/python /opt/traceproof/scripts/validate_{script}.py "
+            f"'{query}' /work/acceptance --csharp-dependency-profile "
+            "/opt/traceproof/csharp-dependencies/profile.json"
+        )
+        results_file = "validation.json"
     else:
         query_name = "SqlTainted.ql" if args.suite == "spring" else "SqlConcatenated.ql"
         query = (

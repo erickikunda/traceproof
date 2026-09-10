@@ -145,6 +145,9 @@ profile, fail-closed enforcement and isolation-aware reuse. Next: enforced offli
 Linux container validation, private-feed/Windows-worker integration and broader C# evidence.
 Slice 44 adds opt-in single-language auto selection. L6 still requires query routing,
 per-language fan-out and consolidated repository reporting.
+Slice 51 adds the pinned Linux ARM64 .NET SDK/net48 image profile and C#/classic
+ASP.NET offline fixture validation. Next: broader ASP.NET Core/classic framework
+fixtures and C# evidence support; Windows build execution remains separate.
 Keep existing operator entry points and add options only where language selection or
 safe build-profile selection requires them.
 

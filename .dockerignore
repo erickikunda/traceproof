@@ -25,3 +25,14 @@
 
 !work/container-inputs/java-repository/
 !work/container-inputs/java-repository/**
+
+!work/container-inputs/dotnet-linux-arm64.tar.gz
+!work/container-inputs/net48/
+!work/container-inputs/net48/**
+!scripts/pin_csharp_dependencies.py
+!scripts/validate_csharp.py
+!scripts/validate_csharp_classic.py
+!tests/fixtures/csharp/
+!tests/fixtures/csharp/**
+!tests/fixtures/csharp-classic/
+!tests/fixtures/csharp-classic/**

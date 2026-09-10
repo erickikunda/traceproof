@@ -188,3 +188,7 @@ Slice 50 supplies pinned local Maven-layout JAR profiles for Java, records profi
 identity in reuse/reports and rechecks integrity after extraction. Six pinned Spring
 JARs restore the offline flat Spring fixture. Other inferred fetch attempts remain
 blocked by the container; the profile itself does not enforce network isolation.
+
+Slice 51 brings the pinned .NET SDK/net48 profile to Linux ARM64 containers and
+validates basic C#/classic ASP.NET fixtures with networking denied. This does not
+qualify ASP.NET Core, broad classic MVC/Web API coverage, C# LLM evidence or OCP.

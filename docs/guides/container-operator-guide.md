@@ -1,7 +1,7 @@
 # Local Linux container operator guide
 
-This is the first OCP preparation image, qualified locally for synthetic Python and basic source-only Java
-scan acceptance. Slice 50 adds a pinned Spring dependency profile for offline fixture acceptance on Linux ARM64. It is not an OCP-certified deployment. No OpenShift
+This is the first OCP preparation image, qualified locally for synthetic Python, Java/Spring and C#/classic ASP.NET
+source-only scan acceptance on Linux ARM64. It is not an OCP-certified deployment. No OpenShift
 installation is needed on the laptop. Docker Desktop and uv are required for the
 following commands; run from the TraceProof checkout.
 
@@ -32,14 +32,17 @@ base supports multiple architectures, but this CodeQL archive does not. No macOS
 or executable is copied into the image. The source-only Java lane uses a separately checksum-pinned full Temurin 21.0.12.1+1
 Linux JDK, including jmods. Slice 49 identified missing inferred Spring artifacts. Slice 50 supplies a pinned
 six-JAR local Maven repository alongside the full JDK; the JDK alone is insufficient.
-C# runtime/toolchain qualification is subsequent; bundled extractors alone do not
-establish language readiness. No Maven/Gradle build execution is qualified.
+Slice 51 adds Linux .NET SDK 10.0.100 and pinned net48 reference assemblies for
+basic C# and classic ASP.NET fixtures. This does not qualify ASP.NET Core or broad
+classic MVC/Web API coverage. No Maven/Gradle build execution is qualified.
 
 ## Run acceptance
 
 ```sh
 uv run python scripts/validate_container.py work/container-acceptance-001
 uv run python scripts/validate_container.py work/container-java-001 --suite java
+uv run python scripts/validate_container.py work/container-csharp-001 --suite csharp
+uv run python scripts/validate_container.py work/container-classic-001 --suite csharp-classic
 # Spring suites automatically select the pinned fixture dependency profile.
 uv run python scripts/validate_container.py work/container-spring-001 --suite spring
 uv run python scripts/validate_container.py work/container-spring-maven-001 --suite spring --project-layout maven
@@ -84,7 +87,7 @@ endpoints. Do not mount host paths or Docker sockets into future worker pods. In
 let the SCC assign the UID rather than copying this test UID into pod manifests.
 
 Remaining work: broader Java/Spring dependency/version qualification;
-Linux .NET dependency profiles and fixtures; full Java build profiles; matching bank CPU
+broader C#/ASP.NET framework and evidence coverage; full Java build profiles; matching bank CPU
 architecture; namespace Job/NetworkPolicy/PVC manifests; SELinux/SCC admission; corporate
 CAs/mirrors; stage-separated egress and credentials; PostgreSQL durability; formal image
 SBOM/signing/scanning; and finally the bank OCP smoke test. Actual cluster testing is
@@ -141,3 +144,25 @@ network_denial_verified=false because TraceProof does not attest the external Do
 policy; runtime.json/container-config.json are the separate local enforcement evidence.
 Reports remain incomplete; no general framework reachability or production readiness
 is inferred from the fixture results.
+
+### Linux C# and classic ASP.NET (Slice 51)
+
+Preparation verifies Microsoft's published SHA-512 for the .NET 10.0.100 Linux ARM64
+SDK and the pinned SHA-256 for Microsoft.NETFramework.ReferenceAssemblies.net48 1.0.3.
+Only reference DLLs are extracted from that package. An additional committed DLL
+inventory is checked at image build, before generating the SDK/reference profile.
+The generated profile is /opt/traceproof/csharp-dependencies/profile.json. It is
+separate from the laptop's macOS SDK profile. Runtime rechecks the complete inventory.
+
+--suite csharp runs the raw socket/SQL fixture pair; --suite csharp-classic runs the
+System.Web.HttpRequest/SqlClient pair. Both use the installed C# SqlInjection query.
+The fixture scripts retain the existing allow-csharp-downloads consent needed by the
+CLI, while Docker --network none enforces external network denial. Do not remove that
+runner restriction. Do not use the macOS-only --csharp-offline flag in this Linux image.
+
+The report's network_denial_verified remains false because the app does not attest
+external Docker policy. runtime.json and container-config.json are the enforcement
+evidence. No LLM calls or .NET application builds occur in these synthetic fixtures.
+C# semantic indexing/evidence support and real framework/build qualification remain
+open. Linux success with reference assemblies does not imply Windows-only builds
+can run on OCP. No shared-PVC/SQLite durability or OCP SCC/SELinux testing is claimed.

@@ -24,15 +24,30 @@ RUN test -n "$JDK_SHA256" && echo "$JDK_SHA256  /tmp/jdk.tar.gz" | sha256sum -c 
     mkdir /opt/traceproof-jdk && tar -xzf /tmp/jdk.tar.gz -C /opt/traceproof-jdk --strip-components=1 && \
     chmod -R a+rX /opt/traceproof-jdk && rm /tmp/jdk.tar.gz
 
+FROM registry.access.redhat.com/ubi9/python-312@sha256:b29b44b014b0fad4b6c047abad7cbe42b4107cfe349075318eea8ba6475cbd69 AS dotnet
+USER 0
+ARG DOTNET_SHA512
+COPY work/container-inputs/dotnet-linux-arm64.tar.gz /tmp/dotnet.tar.gz
+RUN test -n "$DOTNET_SHA512" && echo "$DOTNET_SHA512  /tmp/dotnet.tar.gz" | sha512sum -c - && \
+    mkdir /opt/dotnet && tar -xzf /tmp/dotnet.tar.gz -C /opt/dotnet && \
+    chmod -R a+rX /opt/dotnet && rm /tmp/dotnet.tar.gz
+
 FROM registry.access.redhat.com/ubi9/python-312@sha256:b29b44b014b0fad4b6c047abad7cbe42b4107cfe349075318eea8ba6475cbd69
 USER 0
+COPY --from=dotnet /opt/dotnet /opt/traceproof/csharp-dependencies/dotnet
+COPY work/container-inputs/net48 /opt/traceproof/csharp-dependencies/net48
 COPY --from=jdk /opt/traceproof-jdk /opt/traceproof-jdk
 COPY --from=python-deps /opt/traceproof-venv /opt/traceproof-venv
 COPY --from=codeql /opt/codeql-bundle /opt/codeql-bundle
 COPY containers/java-profile.json /opt/traceproof/dependencies/java-profile.json
 COPY work/container-inputs/java-repository /opt/traceproof/dependencies/java-repository
 COPY containers/runtime_probe.py /opt/traceproof/runtime_probe.py
-COPY scripts/validate_java.py scripts/validate_spring.py /opt/traceproof/scripts/
+COPY scripts/validate_java.py scripts/validate_spring.py scripts/validate_csharp.py scripts/validate_csharp_classic.py scripts/pin_csharp_dependencies.py /opt/traceproof/scripts/
+COPY tests/fixtures/csharp /opt/traceproof/tests/fixtures/csharp
+COPY tests/fixtures/csharp-classic /opt/traceproof/tests/fixtures/csharp-classic
+COPY containers/net48-inventory.json /opt/traceproof/net48-inventory.json
+RUN /opt/traceproof-venv/bin/python -c "import json; from pathlib import Path; from traceproof.csharp_dependencies import inventory; assert inventory(Path('/opt/traceproof/csharp-dependencies/net48')) == json.loads(Path('/opt/traceproof/net48-inventory.json').read_text())"
+RUN /opt/traceproof-venv/bin/python /opt/traceproof/scripts/pin_csharp_dependencies.py /opt/traceproof/csharp-dependencies --sdk dotnet --references net48 --sdk-version 10.0.100 --codeql-version 2.27.0
 COPY tests/fixtures/java /opt/traceproof/tests/fixtures/java
 COPY tests/fixtures/spring /opt/traceproof/tests/fixtures/spring
 RUN mkdir -p /work /inputs /reports && chmod 0770 /work /reports && \

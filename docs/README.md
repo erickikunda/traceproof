@@ -85,3 +85,5 @@ qualification remain pending. See Slice 46.
 - [Slice 49: Linux Java/Spring qualification](development/slice-49.md)
 
 - [Slice 50: pinned Java dependencies](development/slice-50.md)
+
+- [Slice 51: Linux C#/classic ASP.NET](development/slice-51.md)
