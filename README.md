@@ -5,6 +5,10 @@ Evidence-driven, LLM-assisted vulnerability discovery.
 For step-by-step use, report interpretation and recovery, read the
 [CLI user/operator guide](docs/guides/cli-operator-guide.md).
 
+Use `run-history REPO_ID` and `scan-history REPO_ID` to find previous work, including
+failed or unpublished scans. Both support `--offset` and `--limit`; scan history also
+accepts `--run-id`. See [Slice 16](docs/development/slice-16.md).
+
 **Implemented slices:** local CSV/archive intake, verified source snapshots, resumable
 Python indexing, conservative call candidates, bounded evidence bundles, CodeQL security
 queries, advisory triage with replay/opt-in OpenAI and Anthropic adapters, source claim checks,

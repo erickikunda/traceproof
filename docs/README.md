@@ -23,6 +23,7 @@ first hosted API, as scheduled in the implementation plan.
 - [Thirteenth-slice status](development/slice-13.md): opt-in Anthropic Messages adapter with shared evidence and budget controls.
 - [Fourteenth-slice status](development/slice-14.md): explicit latest-attempt/latest-completed selection with current-work disclosure.
 - [Fifteenth-slice status](development/slice-15.md): CLI operator guide and verified synthetic walkthrough; API guide delivery gate.
+- [Sixteenth-slice status](development/slice-16.md): paginated repository runs and query attempts, including unpublished work.
 - [Progress assessment](development/progress.md): work-package estimates against the full implementation plan.
 
 The design and plan are proposals; the slice status and README describe what actually runs.

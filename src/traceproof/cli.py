@@ -468,6 +468,33 @@ def run(ctx: typer.Context, run_id: str):
     perform(lambda: run_status(ctx.obj, run_id))
 
 
+@app.command("run-history")
+def run_history_command(
+    ctx: typer.Context,
+    repo_id: str,
+    offset: Annotated[int, typer.Option(min=0)] = 0,
+    limit: Annotated[int, typer.Option(min=1, max=1000)] = 100,
+):
+    """List admitted runs, including work without a scan or published report."""
+    from traceproof.history import run_history
+
+    perform(lambda: run_history(ctx.obj, repo_id, offset, limit))
+
+
+@app.command("scan-history")
+def scan_history_command(
+    ctx: typer.Context,
+    repo_id: str,
+    run_id: str | None = None,
+    offset: Annotated[int, typer.Option(min=0)] = 0,
+    limit: Annotated[int, typer.Option(min=1, max=1000)] = 100,
+):
+    """List query attempts, including failed and unpublished work; never executes scans."""
+    from traceproof.history import scan_history
+
+    perform(lambda: scan_history(ctx.obj, repo_id, run_id, offset, limit))
+
+
 @app.command()
 def worker(
     ctx: typer.Context,

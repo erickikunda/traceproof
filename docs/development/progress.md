@@ -1,7 +1,8 @@
-# Implementation progress after Slice 15
+# Implementation progress after Slice 16
 
-Slice 15 adds the verified CLI operator guide and an API documentation delivery gate.
-It changes no runtime work-package credit; the assessment below remains unchanged.
+Slices 15–16 add the verified CLI guide, an API documentation delivery gate and repository
+run/query-attempt histories. These extend existing partial packages; work-package credit
+below remains unchanged.
 
 **Planning estimate: approximately 25–30% of the full implementation plan and 60–65%
 of M0–M2.** The rounded conversational estimates are about one quarter overall and

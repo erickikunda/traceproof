@@ -1,6 +1,6 @@
 # TraceProof CLI user and operator guide
 
-**Scope:** laptop POC through Slice 15, SQLite schema 0006. Commands are run from the repository checkout on Linux/macOS using Python 3.12+. This guide describes implemented behavior. Git/GCS acquisition, HTTP API hosting, distributed workers, authenticated reviewers and OpenShift deployment are future work.
+**Scope:** laptop POC through Slice 16, SQLite schema 0006. Commands are run from the repository checkout on Linux/macOS using Python 3.12+. This guide describes implemented behavior. Git/GCS acquisition, HTTP API hosting, distributed workers, authenticated reviewers and OpenShift deployment are future work.
 
 ## Start here
 
@@ -40,6 +40,16 @@ Copy IDs from actual command responses; uppercase names below are placeholders.
 | `REPORT_ID` | Immutable published summary version, returned by `publish-report` |
 
 Commands normally print JSON. Request/storage errors produce a nonzero exit code, often with JSON on stderr. Durable failures can still exit zero: inspect row states, extraction/query `status`, bundle gaps, triage disposition and readiness. Scripts must inspect both the exit code and returned fields. `acceptance-run` and benchmark validation have additional explicit failure exit behavior.
+
+To recover run or query-attempt IDs, including work without a published report:
+
+```bash
+uv run traceproof run-history REPO_ID --limit 100
+uv run traceproof scan-history REPO_ID --limit 100
+uv run traceproof scan-history REPO_ID --run-id RUN_ID --offset 0 --limit 100
+```
+
+Follow `next_offset` until null. Pages contain at most 1000 rows, sorted by newest run admission and then newest attempt within each run. New work can shift offset pages between requests; this is not a frozen export. Failed attempts remain visible, unknown counts are null, and a run with no query attempt has no scan-history rows. Extraction attempts are separate: retain their IDs for `codeql-status`. Use `report-history` for published summary IDs.
 
 ## First walkthrough: capture and index synthetic source
 
@@ -145,6 +155,7 @@ Publication reads stored state without invoking analysis. New triage/review stat
 | Command | Question answered |
 | --- | --- |
 | `run-status` | Was source captured? |
+| `run-history` / `scan-history` | Which runs and query attempts exist, including unpublished work? |
 | `repo-report` | What Python syntax was indexed, and where are the gaps? |
 | `scan-report` | What did this static-analysis attempt observe? |
 | `triage-report` | What advice and costs were recorded for the run? |
