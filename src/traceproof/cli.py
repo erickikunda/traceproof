@@ -585,6 +585,36 @@ def triage_command(
     perform(operation)
 
 
+@app.command("triage-attempt")
+def triage_attempt_command(
+    ctx: typer.Context,
+    repo_id: str,
+    attempt_id: str,
+    config: Path,
+    key: str,
+    replay: Path | None = None,
+    offset: Annotated[int, typer.Option(min=0)] = 0,
+    limit: Annotated[int, typer.Option(min=1, max=100)] = 1,
+):
+    """Triage a bounded candidate page with per-run budgets and stable request keys."""
+    from traceproof.batch_triage import triage_attempt
+    from traceproof.models import ReplayAdapter, live_adapter, read_config
+
+    def operation():
+        policy = read_config(config)
+        if policy.provider == "replay":
+            if replay is None:
+                raise TraceProofError("Replay policy requires --replay RESPONSE_JSON")
+            adapter = ReplayAdapter(replay)
+        else:
+            if replay is not None:
+                raise TraceProofError("A live policy cannot use a replay fixture")
+            adapter = live_adapter(policy)
+        return triage_attempt(ctx.obj, repo_id, attempt_id, policy, adapter, key, offset, limit)
+
+    perform(operation)
+
+
 @app.command("triage-report")
 def triage_status(
     ctx: typer.Context,

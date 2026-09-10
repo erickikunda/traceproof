@@ -1,4 +1,7 @@
-# Implementation progress after Slice 29
+# Implementation progress after Slice 30
+
+Slice 30 adds bounded exact-attempt triage orchestration using existing model/evidence
+and budget gates. No new detection-quality or milestone credit is claimed.
 
 Slice 29 adds a self-contained HTML benchmark scorecard. M4.7 remains partial at the full
 acceptance level; no bank benchmark or additional package credit is claimed.

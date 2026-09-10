@@ -408,3 +408,6 @@ resource tuning, with existing defaults preserved. See [Slice 28](docs/developme
 
 Use `benchmark-get DATASET_ID SCORECARD_ID --format html` for a self-contained benchmark
 scorecard with explicit provisional metrics and scope gaps. See [Slice 29](docs/development/slice-29.md).
+
+Use `triage-attempt REPO_ID ATTEMPT_ID CONFIG_JSON BATCH_KEY --limit 5` to triage a
+bounded candidate page under an existing run budget. See [Slice 30](docs/development/slice-30.md).

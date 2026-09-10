@@ -1,6 +1,31 @@
 # TraceProof CLI user and operator guide
 
-**Scope:** laptop POC through Slice 29, SQLite schema 0008. Commands are run from the repository checkout on Linux/macOS using Python 3.12+. This guide describes implemented behavior. Git/GCS acquisition, HTTP API hosting, distributed workers, authenticated reviewers and OpenShift deployment are future work.
+**Scope:** laptop POC through Slice 30, SQLite schema 0008. Commands are run from the repository checkout on Linux/macOS using Python 3.12+. This guide describes implemented behavior. Git/GCS acquisition, HTTP API hosting, distributed workers, authenticated reviewers and OpenShift deployment are future work.
+
+## Triage a candidate page
+
+For synthetic local Ollama testing, with an approved model configuration:
+
+```bash
+uv run traceproof triage-budget RUN_ID 0 --max-requests 20
+uv run traceproof triage-attempt REPO_ID ATTEMPT_ID examples/triage-ollama-config.json local-pass-1 --limit 5
+uv run traceproof triage-report RUN_ID
+uv run traceproof publish-report REPO_ID --run-id RUN_ID --attempt-id ATTEMPT_ID
+```
+
+The zero monetary budget above is for zero-priced local inference; priced models require
+a suitable monetary cap and explicit source-transmission policy. Existing budgets remain
+fixed. Replay policies require `--replay RESPONSE_JSON`; a shared replay fixture does not
+measure candidate-specific detection quality.
+
+Selection is from the exact attempt in fingerprint order. Default limit is 1, maximum 100.
+Repeat the same key/configuration to reuse recorded calls. A new key can cause additional
+calls and spend; batch keys do not deduplicate unrelated manual triage calls. Inspect JSON
+`status` and the ledger after each page. Budget exhaustion, uncertain provider outcomes
+and application errors halt processing. `next_offset` advances past recorded outcomes,
+but stays on an application-error candidate. Do not treat a halted page as a successful
+triage pass. `page_complete` describes only the selected page. Later publication is explicit.
+See [Slice 30](../development/slice-30.md) for retry and stop semantics.
 
 ## Share a benchmark scorecard
 
