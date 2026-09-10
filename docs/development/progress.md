@@ -176,3 +176,10 @@ Slice 48 begins OCP-1 locally: UBI/Linux ARM64 image and restricted Docker Pytho
 acceptance. Actual bank OCP validation is deferred to functional POC completion by
 request, and remains required. Other language toolchains and deployment manifests
 remain unqualified in Linux.
+
+Slice 49 extends Linux qualification to basic source-only Java using a pinned full
+Java 21 JDK. Offline Spring is NOT qualified: the vulnerable case produces zero
+candidates with blocked inferred Maven downloads and unresolved annotations. Historical
+macOS Spring runs fetched dependencies despite source-only input. Next: pinned Java
+profiles and offline Spring requalification. Full builds and Linux C# remain open.
+Container suite selection and package inventories use TraceProof's virtual environment.

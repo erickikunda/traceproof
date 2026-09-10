@@ -10,3 +10,15 @@
 !work/
 !work/container-inputs/
 !work/container-inputs/codeql-linux-arm64.tar.gz
+
+!scripts/
+!scripts/validate_java.py
+!scripts/validate_spring.py
+!tests/
+!tests/fixtures/
+!tests/fixtures/java/
+!tests/fixtures/java/**
+!tests/fixtures/spring/
+!tests/fixtures/spring/**
+
+!work/container-inputs/jdk-linux-arm64.tar.gz

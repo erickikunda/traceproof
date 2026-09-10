@@ -1,4 +1,4 @@
-"""Run real Python acceptance in a restricted Linux container and export its reports."""
+"""Run real Python/Java/Spring acceptance in a restricted Linux container and export its reports."""
 
 import argparse
 import json
@@ -17,7 +17,27 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("output", type=Path, help="New local output directory")
     parser.add_argument("--image", default="traceproof:linux-poc")
+    parser.add_argument("--suite", choices=["python", "java", "spring"], default="python")
+    parser.add_argument("--project-layout", choices=["flat", "maven", "gradle"], default="flat")
     args = parser.parse_args()
+    if args.suite == "python" and args.project_layout != "flat":
+        parser.error("Project layouts apply only to Java/Spring")
+    if args.suite == "python":
+        scan = f"traceproof acceptance-run /work/acceptance {QUERY} --timeout 300"
+        results_file = "acceptance.json"
+    else:
+        query_name = "SqlTainted.ql" if args.suite == "spring" else "SqlConcatenated.ql"
+        query = (
+            "/opt/codeql-bundle/codeql/qlpacks/codeql/java-queries/1.11.10/Security/CWE/CWE-089/"
+            + query_name
+        )
+        scan = (
+            f"/opt/traceproof-venv/bin/python /opt/traceproof/scripts/validate_{args.suite}.py "
+            f"{query} /work/acceptance"
+        )
+        if args.project_layout != "flat":
+            scan += f" --java-profile source-only --project-layout {args.project_layout}"
+        results_file = "validation.json"
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=False)
     name = "traceproof-smoke-" + uuid.uuid4().hex[:12]
@@ -58,17 +78,21 @@ def main():
         image,
         "-euc",
         "mkdir /reports/diagnostics\n"
-        'trap \'find /work -name "*.log" '
-        "-exec cp --parents {} /reports/diagnostics/ \\; || true' EXIT\n"
-        "python /opt/traceproof/runtime_probe.py > /reports/runtime.json\n"
-        "python -m pip inspect > /reports/python-packages.json\n"
+        "export_artifacts() {\n"
+        'find /work -name "*.log" '
+        "-exec cp --parents {} /reports/diagnostics/ \\; || true\n"
+        f"if [ -f /work/acceptance/{results_file} ]; then "
+        f"cp /work/acceptance/{results_file} /reports/case-results.json; fi\n"
+        "if [ -d /work/acceptance ]; then "
+        "find /work/acceptance -maxdepth 1 -type f "
+        "\\( -name '*.html' -o -name '*.csv' -o -name '*.md' -o -name '*.json' \\) "
+        "-exec cp {} /reports/ \\;\nfi\n"
+        "}\ntrap export_artifacts EXIT\n"
+        "/opt/traceproof-venv/bin/python /opt/traceproof/runtime_probe.py > /reports/runtime.json\n"
+        "/opt/traceproof-venv/bin/python -m pip inspect > /reports/python-packages.json\n"
         "rpm -qa | sort > /reports/os-packages.txt\n"
-        f"traceproof acceptance-run /work/acceptance {QUERY} "
-        "--timeout 300 > /reports/cli.log 2>&1\n"
-        "cp /work/acceptance/acceptance.json /reports/\n"
-        "cp /work/acceptance/*.html /work/acceptance/*.csv /work/acceptance/*.md /reports/\n"
-        "cp /work/acceptance/vulnerable.json /work/acceptance/fixed.json "
-        "/work/acceptance/incomplete.json /reports/\n",
+        "java -version > /reports/java-version.txt 2>&1\n"
+        f"{scan} > /reports/cli.log 2>&1\n",
     ]
     subprocess.run(command, check=True, capture_output=True)
     started = time.monotonic()
@@ -84,16 +108,24 @@ def main():
         finally:
             state = json.loads(subprocess.check_output(["docker", "inspect", name]))[0]["State"]
             (output / "container-state.json").write_text(json.dumps(state, indent=2))
-        passed = result.returncode == 0 and (output / "acceptance.json").exists()
+        passed = result.returncode == 0 and (output / "case-results.json").exists()
         if passed:
-            passed = json.loads((output / "acceptance.json").read_text())["passed"]
+            cases = json.loads((output / "case-results.json").read_text())
+            passed = (
+                cases["passed"]
+                if args.suite == "python"
+                else len(cases) == (4 if args.suite == "spring" else 2)
+                and all(case["passed"] for case in cases)
+            )
         summary = dict(
             passed=passed,
             image_id=image,
             architecture=inspected["Architecture"],
             elapsed_seconds=round(time.monotonic() - started, 3),
             ocp_qualified=False,
-            scope="Local restricted Linux Python fixture validation",
+            scope="Local restricted Linux fixture validation",
+            suite=args.suite,
+            project_layout=args.project_layout,
         )
         (output / "validation.json").write_text(json.dumps(summary, indent=2))
         print(json.dumps(summary))

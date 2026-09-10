@@ -15,19 +15,20 @@ def main():
     parser.add_argument("--tag", default="traceproof:linux-poc")
     args = parser.parse_args()
     lock = json.loads((ROOT / "containers/toolchain.json").read_text())
-    archive = ROOT / "work/container-inputs/codeql-linux-arm64.tar.gz"
-    archive.parent.mkdir(parents=True, exist_ok=True)
-    if not archive.exists():
-        temporary = archive.with_suffix(".download")
-        urllib.request.urlretrieve(lock["codeql_url"], temporary)
-        with temporary.open("rb") as handle:
-            digest = hashlib.file_digest(handle, "sha256").hexdigest()
-        if digest != lock["codeql_sha256"]:
-            raise RuntimeError("CodeQL download checksum mismatch")
-        temporary.replace(archive)
-    with archive.open("rb") as handle:
-        if hashlib.file_digest(handle, "sha256").hexdigest() != lock["codeql_sha256"]:
-            raise RuntimeError("Cached CodeQL checksum mismatch")
+    for name in ("codeql", "jdk"):
+        archive = ROOT / f"work/container-inputs/{name}-linux-arm64.tar.gz"
+        archive.parent.mkdir(parents=True, exist_ok=True)
+        if not archive.exists():
+            temporary = archive.with_suffix(".download")
+            urllib.request.urlretrieve(lock[name + "_url"], temporary)
+            with temporary.open("rb") as handle:
+                digest = hashlib.file_digest(handle, "sha256").hexdigest()
+            if digest != lock[name + "_sha256"]:
+                raise RuntimeError("Toolchain download checksum mismatch")
+            temporary.replace(archive)
+        with archive.open("rb") as handle:
+            if hashlib.file_digest(handle, "sha256").hexdigest() != lock[name + "_sha256"]:
+                raise RuntimeError("Cached Toolchain checksum mismatch")
     subprocess.run(["uv", "build"], cwd=ROOT, check=True)
     subprocess.run(
         [
@@ -37,6 +38,8 @@ def main():
             lock["platform"],
             "--build-arg",
             "CODEQL_SHA256=" + lock["codeql_sha256"],
+            "--build-arg",
+            "JDK_SHA256=" + lock["jdk_sha256"],
             "-f",
             "containers/Containerfile",
             "-t",

@@ -1,7 +1,7 @@
 # Local Linux container operator guide
 
-This is the first OCP preparation image, qualified locally for synthetic Python
-scan acceptance on Linux ARM64. It is not an OCP-certified deployment. No OpenShift
+This is the first OCP preparation image, qualified locally for synthetic Python and basic source-only Java
+scan acceptance. Offline Spring acceptance currently fails and is not qualified on Linux ARM64. It is not an OCP-certified deployment. No OpenShift
 installation is needed on the laptop. Docker Desktop and uv are required for the
 following commands; run from the TraceProof checkout.
 
@@ -12,7 +12,7 @@ uv run python scripts/build_container.py
 ```
 
 Preparation downloads the checksum-pinned CodeQL 2.27.0 Linux ARM64 bundle into ignored
-work/container-inputs, builds the application wheel and builds traceproof:linux-poc.
+work/container-inputs, downloads/verifies the pinned Linux JDK, builds the application wheel and builds traceproof:linux-poc.
 The UBI9 Python 3.12 image is pinned by manifest digest in containers/Containerfile.
 Python runtime dependencies are installed from containers/requirements.lock with hash
 verification and wheels only. Build needs registry/PyPI/GitHub access; runtime does not.
@@ -29,13 +29,22 @@ uv export --frozen --no-dev --no-emit-project --format requirements-txt --output
 The current recipe is explicitly Linux ARM64, not a multi-architecture build. Confirm
 bank worker architecture before preparing the matching AMD64 bundle/image. The UBI
 base supports multiple architectures, but this CodeQL archive does not. No macOS SDK
-or executable is copied into the image. Java/C# runtime/toolchain qualification is a
-subsequent slice; bundled extractors alone do not establish language readiness.
+or executable is copied into the image. The source-only Java lane uses a separately checksum-pinned full Temurin 21.0.12.1+1
+Linux JDK, including jmods. Both the bundled runtime and full JDK missed the offline Spring vulnerable fixture;
+the detailed extractor logs identify blocked Maven artifact downloads and unresolved
+annotations. Installing the full JDK alone does not solve that dependency gap.
+C# runtime/toolchain qualification is subsequent; bundled extractors alone do not
+establish language readiness. No Maven/Gradle build execution is qualified.
 
 ## Run acceptance
 
 ```sh
 uv run python scripts/validate_container.py work/container-acceptance-001
+uv run python scripts/validate_container.py work/container-java-001 --suite java
+# Diagnostic suites below currently fail the vulnerable Spring case offline.
+uv run python scripts/validate_container.py work/container-spring-001 --suite spring
+uv run python scripts/validate_container.py work/container-spring-maven-001 --suite spring --project-layout maven
+uv run python scripts/validate_container.py work/container-spring-gradle-001 --suite spring --project-layout gradle
 ```
 
 The output directory must be new. The test runs the inspected immutable image ID with:
@@ -48,8 +57,13 @@ The output directory must be new. The test runs the inspected immutable image ID
 
 Runtime probes check the applied process privileges, denied writes and external network
 failure. Network-none retains loopback; it does not forbid communications within the
-same container. The Python vulnerable/fixed/incomplete acceptance then runs real CodeQL
-extraction/querying and exact report retrieval. SQLite state is temporary in /work;
+same container. The Python vulnerable/fixed/incomplete acceptance runs real CodeQL
+extraction/querying and exact report retrieval. Java checks the vulnerable/fixed pair;
+Spring attempts to check lookalike and incomplete cases, annotation observations, retained
+source/sink flows and the narrow advisory evidence gate. Its vulnerable case currently fails candidate-count acceptance (zero instead of one);
+expect a nonzero exit. Non-flat layouts select the
+source-only Java profile and omit build configuration. These are synthetic annotation/
+SQL fixtures, not deployed Spring applications or Maven/Gradle build qualification. SQLite state is temporary in /work;
 this is deliberately not durable/shared-database qualification. Reports survive on the
 host; state/databases disappear with the container. Execute permission on scratch is
 needed for toolchain operation; no hostile source builds are enabled by this recipe.
@@ -59,8 +73,8 @@ output, container state and available extractor/query logs. A hard kill/OOM may 
 log export from tmpfs; container-state.json records the runtime outcome. No background
 services are started. A failed acceptance exits nonzero.
 
-Outputs include validation.json, runtime.json, acceptance.json, per-case JSON/HTML/
-Markdown/CSV reports, image/runtime configuration, Python package inventory and RPM
+Outputs include validation.json, runtime.json, case-results.json, per-case JSON/HTML/
+Markdown/CSV reports, image/runtime configuration, Python package inventory, observed Java version and RPM
 package inventory. Inventories are not a formal SPDX/CycloneDX SBOM. Treat diagnostic
 logs and reports as source-sensitive when adapting this workflow to real repositories.
 The roughly 20-second synthetic first run is not a throughput benchmark.
@@ -71,7 +85,8 @@ RHCOS is the node OS; dependencies belong in the image, approved volumes or serv
 endpoints. Do not mount host paths or Docker sockets into future worker pods. In OCP,
 let the SCC assign the UID rather than copying this test UID into pod manifests.
 
-Remaining work: Linux Java/.NET dependency profiles and fixtures; matching bank CPU
+Remaining work: pinned Java/Spring dependency profiles and offline requalification;
+Linux .NET dependency profiles and fixtures; full Java build profiles; matching bank CPU
 architecture; namespace Job/NetworkPolicy/PVC manifests; SELinux/SCC admission; corporate
 CAs/mirrors; stage-separated egress and credentials; PostgreSQL durability; formal image
 SBOM/signing/scanning; and finally the bank OCP smoke test. Actual cluster testing is
@@ -81,3 +96,20 @@ The current --csharp-offline option uses macOS sandbox-exec and intentionally re
 Linux. OCP/Docker isolation must be integrated as a distinct runner mode; do not pass
 that flag inside this image or falsely report platform-enforced isolation as macOS
 verification. LLM calls remain untested in this network-disabled acceptance run.
+
+### Python interpreter selection
+
+UBI's S2I shell startup normally prepends /opt/app-root/bin. The application image
+sets BASH_ENV=/dev/null, and validation uses the absolute TraceProof virtual-environment
+interpreter for fixture scripts and package inventory. This avoids silently selecting
+a different Python environment when starting the container through bash.
+
+### Java source-only does not mean dependency-download-free
+
+CodeQL build-mode=none can infer missing dependency artifacts and fetch them from
+Maven Central. Detailed javac-extractor logs from the historical macOS run show fetches;
+the offline Linux run logs show failed Spring artifact downloads and unresolved
+annotation symbols. The traceproof profile name dependency-free describes operator
+inputs, not extractor network behavior. Keep external network denied when testing
+untrusted/bank source and do not treat zero candidates as a clean verdict. Reports
+remain incomplete. A pinned Java dependency profile is the next acceptance prerequisite.

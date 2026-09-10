@@ -39,7 +39,11 @@ The installed CodeQL 2.27.0 / java-queries 1.11.10 query declares java/sql-injec
 path-problem and high precision. This is tool metadata, not a measured precision claim.
 Unlike the earlier concatenation query, this checks a retained modeled data-flow path.
 
-No Spring jars are supplied and no Maven/Gradle build is executed. The existing
+No Spring jars were supplied by the operator and no Maven/Gradle build was executed.
+Correction from Slice 49: detailed extractor logs show inferred Maven artifact fetches
+in the historical macOS runs. The fixture fails with zero candidates in the offline
+Linux container because Spring dependencies cannot be resolved. This earlier result
+therefore does not qualify offline Spring extraction. The existing
 java-dependency-free-v1 profile name means this run supplies source without build or
 dependency artifacts; it does not mean that Spring source has no external imports.
 CodeQL's modeled source-only result does not prove runtime dependency resolution,
