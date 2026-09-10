@@ -14,6 +14,7 @@ from uuid import uuid4
 from sqlalchemy import select
 
 from traceproof.codeql import extraction_status
+from traceproof.codeql_resources import resource_settings
 from traceproof.domain import TraceProofError
 from traceproof.indexing import verified_source
 from traceproof.intake import now
@@ -30,8 +31,9 @@ def query_entry(store, queries):
     return queries
 
 
-def analyze(store, extraction_id, queries, timeout=600):
+def analyze(store, extraction_id, queries, timeout=600, *, threads=2, ram_mb=2048):
     """Caller holds exclusive_worker. queries is a trusted operator-supplied local file."""
+    resources = resource_settings(threads, ram_mb)
     if not 1 <= timeout <= 3600:
         raise TraceProofError("Query timeout must be between 1 and 3600 seconds")
     extraction = extraction_status(store, extraction_id)
@@ -54,6 +56,8 @@ def analyze(store, extraction_id, queries, timeout=600):
         "classification": manifest.classification,
         "extraction_id": extraction_id,
         "status": "running",
+        "requested_resources": resources,
+        "timeout_seconds": timeout,
         "candidate_count": None,
         "verified_finding_count": None,
         "security_verdict": "not_adjudicated",
@@ -112,8 +116,8 @@ def analyze(store, extraction_id, queries, timeout=600):
             "--no-sarif-add-file-contents",
             "--no-sarif-add-snippets",
             f"--output={root / 'results.sarif'}",
-            "--threads=2",
-            "--ram=2048",
+            f"--threads={threads}",
+            f"--ram={ram_mb}",
             f"--common-caches={root / 'cache'}",
         ]
         with (root / "analyze.log").open("wb") as log:

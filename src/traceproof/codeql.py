@@ -10,13 +10,15 @@ from uuid import uuid4
 
 from sqlalchemy import select
 
+from traceproof.codeql_resources import resource_settings
 from traceproof.domain import TraceProofError
 from traceproof.indexing import verified_source
 from traceproof.persistence import CodeqlAttempt
 
 
-def extract(store, run_id, timeout=300, skip_baseline=False):
+def extract(store, run_id, timeout=300, skip_baseline=False, *, threads=2, ram_mb=2048):
     """Caller holds exclusive_worker; attempts and artifacts are never overwritten."""
+    resources = resource_settings(threads, ram_mb)
     if not 1 <= timeout <= 3600:
         raise TraceProofError("Extraction timeout must be between 1 and 3600 seconds")
     run, manifest, tree = verified_source(store, run_id)
@@ -34,6 +36,7 @@ def extract(store, run_id, timeout=300, skip_baseline=False):
         "coverage_verified": False,
         "database_path": str(root / "database"),
         "timeout_seconds": timeout,
+        "requested_resources": resources,
         "build_mode": "none",
         "language": "python",
         "baseline_requested": not skip_baseline,
@@ -74,8 +77,8 @@ def extract(store, run_id, timeout=300, skip_baseline=False):
             "--language=python",
             "--build-mode=none",
             f"--source-root={tree}",
-            "--threads=2",
-            "--ram=2048",
+            f"--threads={threads}",
+            f"--ram={ram_mb}",
             f"--common-caches={root / 'cache'}",
         ]
         if skip_baseline:

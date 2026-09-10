@@ -39,3 +39,4 @@ first hosted API, as scheduled in the implementation plan.
 The design and plan are proposals; the slice status and README describe what actually runs.
 
 - [Twenty-seventh-slice status](development/slice-27.md): verified original SARIF export for exact query attempts.
+- [Twenty-eighth-slice status](development/slice-28.md): explicit, recorded CodeQL thread and RAM settings.

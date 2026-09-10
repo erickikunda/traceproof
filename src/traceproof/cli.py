@@ -347,6 +347,8 @@ def codeql_extract(
     skip_baseline: Annotated[
         bool, typer.Option(help="Skip optional CodeQL line-count baseline")
     ] = False,
+    threads: Annotated[int, typer.Option(min=1, max=64)] = 2,
+    ram_mb: Annotated[int, typer.Option(min=2048, max=262144)] = 2048,
 ):
     """Opt-in local Python extraction; creates diagnostics, not security findings."""
     from traceproof.codeql import extract
@@ -354,7 +356,7 @@ def codeql_extract(
     def operation():
         ctx.obj.require_initialized()
         with exclusive_worker(ctx.obj.root):
-            return extract(ctx.obj, run_id, timeout, skip_baseline)
+            return extract(ctx.obj, run_id, timeout, skip_baseline, threads=threads, ram_mb=ram_mb)
 
     perform(operation)
 
@@ -374,11 +376,23 @@ def scan_run_command(
     queries: Path,
     extraction_timeout: Annotated[int, typer.Option(min=1, max=3600)] = 300,
     query_timeout: Annotated[int, typer.Option(min=1, max=3600)] = 600,
+    threads: Annotated[int, typer.Option(min=1, max=64)] = 2,
+    ram_mb: Annotated[int, typer.Option(min=2048, max=262144)] = 2048,
 ):
     """Index, gate, extract, query and publish one captured run; no model calls."""
     from traceproof.pipeline import scan_run
 
-    perform(lambda: scan_run(ctx.obj, run_id, queries, extraction_timeout, query_timeout))
+    perform(
+        lambda: scan_run(
+            ctx.obj,
+            run_id,
+            queries,
+            extraction_timeout,
+            query_timeout,
+            threads=threads,
+            ram_mb=ram_mb,
+        )
+    )
 
 
 @app.command("scan-import")
@@ -391,13 +405,24 @@ def scan_import_command(
     rescan: bool = False,
     extraction_timeout: Annotated[int, typer.Option(min=1, max=3600)] = 300,
     query_timeout: Annotated[int, typer.Option(min=1, max=3600)] = 600,
+    threads: Annotated[int, typer.Option(min=1, max=64)] = 2,
+    ram_mb: Annotated[int, typer.Option(min=2048, max=262144)] = 2048,
 ):
     """Sequentially scan selected import rows; existing query attempts are skipped by default."""
     from traceproof.batch_scan import scan_import
 
     perform(
         lambda: scan_import(
-            ctx.obj, import_id, queries, offset, limit, rescan, extraction_timeout, query_timeout
+            ctx.obj,
+            import_id,
+            queries,
+            offset,
+            limit,
+            rescan,
+            extraction_timeout,
+            query_timeout,
+            threads=threads,
+            ram_mb=ram_mb,
         )
     )
 
@@ -433,6 +458,8 @@ def codeql_analyze(
     extraction_id: str,
     queries: Path,
     timeout: Annotated[int, typer.Option(min=1, max=3600)] = 600,
+    threads: Annotated[int, typer.Option(min=1, max=64)] = 2,
+    ram_mb: Annotated[int, typer.Option(min=2048, max=262144)] = 2048,
 ):
     """Run an operator-provided local query/suite; publish unreviewed SARIF candidates."""
     from traceproof.scanning import analyze
@@ -440,7 +467,7 @@ def codeql_analyze(
     def operation():
         ctx.obj.require_initialized()
         with exclusive_worker(ctx.obj.root):
-            return analyze(ctx.obj, extraction_id, queries, timeout)
+            return analyze(ctx.obj, extraction_id, queries, timeout, threads=threads, ram_mb=ram_mb)
 
     perform(operation)
 

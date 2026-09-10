@@ -3,6 +3,7 @@
 from sqlalchemy import select
 
 from traceproof.codeql import extract
+from traceproof.codeql_resources import resource_settings
 from traceproof.domain import TraceProofError
 from traceproof.indexing import build_index
 from traceproof.persistence import Run, ScanAttempt, exclusive_worker
@@ -11,8 +12,17 @@ from traceproof.scanning import analyze, query_entry
 
 
 def scan_run(
-    store, run_id, queries, extraction_timeout=300, query_timeout=600, *, skip_existing=False
+    store,
+    run_id,
+    queries,
+    extraction_timeout=300,
+    query_timeout=600,
+    *,
+    skip_existing=False,
+    threads=2,
+    ram_mb=2048,
 ):
+    resources = resource_settings(threads, ram_mb)
     if not 1 <= extraction_timeout <= 3600 or not 1 <= query_timeout <= 3600:
         raise TraceProofError("Stage timeouts must be between 1 and 3600 seconds")
     store.require_initialized()
@@ -58,7 +68,7 @@ def scan_run(
         result["python_index_gate"] = index["python_index_gate"]
         if index["python_index_gate"] != "ready":
             return {**result, "reason": "Python index is not ready; inspect repo-report"}
-        extraction = extract(store, run_id, timeout=extraction_timeout)
+        extraction = extract(store, run_id, timeout=extraction_timeout, **resources)
         result.update(
             extraction_id=extraction["attempt_id"],
             stopped_after="extraction",
@@ -66,7 +76,7 @@ def scan_run(
         )
         if extraction["status"] != "extracted":
             return {**result, "reason": "Extraction did not succeed; inspect codeql-status"}
-        scan = analyze(store, extraction["attempt_id"], query, timeout=query_timeout)
+        scan = analyze(store, extraction["attempt_id"], query, timeout=query_timeout, **resources)
         result.update(attempt_id=scan["attempt_id"], analysis_status=scan["status"])
     # Publication owns its own lock. Pin the attempt even if other work starts between stages.
     report = publish_report(store, repo_id, run_id, scan["attempt_id"])

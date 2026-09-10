@@ -1,4 +1,7 @@
-# Implementation progress after Slice 27
+# Implementation progress after Slice 28
+
+Slice 28 adds configurable, recorded CodeQL resource requests. This prepares local
+tuning but does not qualify capacity or container enforcement; package credit is unchanged.
 
 Slice 27 adds integrity-checked original SARIF retrieval for exact repository/attempt
 identities. M2.8 remains partial because the full finding/coverage contract is still open;

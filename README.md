@@ -402,3 +402,6 @@ support exact retrieval. See [Slice 26](docs/development/slice-26.md).
 Use `traceproof get-sarif REPO_ID ATTEMPT_ID > results.sarif` to retrieve verified original
 CodeQL output for a SARIF viewer. Raw output may contain sensitive details; see
 [Slice 27](docs/development/slice-27.md).
+
+CodeQL stage and pipeline commands accept `--threads` and `--ram-mb` for explicit
+resource tuning, with existing defaults preserved. See [Slice 28](docs/development/slice-28.md).

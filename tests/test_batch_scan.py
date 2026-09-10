@@ -33,6 +33,7 @@ def test_mixed_rows_pagination_and_explicit_rescan(store, archive, manifest, tmp
 
     def scan(*args, **kwargs):
         calls.append(kwargs["skip_existing"])
+        assert kwargs["threads"] == 2 and kwargs["ram_mb"] == 2048
         if len(calls) == 1:
             raise TraceProofError("Synthetic row failure")
         return {"status": "ready_for_review", "report_id": "report"}

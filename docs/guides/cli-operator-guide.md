@@ -1,6 +1,23 @@
 # TraceProof CLI user and operator guide
 
-**Scope:** laptop POC through Slice 27, SQLite schema 0008. Commands are run from the repository checkout on Linux/macOS using Python 3.12+. This guide describes implemented behavior. Git/GCS acquisition, HTTP API hosting, distributed workers, authenticated reviewers and OpenShift deployment are future work.
+**Scope:** laptop POC through Slice 28, SQLite schema 0008. Commands are run from the repository checkout on Linux/macOS using Python 3.12+. This guide describes implemented behavior. Git/GCS acquisition, HTTP API hosting, distributed workers, authenticated reviewers and OpenShift deployment are future work.
+
+## Tune CodeQL resources
+
+```bash
+uv run traceproof scan-run RUN_ID /absolute/approved.ql --threads 1 --ram-mb 4096
+```
+
+The same options work on `codeql-extract`, `codeql-analyze` and `scan-import`.
+Defaults remain 2 threads and 2048 MB. Allowed ranges are 1–64 threads and 2048–262144 MB;
+choose values your machine can support. Pipeline commands apply them to both stages.
+CodeQL treats these as tuning inputs, not hard process limits. Leave room for the OS,
+Python and JVM overhead; OpenShift pod requests/limits will require separate configuration.
+
+`codeql-status` and `scan-report` expose each new attempt's `requested_resources`.
+Older attempts have no inferred resource record. Changing options does not force an
+existing batch row to run again: `scan-import` still requires `--rescan` for existing
+query attempts. See [Slice 28](../development/slice-28.md) for scope and validation.
 
 ## Export original SARIF for a viewer
 

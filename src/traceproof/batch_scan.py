@@ -2,6 +2,7 @@
 
 from collections import Counter
 
+from traceproof.codeql_resources import resource_settings
 from traceproof.domain import TraceProofError
 from traceproof.history import validate_page
 from traceproof.intake import import_status
@@ -18,7 +19,11 @@ def scan_import(
     rescan=False,
     extraction_timeout=300,
     query_timeout=600,
+    *,
+    threads=2,
+    ram_mb=2048,
 ):
+    resources = resource_settings(threads, ram_mb)
     validate_page(offset, limit)
     if not 1 <= extraction_timeout <= 3600 or not 1 <= query_timeout <= 3600:
         raise TraceProofError("Stage timeouts must be between 1 and 3600 seconds")
@@ -44,6 +49,7 @@ def scan_import(
                 extraction_timeout,
                 query_timeout,
                 skip_existing=not rescan,
+                **resources,
             )
         except TraceProofError as exc:
             # Expected row failures remain explicit; infrastructure errors stop the command.

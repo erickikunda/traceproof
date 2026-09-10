@@ -51,10 +51,12 @@ def test_exact_attempt_publication_and_cli(store, scanned, query, monkeypatch):
 
     def extract(*args, **kwargs):
         seen.append(kwargs["timeout"])
+        assert kwargs["threads"] == 3 and kwargs["ram_mb"] == 4096
         return {"attempt_id": "extraction", "status": "extracted"}
 
-    def analyze(store, extraction_id, query, timeout):
+    def analyze(store, extraction_id, query, timeout, **resources):
         assert extraction_id == "extraction"
+        assert resources == {"threads": 3, "ram_mb": 4096}
         seen.append(timeout)
         return {"attempt_id": scanned[2], "status": "completed"}
 
@@ -72,6 +74,10 @@ def test_exact_attempt_publication_and_cli(store, scanned, query, monkeypatch):
             "12",
             "--query-timeout",
             "34",
+            "--threads",
+            "3",
+            "--ram-mb",
+            "4096",
         ],
     )
     assert result.exit_code == 0, result.output
