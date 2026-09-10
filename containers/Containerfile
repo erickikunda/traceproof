@@ -29,6 +29,8 @@ USER 0
 COPY --from=jdk /opt/traceproof-jdk /opt/traceproof-jdk
 COPY --from=python-deps /opt/traceproof-venv /opt/traceproof-venv
 COPY --from=codeql /opt/codeql-bundle /opt/codeql-bundle
+COPY containers/java-profile.json /opt/traceproof/dependencies/java-profile.json
+COPY work/container-inputs/java-repository /opt/traceproof/dependencies/java-repository
 COPY containers/runtime_probe.py /opt/traceproof/runtime_probe.py
 COPY scripts/validate_java.py scripts/validate_spring.py /opt/traceproof/scripts/
 COPY tests/fixtures/java /opt/traceproof/tests/fixtures/java

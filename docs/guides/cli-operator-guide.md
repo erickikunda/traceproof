@@ -636,3 +636,16 @@ See Slice 47 for validation and reproduction.
 Mount SDK/reference directories read-only in deployment and give each scan writable
 scratch. The macOS SDK is not portable to a Linux/OpenShift worker. Reports remain
 incomplete and C# LLM advice is still unsupported. No migration.
+
+### Pinned Java JAR profiles (Slice 50)
+
+Use --java-dependency-profile PATH on codeql-extract, scan-run or scan-import with
+Java (or auto selecting Java). scripts/pin_java_dependencies.py creates a versioned
+manifest of approved local Maven-layout JARs; see the container operator guide. The
+profile is validated before extraction and rechecked afterward. It participates in
+scan reuse and report comparison. CodeQL version 2.27.0 is the qualified interface.
+
+Supplying a profile does not enforce offline execution. CodeQL can infer additional
+artifacts; keep network disabled in the runner when scanning offline. The container
+Spring fixture uses a six-JAR pinned profile; this is not broad Spring qualification.
+No Maven/Gradle builds or live LLM calls are introduced. No migration.

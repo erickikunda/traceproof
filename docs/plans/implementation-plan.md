@@ -54,9 +54,9 @@ before more macOS-specific runtime work. Execute OCP-4 at functional POC complet
 Slice 48 delivers the first OCP-1 subset: digest-pinned UBI/Linux ARM64 packaging,
 checksum-pinned CodeQL 2.27.0, hashed Python dependencies and a real restricted Docker
 Python fixture suite. Slice 49 adds a pinned full Java 21 JDK and basic source-only Java Linux fixture
-validation. Offline Spring fails (missing inferred dependencies); next implement pinned
-Java dependency profiles and requalify Spring without network. Maven/Gradle layout
-options are diagnostic only until that gate passes. Linux C# toolchains, full Java
+validation. Offline Spring fails (missing inferred dependencies); Slice 50 adds hash-pinned
+Java artifact profiles and restores the Spring fixture under denied networking in
+flat, Maven and Gradle source-only layouts; broader dependency closures remain open. Linux C# toolchains, full Java
 builds, AMD64 qualification, formal SBOM
 and bank policy validation remain open. No OCP execution is claimed.
 

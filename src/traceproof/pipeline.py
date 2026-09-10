@@ -7,6 +7,7 @@ from traceproof.codeql_resources import resource_settings
 from traceproof.csharp_dependencies import load_profile
 from traceproof.domain import TraceProofError
 from traceproof.indexing import build_index, verified_source
+from traceproof.java_dependencies import load_java_profile
 from traceproof.java_index import build_java_index
 from traceproof.languages import (
     adapter_for,
@@ -32,6 +33,7 @@ def scan_run(
     ram_mb=2048,
     language="python",
     java_profile="dependency-free",
+    java_dependency_profile=None,
     allow_csharp_downloads=False,
     csharp_dependency_profile=None,
     csharp_offline=False,
@@ -51,6 +53,11 @@ def scan_run(
         validate_offline(
             language, csharp_dependency_profile, allow_csharp_downloads, csharp_offline
         )
+        if java_dependency_profile is not None and language != "java":
+            raise TraceProofError("Java dependency profiles require java")
+        java_dependency_id = (
+            load_java_profile(java_dependency_profile)["id"] if java_dependency_profile else ""
+        )
         dependency_id = None
         if csharp_dependency_profile is not None:
             if language != "csharp":
@@ -66,6 +73,13 @@ def scan_run(
                     select(ScanAttempt)
                     .where(
                         ScanAttempt.run_id == run_id,
+                        func.coalesce(
+                            ScanAttempt.report["language_scope"]["java_dependency_profile"][
+                                "id"
+                            ].as_string(),
+                            "",
+                        )
+                        == java_dependency_id,
                         func.coalesce(
                             ScanAttempt.report["language_scope"]["network_isolation"].as_string(),
                             "none",
@@ -139,6 +153,7 @@ def scan_run(
             timeout=extraction_timeout,
             language=requested_language,
             java_profile=java_profile,
+            java_dependency_profile=java_dependency_profile,
             allow_csharp_downloads=allow_csharp_downloads,
             csharp_dependency_profile=csharp_dependency_profile,
             csharp_offline=csharp_offline,

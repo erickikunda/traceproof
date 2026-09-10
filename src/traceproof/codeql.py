@@ -17,6 +17,7 @@ from traceproof.csharp_dependencies import environment as dependency_environment
 from traceproof.csharp_dependencies import load_profile
 from traceproof.domain import TraceProofError
 from traceproof.indexing import verified_source
+from traceproof.java_dependencies import java_environment, load_java_profile
 from traceproof.java_index import build_java_index
 from traceproof.languages import (
     adapter_for,
@@ -38,6 +39,7 @@ def extract(
     ram_mb=2048,
     language="python",
     java_profile="dependency-free",
+    java_dependency_profile=None,
     allow_csharp_downloads=False,
     csharp_dependency_profile=None,
     csharp_offline=False,
@@ -54,6 +56,11 @@ def extract(
     if csharp_dependency_profile is not None and language != "csharp":
         raise TraceProofError("C# dependency profiles require the csharp language")
     validate_offline(language, csharp_dependency_profile, allow_csharp_downloads, csharp_offline)
+    if java_dependency_profile is not None and language != "java":
+        raise TraceProofError("Java dependency profiles require java")
+    java_dependencies = (
+        load_java_profile(java_dependency_profile) if java_dependency_profile else None
+    )
     dependency_profile = (
         load_profile(csharp_dependency_profile) if csharp_dependency_profile else None
     )
@@ -75,6 +82,13 @@ def extract(
             "sdk_version": dependency_profile["sdk_version"],
             "codeql_version": dependency_profile["codeql_version"],
             "file_count": dependency_profile["file_count"],
+            "network_denial_verified": False,
+        }
+    if java_dependencies:
+        scope["java_dependency_profile"] = {
+            "id": java_dependencies["id"],
+            "codeql_version": java_dependencies["codeql_version"],
+            "file_count": java_dependencies["file_count"],
             "network_denial_verified": False,
         }
     attempt_id = str(uuid4())
@@ -127,6 +141,8 @@ def extract(
             "TMPDIR": str(root),
             "LANG": "en_US.UTF-8",
         }
+        if java_dependencies:
+            env.update(java_environment(java_dependencies, root))
         prefix = []
         if csharp_offline:
             try:
@@ -176,7 +192,8 @@ def extract(
             result["codeql_version"] = json.loads(version.stdout)["version"]
         except (OSError, subprocess.SubprocessError, ValueError, KeyError):
             result["codeql_version"] = "unknown"
-        if dependency_profile and result["codeql_version"] != dependency_profile["codeql_version"]:
+        toolchain_profile = dependency_profile or java_dependencies
+        if toolchain_profile and result["codeql_version"] != toolchain_profile["codeql_version"]:
             result["status"] = "dependency_toolchain_mismatch"
             with store.transaction() as session:
                 session.get(CodeqlAttempt, attempt_id).result = result
@@ -221,6 +238,9 @@ def extract(
                 result["status"] = "launch_failed"
         try:
             verified_source(store, run_id)
+            if java_dependencies:
+                if load_java_profile(java_dependencies["path"])["id"] != java_dependencies["id"]:
+                    raise TraceProofError("Java dependency profile changed")
             if dependency_profile:
                 if load_profile(dependency_profile["path"])["id"] != dependency_profile["id"]:
                     raise TraceProofError("Dependency profile changed")

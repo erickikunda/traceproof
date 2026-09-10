@@ -1,7 +1,7 @@
 # Local Linux container operator guide
 
 This is the first OCP preparation image, qualified locally for synthetic Python and basic source-only Java
-scan acceptance. Offline Spring acceptance currently fails and is not qualified on Linux ARM64. It is not an OCP-certified deployment. No OpenShift
+scan acceptance. Slice 50 adds a pinned Spring dependency profile for offline fixture acceptance on Linux ARM64. It is not an OCP-certified deployment. No OpenShift
 installation is needed on the laptop. Docker Desktop and uv are required for the
 following commands; run from the TraceProof checkout.
 
@@ -30,9 +30,8 @@ The current recipe is explicitly Linux ARM64, not a multi-architecture build. Co
 bank worker architecture before preparing the matching AMD64 bundle/image. The UBI
 base supports multiple architectures, but this CodeQL archive does not. No macOS SDK
 or executable is copied into the image. The source-only Java lane uses a separately checksum-pinned full Temurin 21.0.12.1+1
-Linux JDK, including jmods. Both the bundled runtime and full JDK missed the offline Spring vulnerable fixture;
-the detailed extractor logs identify blocked Maven artifact downloads and unresolved
-annotations. Installing the full JDK alone does not solve that dependency gap.
+Linux JDK, including jmods. Slice 49 identified missing inferred Spring artifacts. Slice 50 supplies a pinned
+six-JAR local Maven repository alongside the full JDK; the JDK alone is insufficient.
 C# runtime/toolchain qualification is subsequent; bundled extractors alone do not
 establish language readiness. No Maven/Gradle build execution is qualified.
 
@@ -41,7 +40,7 @@ establish language readiness. No Maven/Gradle build execution is qualified.
 ```sh
 uv run python scripts/validate_container.py work/container-acceptance-001
 uv run python scripts/validate_container.py work/container-java-001 --suite java
-# Diagnostic suites below currently fail the vulnerable Spring case offline.
+# Spring suites automatically select the pinned fixture dependency profile.
 uv run python scripts/validate_container.py work/container-spring-001 --suite spring
 uv run python scripts/validate_container.py work/container-spring-maven-001 --suite spring --project-layout maven
 uv run python scripts/validate_container.py work/container-spring-gradle-001 --suite spring --project-layout gradle
@@ -60,8 +59,7 @@ failure. Network-none retains loopback; it does not forbid communications within
 same container. The Python vulnerable/fixed/incomplete acceptance runs real CodeQL
 extraction/querying and exact report retrieval. Java checks the vulnerable/fixed pair;
 Spring attempts to check lookalike and incomplete cases, annotation observations, retained
-source/sink flows and the narrow advisory evidence gate. Its vulnerable case currently fails candidate-count acceptance (zero instead of one);
-expect a nonzero exit. Non-flat layouts select the
+source/sink flows and the narrow advisory evidence gate. The pinned profile restores the vulnerable candidate without enabling external network. Non-flat layouts select the
 source-only Java profile and omit build configuration. These are synthetic annotation/
 SQL fixtures, not deployed Spring applications or Maven/Gradle build qualification. SQLite state is temporary in /work;
 this is deliberately not durable/shared-database qualification. Reports survive on the
@@ -85,7 +83,7 @@ RHCOS is the node OS; dependencies belong in the image, approved volumes or serv
 endpoints. Do not mount host paths or Docker sockets into future worker pods. In OCP,
 let the SCC assign the UID rather than copying this test UID into pod manifests.
 
-Remaining work: pinned Java/Spring dependency profiles and offline requalification;
+Remaining work: broader Java/Spring dependency/version qualification;
 Linux .NET dependency profiles and fixtures; full Java build profiles; matching bank CPU
 architecture; namespace Job/NetworkPolicy/PVC manifests; SELinux/SCC admission; corporate
 CAs/mirrors; stage-separated egress and credentials; PostgreSQL durability; formal image
@@ -112,4 +110,34 @@ the offline Linux run logs show failed Spring artifact downloads and unresolved
 annotation symbols. The traceproof profile name dependency-free describes operator
 inputs, not extractor network behavior. Keep external network denied when testing
 untrusted/bank source and do not treat zero candidates as a clean verdict. Reports
-remain incomplete. A pinned Java dependency profile is the next acceptance prerequisite.
+remain incomplete. Slice 50 supports --java-dependency-profile for approved pre-provisioned JARs. The
+container fixture profile supplies six Spring 6.0.10 JARs. This is a fixed historical
+fixture toolchain, not a recommendation to deploy that framework version.
+
+### Pinned Java dependencies (Slice 50)
+
+The container build verifies six JAR hashes from containers/java-profile.json and
+copies them into a read-only image directory. Only preparation downloads artifacts.
+The Spring acceptance suites pass --java-dependency-profile automatically; other Java
+scans must select their own approved matching profile.
+
+```sh
+traceproof scan-run RUN_ID JAVA_QUERY --language java --java-dependency-profile DEPENDENCY_ROOT/java-profile.json
+uv run python scripts/pin_java_dependencies.py DEPENDENCY_ROOT --repository maven-repository --artifact org.example:library:jar:1.0
+```
+
+Pinning does not download files. The local repository must contain exactly the specified
+Maven-layout JARs. The first schema supports unclassified JAR coordinates only and pins
+CodeQL 2.27.0 because the standalone classpath CSV interface is version-specific.
+Additional repositories, POM-driven transitive resolution and arbitrary classpath flags
+are not accepted by this interface. Approved inputs are hashed before/after extraction;
+changed profiles prevent scan reuse and mark report comparison gaps. No migration.
+
+A profile is not a network sandbox or a complete dependency-resolution guarantee.
+CodeQL can still attempt inferred downloads for other unresolved symbols; the container
+blocks those attempts. Even the passing fixture logs contain blocked fetch attempts.
+Keep Docker --network none or future OCP egress policy in place. Reports retain
+network_denial_verified=false because TraceProof does not attest the external Docker
+policy; runtime.json/container-config.json are the separate local enforcement evidence.
+Reports remain incomplete; no general framework reachability or production readiness
+is inferred from the fixture results.

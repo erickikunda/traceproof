@@ -1,0 +1,23 @@
+{
+  "version": "1",
+  "codeql_version": "2.27.0",
+  "repository": {
+    "directory": "java-repository",
+    "files": {
+      "org/springframework/spring-web/6.0.10/spring-web-6.0.10.jar": "42a9efbe8681be4d918a363348ba2bea131ce6362c0aa7260f17fd8f5c544375",
+      "org/springframework/spring-core/6.0.10/spring-core-6.0.10.jar": "1c0a6bf9cccfa8bbe6ab49c13963c1abb2edff81d88b1af7462617ddc7c0975d",
+      "org/springframework/spring-context/6.0.10/spring-context-6.0.10.jar": "7621b05384de2f2faf77403fc46964a57c0c040c265681c3a897386390f130b9",
+      "org/springframework/spring-beans/6.0.10/spring-beans-6.0.10.jar": "9f7719bdabe01302c502160b08f2ab45df242edb46e972486f08aa2be5c77f2d",
+      "org/springframework/spring-expression/6.0.10/spring-expression-6.0.10.jar": "af44e25931b885dfe23dc700fbcc1c1e3b6dfd19fbee52aab46d89efd45bca69",
+      "org/springframework/spring-jcl/6.0.10/spring-jcl-6.0.10.jar": "323209c83374e9e4c0785311334862fef23755b24c3c0ef94af57313336d6c30"
+    }
+  },
+  "artifacts": [
+    "org.springframework:spring-web:jar:6.0.10",
+    "org.springframework:spring-core:jar:6.0.10",
+    "org.springframework:spring-context:jar:6.0.10",
+    "org.springframework:spring-beans:jar:6.0.10",
+    "org.springframework:spring-expression:jar:6.0.10",
+    "org.springframework:spring-jcl:jar:6.0.10"
+  ]
+}

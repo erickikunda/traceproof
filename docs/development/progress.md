@@ -183,3 +183,8 @@ candidates with blocked inferred Maven downloads and unresolved annotations. His
 macOS Spring runs fetched dependencies despite source-only input. Next: pinned Java
 profiles and offline Spring requalification. Full builds and Linux C# remain open.
 Container suite selection and package inventories use TraceProof's virtual environment.
+
+Slice 50 supplies pinned local Maven-layout JAR profiles for Java, records profile
+identity in reuse/reports and rechecks integrity after extraction. Six pinned Spring
+JARs restore the offline flat Spring fixture. Other inferred fetch attempts remain
+blocked by the container; the profile itself does not enforce network isolation.

@@ -29,6 +29,21 @@ def main():
         with archive.open("rb") as handle:
             if hashlib.file_digest(handle, "sha256").hexdigest() != lock[name + "_sha256"]:
                 raise RuntimeError("Cached Toolchain checksum mismatch")
+    profile = json.loads((ROOT / "containers/java-profile.json").read_text())
+    repository = ROOT / "work/container-inputs/java-repository"
+    for relative, expected in profile["repository"]["files"].items():
+        target = repository / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        if not target.exists():
+            temporary = target.with_suffix(".download")
+            urllib.request.urlretrieve(
+                "https://repo.maven.apache.org/maven2/" + relative, temporary
+            )
+            if hashlib.sha256(temporary.read_bytes()).hexdigest() != expected:
+                raise RuntimeError("Java dependency checksum mismatch")
+            temporary.replace(target)
+        if hashlib.sha256(target.read_bytes()).hexdigest() != expected:
+            raise RuntimeError("Cached Java dependency checksum mismatch")
     subprocess.run(["uv", "build"], cwd=ROOT, check=True)
     subprocess.run(
         [

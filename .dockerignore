@@ -22,3 +22,6 @@
 !tests/fixtures/spring/**
 
 !work/container-inputs/jdk-linux-arm64.tar.gz
+
+!work/container-inputs/java-repository/
+!work/container-inputs/java-repository/**

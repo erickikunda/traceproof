@@ -35,6 +35,8 @@ def main():
             f"/opt/traceproof-venv/bin/python /opt/traceproof/scripts/validate_{args.suite}.py "
             f"{query} /work/acceptance"
         )
+        if args.suite == "spring":
+            scan += " --java-dependency-profile /opt/traceproof/dependencies/java-profile.json"
         if args.project_layout != "flat":
             scan += f" --java-profile source-only --project-layout {args.project_layout}"
         results_file = "validation.json"

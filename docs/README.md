@@ -83,3 +83,5 @@ qualification remain pending. See Slice 46.
 - [Local Linux container guide](guides/container-operator-guide.md)
 
 - [Slice 49: Linux Java/Spring qualification](development/slice-49.md)
+
+- [Slice 50: pinned Java dependencies](development/slice-50.md)

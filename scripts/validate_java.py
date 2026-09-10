@@ -45,6 +45,7 @@ def main(fixture="java"):
     )
     parser.add_argument("--project-layout", choices=["flat", "maven", "gradle"], default="flat")
     parser.add_argument("--auto-language", action="store_true")
+    parser.add_argument("--java-dependency-profile", type=Path)
     parser.add_argument("--csharp-dependency-profile", type=Path)
     parser.add_argument("--csharp-offline", action="store_true")
     args = parser.parse_args()
@@ -103,6 +104,7 @@ def main(fixture="java"):
                 query,
                 language="auto" if args.auto_language else language,
                 java_profile=args.java_profile,
+                java_dependency_profile=args.java_dependency_profile,
                 allow_csharp_downloads=csharp and not args.csharp_offline,
                 csharp_offline=args.csharp_offline,
                 csharp_dependency_profile=args.csharp_dependency_profile,
