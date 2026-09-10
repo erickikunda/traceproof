@@ -1,4 +1,7 @@
-# Implementation progress after Slice 34
+# Implementation progress after Slice 35
+
+Slice 35 adds a bounded storage/reference inventory. M1.4 remains partial: automated
+orphan cleanup and retention are still open. No additional package credit is claimed.
 
 Slice 34 adds extraction-attempt history and timestamps for new extraction records.
 This improves recovery visibility without additional work-package credit.

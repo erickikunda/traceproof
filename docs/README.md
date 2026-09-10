@@ -46,3 +46,4 @@ The design and plan are proposals; the slice status and README describe what act
 - [Thirty-second-slice status](development/slice-32.md): terminal import dispatch cancellation with completed-work retention.
 - [Thirty-third-slice status](development/slice-33.md): paginated import history with dispatch filters and intake counts.
 - [Thirty-fourth-slice status](development/slice-34.md): CodeQL extraction history, including failures before query analysis.
+- [Thirty-fifth-slice status](development/slice-35.md): bounded storage inventory and artifact-reference audit without deletion.

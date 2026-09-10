@@ -1,6 +1,22 @@
 # TraceProof CLI user and operator guide
 
-**Scope:** laptop POC through Slice 34, SQLite schema 0009. Commands are run from the repository checkout on Linux/macOS using Python 3.12+. This guide describes implemented behavior. Git/GCS acquisition, HTTP API hosting, distributed workers, authenticated reviewers and OpenShift deployment are future work.
+**Scope:** laptop POC through Slice 35, SQLite schema 0009. Commands are run from the repository checkout on Linux/macOS using Python 3.12+. This guide describes implemented behavior. Git/GCS acquisition, HTTP API hosting, distributed workers, authenticated reviewers and OpenShift deployment are future work.
+
+## Inspect retained storage
+
+```bash
+uv run traceproof storage-audit --max-entries 1000 --max-nodes 100000
+```
+
+Run while workers are idle. The command takes the worker lock and reports artifact IDs,
+database-reference status and bounded logical file sizes for snapshots, extraction and
+scan directories. It never deletes artifacts. Unreferenced or staging entries need review:
+they may be useful for recovery. Do not interpret them as safe deletion candidates.
+
+Check `status` and `issues`; limits or unreadable/linked entries make the result incomplete.
+Counts exclude database/WAL/backups and are not allocated disk usage. There is no content
+integrity check or search for missing directories. The audit may create the worker lock
+file but does not modify stored results. See [Slice 35](../development/slice-35.md).
 
 ## Find a CodeQL extraction attempt
 

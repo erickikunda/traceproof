@@ -369,6 +369,18 @@ def codeql_status(ctx: typer.Context, attempt_id: str):
     perform(lambda: extraction_status(ctx.obj, attempt_id))
 
 
+@app.command("storage-audit")
+def storage_audit_command(
+    ctx: typer.Context,
+    max_entries: Annotated[int, typer.Option(min=1, max=10000)] = 1000,
+    max_nodes: Annotated[int, typer.Option(min=1, max=1000000)] = 100000,
+):
+    """Inspect retained artifact references and bounded file sizes; never deletes data."""
+    from traceproof.storage_audit import storage_audit
+
+    perform(lambda: storage_audit(ctx.obj, max_entries, max_nodes))
+
+
 @app.command("extraction-history")
 def extraction_history_command(
     ctx: typer.Context,

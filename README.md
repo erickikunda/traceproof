@@ -424,3 +424,6 @@ filter for all imports). See [Slice 33](docs/development/slice-33.md).
 
 Recover extraction IDs with `extraction-history REPO_ID --run-id RUN_ID`, then inspect
 one with `codeql-status`. See [Slice 34](docs/development/slice-34.md).
+
+Use `storage-audit` while workers are idle to inspect retained artifact references and
+bounded logical file sizes without deletion. See [Slice 35](docs/development/slice-35.md).
