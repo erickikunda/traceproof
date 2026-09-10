@@ -1,4 +1,4 @@
-# Implementation progress after Slice 37
+# Implementation progress after Slice 38
 
 ## Priority reset — 10 September 2026
 
@@ -12,6 +12,9 @@ M3.1 has expanded into seven substantial subpackages; no current expanded-scope 
 percentage is asserted until these are re-estimated. Existing implementation evidence remains
 valid, but added scope does not earn completion credit. Defer discretionary CLI/report/storage
 enhancements; retain necessary correctness/security fixes and language-workflow documentation.
+
+Slice 38 adds bounded, resumable Java syntax indexing and pre-extraction parse gates.
+Java semantic resolution, evidence policies and Spring remain unqualified.
 
 ## Historical delivery assessment
 

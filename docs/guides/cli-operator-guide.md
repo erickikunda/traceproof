@@ -1,6 +1,6 @@
 # TraceProof CLI user and operator guide
 
-**Scope:** laptop POC through Slice 37, SQLite schema 0009. Commands are run from the repository checkout on Linux/macOS using Python 3.12+. This guide describes implemented behavior. Git/GCS acquisition, HTTP API hosting, distributed workers, authenticated reviewers and OpenShift deployment are future work.
+**Scope:** laptop POC through Slice 38, SQLite schema 0009. Commands are run from the repository checkout on Linux/macOS using Python 3.12+. This guide describes implemented behavior. Git/GCS acquisition, HTTP API hosting, distributed workers, authenticated reviewers and OpenShift deployment are future work.
 
 ## Evidence gate version 3
 
@@ -537,3 +537,12 @@ uv run python scripts/validate_java.py /path/to/java-queries/Security/CWE/CWE-08
 It checks a JDBC concatenation fixture (one candidate) and a prepared-statement
 fixture (zero), preserves incomplete readiness, and makes no model calls. These
 fixtures do not establish repository security or measured recall.
+
+### Java syntax coverage (Slice 38)
+
+After `uv sync`, Java scan-run/scan-import automatically build a bounded syntax index.
+A blocked syntax gate stops the runner before extraction and returns per-file statuses.
+Standalone codeql-extract records syntax coverage but can still attempt extraction;
+inspect the retained scope. Successful reports expose the index in language_scope.
+No new migration or command is required. Syntax parsing does not establish Java
+semantic or Spring support; readiness remains incomplete. See Slice 38 for limits.

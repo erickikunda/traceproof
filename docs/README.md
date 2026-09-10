@@ -54,3 +54,5 @@ The design and plan are proposals; the slice status and README describe what act
 - [Thirty-fifth-slice status](development/slice-35.md): bounded storage inventory and artifact-reference audit without deletion.
 - [Thirty-seventh-slice status](development/slice-37.md): shared language coverage and initial Java static scanning.
 - [Thirty-sixth-slice status](development/slice-36.md): conservative Flask request alias mapping in evidence gate 3.
+
+- [Slice 38](development/slice-38.md): bounded Java syntax indexing and parse coverage.

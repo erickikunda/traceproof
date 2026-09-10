@@ -45,6 +45,7 @@ def static_readiness(session, snapshot_id, scan):
         "state": "incomplete" if reasons else "ready_for_review",
         "language": language,
         "language_scope": language_scope or None,
+        "java_syntax_index": language_scope.get("syntax_index"),
         "reasons": reasons,
         "index_id": index.id if index else None,
         "index_version": index.version if index else None,

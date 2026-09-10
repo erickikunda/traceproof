@@ -6,6 +6,7 @@ from traceproof.codeql import extract
 from traceproof.codeql_resources import resource_settings
 from traceproof.domain import TraceProofError
 from traceproof.indexing import build_index, verified_source
+from traceproof.java_index import build_java_index
 from traceproof.languages import adapter_for, validate_extraction_scope
 from traceproof.persistence import Run, ScanAttempt, exclusive_worker
 from traceproof.reports import publish_report
@@ -80,6 +81,9 @@ def scan_run(
         else:
             _, manifest, _ = verified_source(store, run_id)
             result["language_scope"] = validate_extraction_scope(manifest, language)
+            result["java_syntax_index"] = build_java_index(store, run_id)
+            if result["java_syntax_index"]["syntax_gate"] != "ready":
+                return {**result, "reason": "Java syntax index is blocked"}
         extraction = extract(
             store, run_id, timeout=extraction_timeout, language=language, **resources
         )

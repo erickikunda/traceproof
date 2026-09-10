@@ -185,7 +185,7 @@ def projection(session, repo_id, run_id, attempt_id):
         raise TraceProofError("Stored candidate count does not reconcile; report not published")
     return {
         "schema_version": "1",
-        "projection_version": "5",
+        "projection_version": "6",
         "report_kind": "repository_summary",
         "repo_id": repo_id,
         "run_id": run.id,

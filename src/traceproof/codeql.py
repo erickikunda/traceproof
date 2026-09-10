@@ -14,6 +14,7 @@ from sqlalchemy import select
 from traceproof.codeql_resources import resource_settings
 from traceproof.domain import TraceProofError
 from traceproof.indexing import verified_source
+from traceproof.java_index import build_java_index
 from traceproof.languages import adapter_for, validate_extraction_scope
 from traceproof.persistence import CodeqlAttempt
 
@@ -28,6 +29,8 @@ def extract(
         raise TraceProofError("Extraction timeout must be between 1 and 3600 seconds")
     run, manifest, tree = verified_source(store, run_id)
     scope = validate_extraction_scope(manifest, language)
+    if language == "java":
+        scope["syntax_index"] = build_java_index(store, run_id)
     attempt_id = str(uuid4())
     root = store.root / "codeql" / attempt_id
     root.mkdir(parents=True, mode=0o700)

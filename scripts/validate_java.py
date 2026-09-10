@@ -62,6 +62,7 @@ def main():
                 "candidate_count": report["candidate_count"] == expected,
                 "query_completed": report["analysis_status"] == "completed",
                 "java_scope": report["language"] == "java",
+                "syntax_index": report["language_scope"]["syntax_index"]["syntax_gate"] == "ready",
                 "honest_readiness": report["static_review_readiness"]["state"] == "incomplete",
                 "no_model_calls": report["triage_call_count"] == 0,
                 "expected_rule": all(
