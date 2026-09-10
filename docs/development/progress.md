@@ -1,4 +1,7 @@
-# Implementation progress after Slice 25
+# Implementation progress after Slice 26
+
+Slice 26 adds read-only import report inventory and CSV export, scoped to admitted runs
+with explicit missing-report states. Local reporting improves; package credit is unchanged.
 
 Slice 25 adds bounded sequential import scanning. This is local orchestration, not
 distributed scheduling or throughput qualification; package credit is unchanged.

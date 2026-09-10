@@ -1,6 +1,30 @@
 # TraceProof CLI user and operator guide
 
-**Scope:** laptop POC through Slice 25, SQLite schema 0008. Commands are run from the repository checkout on Linux/macOS using Python 3.12+. This guide describes implemented behavior. Git/GCS acquisition, HTTP API hosting, distributed workers, authenticated reviewers and OpenShift deployment are future work.
+**Scope:** laptop POC through Slice 26, SQLite schema 0008. Commands are run from the repository checkout on Linux/macOS using Python 3.12+. This guide describes implemented behavior. Git/GCS acquisition, HTTP API hosting, distributed workers, authenticated reviewers and OpenShift deployment are future work.
+
+## Retrieve reports for an import batch
+
+After `scan-import`, inspect report availability or export a dashboard input:
+
+```bash
+uv run traceproof import-reports IMPORT_ID --limit 100
+uv run traceproof import-reports IMPORT_ID --offset 100 --limit 100
+uv run traceproof import-reports IMPORT_ID --limit 1000 --format csv > import-reports.csv
+uv run traceproof get-report REPO_ID --report-id REPORT_ID --format html > report.html
+```
+
+Rows stay tied to the runs admitted in that import. Status distinguishes intake not ready,
+not analyzed, report not published and published. A published report can describe failed
+analysis; check analysis status and static readiness. Candidate counts are observations,
+not verified vulnerabilities. Blank CSV counts mean unknown, not zero.
+
+Only the newest report version matching the admitted run's latest attempt is selected.
+There is no fallback to older reports or newer repository submissions. Publication captures
+advisory/review state at that time; republish to include later reviews. JSON includes
+page counts and `next_offset`; CSV contains only selected rows with stable ID columns.
+Default page size is 100, maximum 1000. Separate pages may observe new work. This read-only
+command makes no model calls and includes no source snippets. See the
+[Slice 26 contract](../development/slice-26.md).
 
 ## Start here
 

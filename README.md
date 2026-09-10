@@ -394,3 +394,7 @@ See [documentation](docs/README.md), [system design](docs/architecture/system-de
 [Slice 02 status](docs/development/slice-02.md).
 See [Slice 03 status](docs/development/slice-03.md) for static analysis and the current
 [Slice 04 status](docs/development/slice-04.md) for evidence bundles and triage.
+
+Use `traceproof import-reports IMPORT_ID --limit 1000 --format csv` to export report
+availability for a CSV import. Missing/failed work stays visible; returned report IDs
+support exact retrieval. See [Slice 26](docs/development/slice-26.md).

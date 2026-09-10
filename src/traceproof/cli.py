@@ -261,6 +261,22 @@ def resolve_report_command(ctx: typer.Context, repo_id: str, selection: str = "l
     perform(lambda: resolve_report(ctx.obj, repo_id, selection))
 
 
+@app.command("import-reports")
+def import_reports_command(
+    ctx: typer.Context,
+    import_id: str,
+    offset: Annotated[int, typer.Option(min=0)] = 0,
+    limit: Annotated[int, typer.Option(min=1, max=1000)] = 100,
+    format: str = "json",
+):
+    """Inventory report availability for admitted import runs, without starting work."""
+    from traceproof.batch_reports import import_reports, render_import_reports
+
+    perform(
+        lambda: render_import_reports(import_reports(ctx.obj, import_id, offset, limit), format)
+    )
+
+
 @app.command("compare-reports")
 def compare_reports_command(
     ctx: typer.Context, repo_id: str, baseline_id: str, current_id: str, format: str = "json"
