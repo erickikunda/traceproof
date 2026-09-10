@@ -1,10 +1,16 @@
 # Vulnerability discovery platform — implementation plan
 
-**Version 0.1 — 9 September 2026**
+**Version 0.2 — 10 September 2026**
 **Basis:** [System design v0.2](../architecture/system-design.md).
 **Status:** Proposed delivery plan. Implementation is underway; see the
 [progress assessment](../development/progress.md) and slice documents for delivered scope.
 No benchmark or production capacity qualification has been completed.
+
+**Priority change:** Language and framework coverage is now the immediate delivery priority.
+Java/Spring, C#/ASP.NET, JavaScript/TypeScript, Rust and Go take precedence over additional
+CLI conveniences, presentation formats, history commands and storage tooling. The current
+implementation remains Python-only; this plan does not imply those targets are delivered.
+The Python-only vertical slice is the foundation, not the revised POC completion target.
 
 ## 1. Delivery objective
 
@@ -25,15 +31,123 @@ The system design contains the leadership use cases and architectural diagrams b
 | M6 — OpenShift pilot | Run under approved identities, images, storage and network policies | Is the architecture feasible inside the enterprise? |
 | M7 — Production qualification | Sustain representative daily throughput and pass quality/recovery gates | Is rollout justified by measured results? |
 
-M0–M2 are the minimum laptop POC. M3 improves discovery quality. M4 integrates the already-existing benchmark; it does not require constructing a new 50-repository corpus. M5–M7 prove operational readiness. Isolated runtime reproduction is an optional extension and is not required to release the source-only POC.
+M0–M2 describe the original Python foundation. The revised POC also requires the language
+coverage track below, including per-language extraction, reporting and evidence acceptance.
+M4 integrates the existing benchmark; it does not require constructing a new corpus.
+M5–M7 prove operational readiness. Isolated reproduction remains optional; approved
+compiled-language extraction builds are separate from exploit reproduction.
 
 ## 2. Implementation order and dependencies
+
+### Immediate priority: multi-language POC
+
+Deliver the following sequence before discretionary CLI refinement. The order starts with
+Java/Spring and C#/ASP.NET, then follows the requested JavaScript/TypeScript, Rust and Go
+coverage. Qualify tool availability for all targets in L0 so an environment blocker can be
+identified early. If one language is externally blocked, continue the next language while
+recording the exact prerequisite; do not fill the gap with unrelated CLI polish.
+
+| Priority / subpackage | Deliverable | Completion evidence |
+|---|---|---|
+| L0 / M3.1a — Shared language foundation | Language/module discovery, adapter contracts, explicit capability matrix and language-specific readiness; preserve Python adapter | Mixed-language fixture selects distinct adapters and cannot inherit a Python-only successful-completion gate |
+| L1 / M3.1b — Java and Spring Framework | Java extraction/query/index adapter; Spring MVC/Boot request binding, service flow and representative guards; explicit WebFlux support/gaps | Real pinned Java and Spring vulnerable/fixed/incomplete fixtures; Maven and Gradle profiles qualified separately |
+| L2 / M3.1c — C# and ASP.NET | C# adapter; ASP.NET Core MVC/minimal APIs and a distinct classic ASP.NET MVC/Web API qualification lane | Real .NET fixtures, framework-bound evidence, safe parameterization cases and explicit platform/build blockers |
+| L3 / M3.1d — JavaScript and TypeScript | Shared CodeQL extraction with separate JS/TS coverage; Node/Express request handling and declared browser-source scope | JS and TS fixtures both pass; module resolution, asynchronous flow and source-map/generated-code gaps are reported |
+| L4 / M3.1e — Rust | Rust adapter with pinned extractor/query packs; initial standard-library and explicitly selected web-framework model scope | Real Cargo fixture, vulnerable/benign flows, macro/build-script/dependency limitations and resource measurements |
+| L5 / M3.1f — Go | Go adapter; modules, net/http request sources and explicitly selected router coverage | Real Go module fixture, handler-to-sink evidence, build-tag/generated-code/cgo gaps and resource measurements |
+| L6 / M3.1g — Multi-language acceptance | Mixed repositories, language-aware reports/benchmark applicability and shared cost controls | No unsupported component disappears from coverage; exact retrieval and bounded triage work for every qualified target |
+
+These subpackages replace the former single Java/Spring expansion item M3.1; they are real
+additional scope, not seven equally sized tasks. They can span multiple implementation
+slices. Do not schedule a new convenience command merely to produce another numbered slice.
+
+**Next implementation slice:** L0 adapter/capability contracts, removal of Python-only
+dispatch/readiness assumptions, and a minimal real Java extraction-to-candidate/report
+fixture. Build only the plumbing necessary for that vertical slice; expand Spring in L1.
+Keep existing operator entry points and add options only where language selection or
+safe build-profile selection requires them.
+
+**Deferred until coverage delivery:** new cosmetic HTML/CSV variants, additional history
+views, CLI convenience wrappers and automated storage cleanup. Fix correctness, security,
+data-loss and blocking usability issues immediately. Maintain the guide for changed
+language workflows; the existing API-guide delivery requirement remains attached to the
+first hosted API. Do not build an API solely to bypass this priority decision.
+
+### What counts as language support
+
+Track each language/framework/version at four distinct levels: detected, statically
+analyzed, evidence/triage supported, and fixture-qualified. Installing an extractor or
+producing a SARIF file alone is not complete support. For every target:
+
+1. Pin the toolchain, query/model packs and approved build profile. Inventory modules,
+   source roots, generated/vendor/test exclusions and unsupported components explicitly.
+2. Produce a real CodeQL database and queries with diagnostics, then normalize candidates
+   and retain exact source locations/flows. Qualify syntax indexing and retrieval for that
+   language; do not parse it with Python AST or reuse Python-only evidence rules.
+3. Implement a small published rule/CWE matrix with language/framework source, sink and
+   counterevidence checks. Start with applicable injection, path traversal and SSRF cases;
+   only claim classes backed by fixtures. Unsupported rule classes stay reportable static
+   candidates with explicit unsupported triage, never silently discarded or confirmed.
+4. For each claimed class, retain vulnerable, fixed/benign and ambiguous/incomplete cases.
+   Exercise parameterization, validation/encoding where applicable, aliasing, wrappers and
+   missing dependencies/models. Models remain advisory and must cite retained evidence.
+5. Retrieve the resulting immutable report by repository/run, with per-language coverage,
+   build mode, diagnostics, gate/rule versions and cost/time. Test at least one mixed-language
+   repository with one blocked component; no aggregate clean/successful-security claim.
+
+### Enterprise-compatible extraction and model use
+
+Prefer a supported no-build extraction mode where it provides adequate declared coverage;
+qualify each pinned language/tool combination rather than applying Python's `build-mode=none`
+globally. Where a build is necessary, use fixed, operator-approved Maven/Gradle, .NET, Go or
+Cargo profiles in isolated runners with bounded CPU/RAM/time/disk. Treat build plugins,
+generators, macros and restore hooks as source execution. Never execute arbitrary build
+commands from CSV metadata. Keep source mounts read-only, build output separate and LLM
+credentials unavailable to extraction jobs. Use approved offline caches/internal mirrors;
+dependency resolution failure produces an explicit blocked/partial result, not internet fallback.
+
+Qualify classic ASP.NET separately from ASP.NET Core. A legacy project requiring Windows
+or unavailable reference assemblies must receive a supported restricted extraction path
+or an approved external build-runner path; Linux/OpenShift support must not be implied.
+Record this prerequisite early, continue other targets if blocked, and keep classic ASP.NET
+as an open acceptance obligation rather than silently treating Core coverage as equivalent.
+
+Python remains the orchestration language. Reuse intake, immutable artifacts, budgets,
+report retrieval, PostgreSQL-ready domain contracts and provider adapters. Each language
+implements indexing/analysis/evidence contracts. Use one sub-analysis per selected language
+and module scope; do not infer cross-language reachability across HTTP/RPC/FFI boundaries.
+Record those boundaries as unknown unless independently modeled and tested.
+
+Run deterministic extraction, queries and candidate deduplication before bounded LLM
+triage. Reuse valid indexes/bundles with language, toolchain, pack and source dependencies
+in their identities. Do not send entire repositories to models. Measure extraction/query
+latency, peak resources, candidate counts, model tokens and configured cost by language;
+keep recall-preserving ablations separate from cheaper-but-less-complete configurations.
+
+### Tooling feasibility checkpoint (10 September 2026)
+
+Local `codeql resolve languages --format=json` on CodeQL 2.27.0 lists `java`, `csharp`,
+`javascript`, `rust` and `go`. This establishes extractor presence only, not installed query
+packs, usable build dependencies or qualified TraceProof adapters. TypeScript uses CodeQL's
+JavaScript extractor. Validate these details at L0 against the pinned local toolchain and
+record supported framework/runtime versions in the capability matrix.
+
+Primary references: [CodeQL supported languages/frameworks](https://codeql.github.com/docs/codeql-overview/supported-languages-and-frameworks/)
+and [compiled-language build modes](https://docs.github.com/en/code-security/concepts/code-scanning/codeql/codeql-for-compiled-languages).
+Vendor support is a starting point; TraceProof's fixture-qualified scope is the release claim.
 
 ```mermaid
 flowchart LR
     M0[M0 Contracts and prerequisites] --> M1[M1 Intake and durable execution]
     M1 --> M2[M2 Scan and retrieve report]
-    M2 --> M3[M3 Quality and reuse]
+    M2 --> L0[L0 Shared language contracts]
+    L0 --> L1[Java / Spring]
+    L1 --> L2[C# / ASP.NET]
+    L2 --> L3[JavaScript / TypeScript]
+    L3 --> L4[Rust]
+    L4 --> L5[Go]
+    L5 --> L6[Multi-language acceptance]
+    L6 --> M3[M3 Further quality and reuse]
     M2 --> M4[M4 Benchmark service]
     M2 --> M5[M5 Multiworker and exports]
     M3 --> M4
@@ -46,7 +160,11 @@ flowchart LR
 
 Benchmark schema and synthetic matcher tests start before M4; the formal comparison waits for a stable M3 configuration and authorized dataset availability. PostgreSQL contract testing starts before M5, although fleet hardening is delivered there. OpenShift compatibility checks start in M0; full deployment is M6. These early checks prevent expensive late surprises without blocking the first vertical slice on enterprise integrations.
 
-For one implementer, follow the milestones mostly sequentially. With a staffed team, reporting, benchmark plumbing and runtime hardening can proceed independently after their contracts stabilize. No separate services or teams are required merely because these are separate work packages.
+For one implementer, follow the immediate language sequence above using the delivered
+Python foundation; do not wait for every historical M0–M2 gap to close. Baseline benchmark
+contracts can evolve as necessary for language acceptance. Discretionary reporting and
+runtime conveniences wait behind language coverage. Separate services are not required
+merely because languages use separate adapters.
 
 ## 3. Cross-cutting implementation rules
 
@@ -176,7 +294,7 @@ Reports start with source revision, owner, completion/coverage and action priori
 
 | ID | Work | Deliverable |
 |---|---|---|
-| M3.1 | Add Java/Spring fixture support and approved build profiles | Language/build adapter plus extraction coverage |
+| M3.1a–g | Deliver the prioritized language track in §2: shared contracts, Java/Spring, C#/ASP.NET, JS/TS, Rust, Go and mixed-language qualification | Per-language extraction/index/evidence adapters, approved builds and fixture-qualified coverage matrix |
 | M3.2 | Model representative custom sources, sinks, propagation and guards | Versioned framework models with vulnerable/benign tests |
 | M3.3 | Add independent exploration and rule applicability accounting | Exploration that runs even when CodeQL finds nothing |
 | M3.4 | Add selective independent review and second-provider adapter | Evidence-oriented escalation with approved fallback policy |
@@ -367,9 +485,10 @@ The code and schemas are committed; meaningful tests pass; the associated use ca
 For user-visible changes, update the applicable CLI/API guide and verify affected
 walkthrough examples. OpenAPI schema generation does not replace operator documentation.
 
-## 15. Practical first implementation backlog
+## 15. Historical foundation backlog and revised next work
 
-Start the next implementation session with this bounded sequence:
+The following was the original foundation sequence; much is now delivered. It is retained
+for traceability, not as the current queue:
 
 1. Create the Python project and lock dependencies; verify the local CodeQL/runtime combination.
 2. Implement the domain models for repository, snapshot, run, task, evidence, finding and report.
@@ -380,7 +499,11 @@ Start the next implementation session with this bounded sequence:
 7. Materialize and retrieve HTML/Markdown/JSON reports by repository and run.
 8. Prove the vulnerable/fixed/partial fixtures, then add the first configured live model adapter and usage accounting.
 
-This order provides a working report early while keeping provider access from blocking core engineering. Git intake follows the same M1 source contract and can be completed alongside the first language adapter. The supplied benchmark is registered through its schema first and executed at M4 when its data is available.
+The current queue is L0 → Java/Spring → C#/ASP.NET → JavaScript/TypeScript → Rust → Go →
+mixed-language acceptance, as defined in §2. Retain CSV/archive intake for the language
+work; Git/GCS acquisition is not a prerequisite. Integrate the supplied corpus when
+authorized and available, reporting per-language/per-framework and per-CWE applicability
+with denominators that retain blocked/missing cases. Do not use labels to route scan discovery.
 
 ## 16. Decisions and risks to track during implementation
 
@@ -403,4 +526,8 @@ This plan uses dependency-based milestones rather than invented calendar dates. 
 
 The implementer owns the POC and engineering contracts. AppSec validates evidence, ground truth and release quality. Platform engineering validates runtime and reliability. Application owners resolve business-policy ambiguity. Data/model governance approves source handling and model bindings. Leadership agrees the supported profile, cost envelope and rollout gate.
 
-The immediate next deliverable is **M0–M2: a laptop POC that accepts source, finds a seeded vulnerability with evidence, and retrieves a readable repository report**. The implementation will then add the benchmark scorecard and operational scale through the milestones above.
+The immediate next deliverable is **the shared language adapter foundation plus a real Java
+scan-to-report fixture**, followed by Spring and the remaining requested targets. The
+expanded multi-language POC takes priority over CLI refinement. Earlier percentage estimates
+describe the smaller scope and must not be presented as current completion percentages
+until the expanded work packages are re-estimated.

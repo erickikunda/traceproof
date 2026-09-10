@@ -143,3 +143,55 @@ def test_split_overlapping_excerpts_can_supply_complete_file():
     original = copy.deepcopy(bundle)
     assert assess_evidence(bundle, decision)["passed"]
     assert bundle == original
+
+
+ALIASED_SOURCE = SOURCE.replace("Flask, request", "Flask, request as req").replace(
+    "request.args", "req.args"
+)
+
+
+def test_flask_alias_support_is_advisory_only():
+    bundle, decision = fixture(ALIASED_SOURCE)
+    original = copy.deepcopy(bundle)
+    gate = assess_evidence(bundle, decision)
+    assert gate["passed"] and gate["gate_version"] == "3"
+    assert gate["source_mappings"][0]["binding_name"] == "req"
+    assert not gate["reachability_proven"] and not gate["source_mappings"][0]["binding_proven"]
+    assert bundle == original
+
+
+@pytest.mark.parametrize(
+    "suffix",
+    [
+        "req = other\n",
+        "del req\n",
+        "def other(req): pass\n",
+        "from elsewhere import x as req\n",
+        "import elsewhere as req\n",
+        "from elsewhere import *\n",
+        "def req(): pass\n",
+        "try:\n    pass\nexcept Exception as req:\n    pass\n",
+        "match value:\n    case {'x': req}: pass\n",
+    ],
+)
+def test_rebound_alias_is_not_supported(suffix):
+    bundle, decision = fixture(ALIASED_SOURCE + suffix)
+    assert not assess_evidence(bundle, decision)["passed"]
+
+
+@pytest.mark.parametrize(
+    "mutation", ["wrong_module", "missing_context", "missing_prefix", "ambiguous"]
+)
+def test_alias_does_not_bypass_source_constraints(mutation):
+    source = ALIASED_SOURCE
+    if mutation == "wrong_module":
+        source = source.replace("from flask", "from elsewhere")
+    if mutation == "ambiguous":
+        source = source.replace('req.args["expr"]', 'req.args["expr"] + other.args["expr"]')
+    bundle, decision = fixture(source)
+    if mutation == "missing_context":
+        for item in bundle["snippets"]:
+            item["source_line_count"] += 1
+    if mutation == "missing_prefix":
+        bundle["snippets"].pop(0)
+    assert not assess_evidence(bundle, decision)["passed"]

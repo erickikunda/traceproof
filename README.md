@@ -427,3 +427,6 @@ one with `codeql-status`. See [Slice 34](docs/development/slice-34.md).
 
 Use `storage-audit` while workers are idle to inspect retained artifact references and
 bounded logical file sizes without deletion. See [Slice 35](docs/development/slice-35.md).
+
+Evidence gate 3 supports bounded Flask request aliases with full-file and rebinding checks.
+Old triage keys may conflict across gate versions; see [Slice 36](docs/development/slice-36.md).

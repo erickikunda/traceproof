@@ -1,4 +1,22 @@
-# Implementation progress after Slice 35
+# Implementation progress after Slice 36
+
+## Priority reset — 10 September 2026
+
+The [implementation plan v0.2](../plans/implementation-plan.md) now prioritizes Java/Spring,
+C#/ASP.NET, JavaScript/TypeScript, Rust and Go over further CLI refinement. These remain
+unimplemented in TraceProof. Next: shared language contracts and a real Java scan-to-report
+fixture, followed by the language sequence and mixed-repository acceptance in plan §2.
+
+The estimates and 64-package table below are a **historical baseline for the former scope**.
+M3.1 has expanded into seven substantial subpackages; no current expanded-scope completion
+percentage is asserted until these are re-estimated. Existing implementation evidence remains
+valid, but added scope does not earn completion credit. Defer discretionary CLI/report/storage
+enhancements; retain necessary correctness/security fixes and language-workflow documentation.
+
+## Historical delivery assessment
+
+Slice 36 extends conservative Flask source mapping to request aliases in evidence gate 3.
+M3.2 remains partial; no corpus recall measurement or additional package credit is claimed.
 
 Slice 35 adds a bounded storage/reference inventory. M1.4 remains partial: automated
 orphan cleanup and retention are still open. No additional package credit is claimed.
@@ -58,7 +76,7 @@ Slice 19 adds durable scorecard publication/history/retrieval. Persisted proxy r
 exist; full adjudicated quality measures and benchmark qualification still remain open.
 No additional work-package credit is claimed.
 
-**Planning estimate: approximately 31% of the full implementation plan and 64%
+**Historical planning estimate for the former scope: approximately 31% overall and 64%
 of M0–M2.** These are feature-delivery estimates,
 not percentages of elapsed effort, calendar duration, production readiness or quality.
 

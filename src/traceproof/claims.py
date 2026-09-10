@@ -7,7 +7,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-GATE_VERSION = "2"
+GATE_VERSION = "3"
 POLICIES = {
     "py/code-injection": {"class": "code_injection", "sinks": ["eval", "exec"]},
     "py/command-line-injection": {
@@ -43,7 +43,7 @@ def requirements(rule_id):
         "policy": POLICIES.get(rule_id),
         "required": ["source", "sink", "flow", "guard"],
         "negative_requires": "present guard and quoted counterevidence",
-        "modeled_source": "Flask request import prefix with full-file evidence and no rebinding",
+        "modeled_source": "Flask request or alias import prefix; full-file evidence, no rebinding",
         "scope": "quote, syntax and recorded flow consistency only; not runtime proof",
     }
 
@@ -56,7 +56,7 @@ def name(node):
     return "<dynamic>"
 
 
-def anchors(window, claim, policy):
+def anchors(window, claim, policy, source_binding=None):
     """Recognize only a narrow syntax vocabulary, excluding comments/string literals."""
     text = textwrap.dedent(window)
     try:
@@ -79,6 +79,14 @@ def anchors(window, claim, policy):
                     "request.POST",
                 }
             ) or (isinstance(node, ast.Call) and name(node.func) in {"input", "request.get_json"})
+            if source_binding:
+                match |= isinstance(node, ast.Attribute) and name(node) in {
+                    f"{source_binding}.{attribute}"
+                    for attribute in ("args", "form", "data", "json")
+                }
+                match |= (
+                    isinstance(node, ast.Call) and name(node.func) == f"{source_binding}.get_json"
+                )
         elif claim.obligation == "sink" and isinstance(node, ast.Call):
             target = name(node.func)
             match = target in policy["sinks"]
@@ -115,7 +123,7 @@ def flow_nodes(bundle, snippet, ranges):
 
 def flask_mapping(bundle, source):
     """Map only a complete retained import prefix, using complete bounded file context."""
-    if source["flow_step"] == 0:
+    if not isinstance(source.get("flow_step"), int) or source["flow_step"] == 0:
         return None
     snippets = [
         item
@@ -140,34 +148,47 @@ def flask_mapping(bundle, source):
         tree = ast.parse("".join(lines[number] for number in range(1, total + 1)))
     except (SyntaxError, ValueError, RecursionError):
         return None
+    # Require a single simple receiver at the retained source location. Ambiguous or
+    # dynamic access stays unsupported rather than selecting an arbitrary binding.
+    bindings = {
+        node.value.id
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Attribute)
+        and isinstance(node.value, ast.Name)
+        and node.attr in {"args", "form", "data", "json", "get_json"}
+        and source["line"] <= node.lineno <= source["end_line"]
+    }
+    if len(bindings) != 1:
+        return None
+    binding = bindings.pop()
     imports = []
     for node in ast.walk(tree):
         if isinstance(node, ast.ImportFrom):
             for alias in node.names:
                 if alias.name == "*":
                     return None
-                if (alias.asname or alias.name) == "request":
+                if (alias.asname or alias.name) == binding:
                     if node.module != "flask" or node.level or alias.name != "request":
                         return None
                     imports.append(node)
         if (
             isinstance(node, ast.Name)
-            and node.id == "request"
+            and node.id == binding
             and isinstance(node.ctx, (ast.Store, ast.Del))
-        ) or (isinstance(node, ast.arg) and node.arg == "request"):
+        ) or (isinstance(node, ast.arg) and node.arg == binding):
             return None
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
-            if node.name == "request":
+            if node.name == binding:
                 return None
         if isinstance(node, ast.Import) and any(
-            (alias.asname or alias.name.split(".")[0]) == "request" for alias in node.names
+            (alias.asname or alias.name.split(".")[0]) == binding for alias in node.names
         ):
             return None
-        if isinstance(node, ast.ExceptHandler) and node.name == "request":
+        if isinstance(node, ast.ExceptHandler) and node.name == binding:
             return None
-        if isinstance(node, (ast.MatchAs, ast.MatchStar)) and node.name == "request":
+        if isinstance(node, (ast.MatchAs, ast.MatchStar)) and node.name == binding:
             return None
-        if isinstance(node, ast.MatchMapping) and node.rest == "request":
+        if isinstance(node, ast.MatchMapping) and node.rest == binding:
             return None
     if len(imports) != 1 or imports[0] not in tree.body:
         return None
@@ -190,7 +211,10 @@ def flask_mapping(bundle, source):
         if (
             isinstance(node, ast.Attribute)
             and name(node)
-            in {"request.args", "request.form", "request.data", "request.json", "request.get_json"}
+            in {
+                f"{binding}.{attribute}"
+                for attribute in ("args", "form", "data", "json", "get_json")
+            }
         )
         and source["line"] <= node.lineno <= source["end_line"]
     ]
@@ -202,6 +226,7 @@ def flask_mapping(bundle, source):
         "import_evidence_ids": [item["id"] for item in prefix],
         "access_evidence_id": source["id"],
         "binding_proven": False,
+        **({"binding_name": binding} if binding != "request" else {}),
     }
 
 
@@ -272,7 +297,10 @@ def assess_evidence(bundle, decision):
                     flow_ids.add(snippet["flow_id"])
                     satisfied.add("flow")
             else:
-                located = anchors(window, claim, policy)
+                mapping = flask_mapping(bundle, snippet) if claim.obligation == "source" else None
+                located = anchors(
+                    window, claim, policy, mapping.get("binding_name") if mapping else None
+                )
                 if not located:
                     reason = "supported_syntax_not_in_quote"
                 else:

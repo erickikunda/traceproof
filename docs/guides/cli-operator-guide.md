@@ -1,6 +1,19 @@
 # TraceProof CLI user and operator guide
 
-**Scope:** laptop POC through Slice 35, SQLite schema 0009. Commands are run from the repository checkout on Linux/macOS using Python 3.12+. This guide describes implemented behavior. Git/GCS acquisition, HTTP API hosting, distributed workers, authenticated reviewers and OpenShift deployment are future work.
+**Scope:** laptop POC through Slice 36, SQLite schema 0009. Commands are run from the repository checkout on Linux/macOS using Python 3.12+. This guide describes implemented behavior. Git/GCS acquisition, HTTP API hosting, distributed workers, authenticated reviewers and OpenShift deployment are future work.
+
+## Evidence gate version 3
+
+The gate now recognizes conservative Flask request aliases, such as
+`from flask import request as req`, in supported retained import-to-sink flows. Complete
+file context and a non-rebound binding are required. Missing context or ambiguous/shadowed
+aliases remain unsupported; passing means supported for review, not a verified vulnerability.
+
+Old triage results remain unchanged. Gate version is part of request identity, so an old
+key may conflict after this upgrade. Use `check-evidence BUNDLE_ID DECISION_JSON` for a
+local recheck. Requesting new model advice requires a deliberately new key and consumes
+the existing run budget/request allowance. It is not an automatic retry of old uncertain
+calls. See [Slice 36](../development/slice-36.md) for exact limitations.
 
 ## Inspect retained storage
 

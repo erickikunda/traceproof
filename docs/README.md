@@ -4,6 +4,11 @@ Start with the [CLI user/operator guide](guides/cli-operator-guide.md) for the l
 status interpretation, reports and recovery. The API companion guide will ship with the
 first hosted API, as scheduled in the implementation plan.
 
+**Current priority:** multi-language coverage before further CLI refinements. The revised
+plan starts with shared adapter contracts and Java/Spring, followed by C#/ASP.NET,
+JavaScript/TypeScript, Rust, Go and mixed-language qualification. Current implemented
+security scanning remains Python-only.
+
 - [System design](architecture/system-design.md): leadership use cases, swimlane,
   data-flow/sequence diagrams, evidence policy, report contracts and enterprise architecture.
 - [Implementation plan](plans/implementation-plan.md): milestones M0–M7 and acceptance gates.
@@ -47,3 +52,4 @@ The design and plan are proposals; the slice status and README describe what act
 - [Thirty-third-slice status](development/slice-33.md): paginated import history with dispatch filters and intake counts.
 - [Thirty-fourth-slice status](development/slice-34.md): CodeQL extraction history, including failures before query analysis.
 - [Thirty-fifth-slice status](development/slice-35.md): bounded storage inventory and artifact-reference audit without deletion.
+- [Thirty-sixth-slice status](development/slice-36.md): conservative Flask request alias mapping in evidence gate 3.
