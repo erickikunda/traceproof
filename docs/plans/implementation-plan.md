@@ -153,8 +153,9 @@ pinned Core profile. Slice 54 adds classic Web API ApiController/FromUri SQL fix
 with a separately pinned assembly profile. Slice 55 adds classic MVC Controller/SQL
 fixtures using pinned MVC/Web Pages/Razor metadata references. Slice 56 enables a narrow
 Core FromQuery/CommandText SQL advisory gate with complete syntax context and retained
-CodeQL paths. Next: classic C# source evidence and broader framework qualification,
-then L3 JavaScript/TypeScript. Windows build execution remains separate.
+CodeQL paths. Slice 57 adds narrow classic MVC/Web API HttpGet action source evidence.
+Next: L3 JavaScript/TypeScript. Broader C# bindings, guards, semantic resolution and
+Windows/full-build qualification remain explicit L2 follow-up obligations.
 Keep existing operator entry points and add options only where language selection or
 safe build-profile selection requires them.
 
@@ -163,6 +164,64 @@ views, CLI convenience wrappers and automated storage cleanup. Fix correctness, 
 data-loss and blocking usability issues immediately. Maintain the guide for changed
 language workflows; the existing API-guide delivery requirement remains attached to the
 first hosted API. Do not build an API solely to bypass this priority decision.
+
+### Approved shared capability: configurable triage policy packs
+
+User-approved direction: broaden discovery through trusted `.qls` suites, and make
+triage extensible through a separate policy registry. Supplying a suite must never
+implicitly enable model calls or qualify new evidence semantics. JavaScript/TypeScript
+remains the next implementation priority. Revisit the bounded registry slice after
+initial L3 qualification; this shared capability must not become an open-ended blocker
+for Rust, Go or mixed-language delivery.
+
+| Mode | Behavior | Qualification boundary |
+|---|---|---|
+| Discovery only (default for unsupported rules) | Retain static candidates, source evidence and reports; no model call | No triage conclusion |
+| Exploratory triage (explicit opt-in) | Explain the finding, identify missing evidence and suggest investigation steps | Unqualified model analysis; cannot confirm, suppress or establish remediation |
+| Qualified advisory triage | Apply an approved, versioned policy pack and deterministic validators | Only the declared, fixture-tested evidence scope; still no automatic adjudication |
+
+Implement the capability in bounded stages:
+
+| Work package | Deliverable | Acceptance evidence |
+|---|---|---|
+| T1 — Policy registry | Extract current Python/Java/C# rule policies into a typed registry; preserve existing validator implementations and behavior | Existing fixtures and rejection tests produce equivalent outcomes; unsupported rules remain no-call by default |
+| T2 — Exploratory mode | Add explicit run/operator selection for unsupported rules with a separate structured response schema | Mock-provider tests prove source/classification policy and budgets still apply; exploratory outputs cannot enter qualified verdict transitions or suppress findings |
+| T3 — Trusted policy packs | Load declarative packs from administrator-controlled configuration/image/PVC; compose allowlisted built-in validators | Invalid/unknown validator references, conflicting rule selection, incompatible query versions and unapproved packs fail closed; no arbitrary plugin-code execution |
+| T4 — Qualification and reporting | Evaluate policy fixtures, record approval/provenance and expose mode/coverage in CLI and machine-readable reports | Vulnerable/fixed/misleading fixtures pass the declared criteria; changing a policy invalidates inappropriate cache reuse; dashboards distinguish exploratory, qualified and untriaged results |
+
+A pack declares its stable ID, version and content digest; rule IDs and CWE/language/
+framework scope; supported CodeQL/query-pack identities; evidence obligations; validator
+IDs and permitted parameters; approved prompt/schema versions; allowed advisory outcomes;
+context/token/output limits; qualification fixture references and approval status.
+CWE mapping alone is insufficient to select a policy: different queries for the same
+CWE can require different source, sink and flow interpretation.
+
+Configuration can compose existing validators. New language/framework semantics may
+require reviewed Python implementation and new fixtures. Prompts or regex configuration
+alone cannot confer qualified status. Model-generated pack suggestions are drafts only;
+they cannot approve or activate themselves. Scanned source, archives and repository
+metadata cannot install or override policy packs.
+
+Record the exact effective policy digest, validator/prompt versions, query provenance,
+triage mode and qualification status on each result and in request/cache identity.
+Keep historical results immutable. Missing compatibility information produces an explicit
+gap; never silently upgrade exploratory output to qualified evidence. A changed query
+suite requires evaluation against the pack's applicability contract, not an assumption
+that the same CWE implies compatibility.
+
+All modes retain existing provider approval, source-classification/consent, redaction,
+timeout, rate, context and monetary/token controls. Reserve cost before invocation;
+exploratory calls count toward the same run budget and usage ledger. Pack limits may
+narrow but cannot override administrator limits. No fallback to exploratory mode without
+explicit opt-in, and no live model calls merely because a new `.qls` file was supplied.
+
+Use replay/mock fixtures on the laptop first. When the authorized 50-repository corpus
+is available, measure incremental detections, review burden, evidence acceptance and
+cost by mode on a held-out partition. Do not count exploratory explanations as confirmed
+true positives or evidence of improved precision. Document new operator options when
+implemented; include the same distinctions in the future API guide.
+
+This is planned work, not functionality currently shipped by the POC.
 
 ### What counts as language support
 

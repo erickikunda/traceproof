@@ -7,7 +7,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-GATE_VERSION = "6"
+GATE_VERSION = "7"
 POLICIES = {
     "cs/sql-injection": {
         "class": "sql_injection",
@@ -51,7 +51,7 @@ def requirements(rule_id):
         "negative_requires": "Java/C# negative suggestions unsupported"
         if rule_id in ("java/sql-injection", "cs/sql-injection")
         else "present guard and quoted counterevidence",
-        "modeled_source": "Explicit ASP.NET Core FromQuery syntax; complete file required"
+        "modeled_source": "Core FromQuery or classic public HttpGet string action; complete file"
         if rule_id == "cs/sql-injection"
         else "Explicit Spring RequestParam syntax; complete file required"
         if rule_id == "java/sql-injection"

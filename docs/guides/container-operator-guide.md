@@ -257,3 +257,15 @@ same reliable address-space limit. This is a syntax parser, not a semantic C# in
 This updates the earlier Core fixture notes: a narrow FromQuery/CommandText evidence
 gate is now available. Classic MVC/Web API and other C# sources still lack qualified
 source evidence. Razor views, runtime guards and full builds remain unqualified.
+
+### Classic evidence acceptance (Slice 57)
+
+The `csharp-mvc` and `csharp-webapi` suites now also export a vulnerable bundle and
+synthetic advisory gate result. Both must pass source/sink/flow/unknown-guard checks,
+keep reachability_proven=false and reject negative advice. No LLM credentials or
+calls are required. Core evidence behavior remains regression coverage.
+
+This supersedes the earlier blanket exclusion of classic source evidence: support
+now includes the narrow public HttpGet string-action patterns described in the CLI
+guide. Raw System.Web request access, arbitrary binders/filters, other sink APIs,
+full builds and broad framework semantics remain unqualified.

@@ -7,8 +7,8 @@ from traceproof.csharp_parser import parse
 from traceproof.models import Decision
 
 
-def fixture():
-    text = Path("tests/fixtures/csharp-core/vulnerable/LookupController.cs").read_text()
+def fixture(suite="csharp-core"):
+    text = Path(f"tests/fixtures/{suite}/vulnerable/LookupController.cs").read_text()
     snippets = [
         dict(
             id=f"E{i + 1}",
@@ -151,11 +151,11 @@ def test_comparison_marks_evidence_policy_change():
         candidates=[],
         created_at="2026-09-10",
     )
-    current = {**base, "language_scope": {"evidence_gate": "core_fromquery_sql_review_v1"}}
+    current = {**base, "language_scope": {"evidence_gate": "aspnet_sql_review_v2"}}
     assert "evidence_gate:unknown_or_different" in compatibility(base, current)
 
 
-@pytest.mark.parametrize("suite", ["csharp-core", "csharp-minimal"])
+@pytest.mark.parametrize("suite", ["csharp-core", "csharp-minimal", "csharp-webapi", "csharp-mvc"])
 def test_qualified_fixture_parser_sources_and_sql_assignment(suite):
     source = Path(f"tests/fixtures/{suite}/vulnerable/LookupController.cs").read_bytes()
     parsed = parse(source)
@@ -163,7 +163,70 @@ def test_qualified_fixture_parser_sources_and_sql_assignment(suite):
     assert len(parsed["sources"]) == len(parsed["sinks"]) == 1
 
 
-@pytest.mark.parametrize("suite", ["csharp", "csharp-classic", "csharp-webapi", "csharp-mvc"])
+@pytest.mark.parametrize("suite", ["csharp", "csharp-classic"])
 def test_other_csharp_sources_stay_unqualified(suite):
     source = Path(f"tests/fixtures/{suite}/vulnerable/LookupController.cs").read_bytes()
     assert not parse(source)["sources"]
+
+
+@pytest.mark.parametrize("suite", ["csharp-webapi", "csharp-mvc"])
+@pytest.mark.parametrize(
+    "change",
+    [
+        "private",
+        "static",
+        "nonaction",
+        "foreign",
+        "shadow",
+        "no_httpget",
+        "wrong_base",
+        "ambiguous",
+    ],
+)
+def test_classic_action_lookalikes_are_not_sources(suite, change):
+    source = Path(f"tests/fixtures/{suite}/vulnerable/LookupController.cs").read_text()
+    if change == "private":
+        source = source.replace("public DbDataReader", "private DbDataReader")
+    if change == "static":
+        source = source.replace("public DbDataReader", "public static DbDataReader")
+    if change == "nonaction":
+        source = source.replace("[HttpGet]", "[HttpGet, NonAction]")
+    if change == "foreign":
+        source = source.replace("using System.Web.", "using Foreign.")
+    if change == "shadow":
+        source += "class HttpGetAttribute {}"
+    if change == "no_httpget":
+        source = source.replace("[HttpGet]", "")
+    if change == "wrong_base":
+        source = source.replace(": ApiController", ": Unrelated").replace(
+            ": Controller", ": Unrelated"
+        )
+    if change == "ambiguous":
+        source = "using Microsoft.AspNetCore.Mvc;\n" + source
+    assert not parse(source.encode())["sources"]
+
+
+@pytest.mark.parametrize("suite", ["csharp-webapi", "csharp-mvc"])
+def test_classic_gate_is_advisory_only(suite):
+    bundle, decision = fixture(suite)
+    gate = assess_evidence(bundle, decision)
+    assert gate["passed"] and not gate["reachability_proven"]
+    assert not assess_evidence(
+        bundle, decision.model_copy(update={"verdict": "likely_false_positive"})
+    )["passed"]
+
+
+@pytest.mark.parametrize(
+    "change", ["abstract", "generic_class", "generic_method", "parameter_attribute"]
+)
+def test_classic_mvc_unsupported_action_shapes(change):
+    source = Path("tests/fixtures/csharp-mvc/vulnerable/LookupController.cs").read_text()
+    if change == "abstract":
+        source = source.replace("public class", "public abstract class")
+    if change == "generic_class":
+        source = source.replace("class LookupController", "class LookupController<T>")
+    if change == "generic_method":
+        source = source.replace("Lookup(string", "Lookup<T>(string")
+    if change == "parameter_attribute":
+        source = source.replace("Lookup(string", "Lookup([Custom] string")
+    assert not parse(source.encode())["sources"]

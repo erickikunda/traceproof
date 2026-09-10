@@ -151,6 +151,44 @@ the appropriate audience. JSON and CSV remain available for dashboards.
 format works on `benchmark-evaluate`, which does evaluate its supplied inputs. See the
 [Slice 29 contract](../development/slice-29.md).
 
+## Supply a CodeQL query suite (.qls)
+
+`scan-run` and `codeql-analyze` accept a trusted local `.qls` file in the same
+positional argument as a single `.ql` query. Replace the example paths below with
+existing, operator-approved suites compatible with the selected language and installed
+CodeQL query packs. These are placeholders, not files shipped by TraceProof.
+
+```bash
+# Scan an already-ingested Python run with a suite.
+uv run traceproof scan-run RUN_ID /absolute/approved-python-suite.qls --language python --query-timeout 600
+
+# Scan an already-ingested Java run with a suite and a provisioned dependency profile.
+uv run traceproof scan-run RUN_ID /absolute/approved-java-suite.qls --language java --java-profile source-only --java-dependency-profile /absolute/java-profile.json --query-timeout 600
+
+# Alternatively, analyze an existing successful extraction with a compatible suite.
+uv run traceproof codeql-analyze EXTRACTION_ID /absolute/approved-suite.qls --timeout 600
+```
+
+Use the same state directory/global CLI options as for the intake or extraction.
+The Java dependency profile is optional when the repository does not require it;
+choose the extraction profile and dependencies appropriate to the source.
+
+Supply the suite from trusted operator tooling, not the repository being scanned.
+TraceProof rejects query paths inside its scanned-artifact directory and passes the
+suite to CodeQL for resolution. Provision all referenced query packs and dependencies
+before an offline scan. For containers, bake them into the image or expose the suite
+and referenced files through an approved read-only mount at the path passed to the CLI.
+The fixed container acceptance scripts still select their own fixture-specific queries;
+changing the application query argument does not expand that acceptance matrix.
+
+A broader suite can produce additional static candidates and reports. It does not
+expand TraceProof's qualified LLM evidence policies: unsupported rules remain available
+as candidates but are not sent for model triage. Check `evidence-policy RULE_ID` for the
+current rule policy. Coverage also depends on successful extraction and query completion.
+The recorded query hash identifies the supplied entry file; it is not a complete
+transitive hash of every query or pack referenced by a suite. Pin and retain those
+operator-tooling dependencies separately for reproducibility.
+
 ## Tune CodeQL resources
 
 ```bash
@@ -672,3 +710,20 @@ new bundle to use the new context policy. Existing triage keys may conflict acro
 gate versions; use a new request key. Reports remain incomplete and findings remain
 unreviewed until the existing operator-review workflow is used. This supersedes earlier
 blanket statements that all C# triage is unsupported; support is narrow and advisory.
+
+### Classic MVC/Web API advisory evidence (Slice 57)
+
+Gate 7 extends `cs/sql-injection` to direct public classic Controller/ApiController
+classes and public instance HttpGet actions with string parameters. MVC parameters
+must have no binding attributes; Web API parameters must carry exactly FromUri.
+Qualified namespace spellings or explicit matching imports are required. Private,
+static, abstract, overridden or generic action shapes, NonAction/other method
+attributes, mixed MVC/Core imports and local framework-name shadows are unqualified.
+This is a narrow syntax policy, not a resolved model of all classic request binding.
+
+Use the same bundle and triage commands. Complete bounded context and the entire
+retained CodeQL path remain required. CommandText is the only qualified sink form;
+unknown guards remain explicit and negative advice cannot pass. No request is confirmed
+or finding suppressed automatically. Existing reports/bundles remain immutable, and
+new triage requests use gate 7. The capability label is aspnet_sql_review_v2; report
+comparison flags a change from the earlier Core-only policy. No migration.

@@ -18,7 +18,7 @@ class LanguageAdapter:
 
 ADAPTERS = {
     "csharp": LanguageAdapter(
-        "csharp", "csharp", "csharp-source-only-v1", "not_qualified", "core_fromquery_sql_review_v1"
+        "csharp", "csharp", "csharp-source-only-v1", "not_qualified", "aspnet_sql_review_v2"
     ),
     "python": LanguageAdapter(
         "python", "python", "python-source-v1", "python_ast", "python_claims"

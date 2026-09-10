@@ -214,3 +214,12 @@ Slice 56 adds narrow C# SQL advisory evidence for explicit Core FromQuery parame
 and CommandText assignments on complete retained CodeQL paths. Syntax parsing is
 bounded and isolated; guard effectiveness and runtime reachability remain unproven.
 Classic C# source evidence and broader framework qualification remain open.
+
+Slice 57 extends the SQL advisory gate to the qualified classic MVC/Web API public
+HttpGet string-action shapes. Guard and reachability claims remain unproven. The next
+priority is JavaScript/TypeScript; broader C# semantics/builds remain tracked gaps.
+
+Approved planning addition: T1–T4 configurable triage policy packs, with discovery-only,
+explicit exploratory and qualified advisory modes. Current behavior is unchanged.
+JavaScript/TypeScript remains next; registry work is reconsidered after initial L3
+qualification without indefinitely blocking the remaining language priorities.

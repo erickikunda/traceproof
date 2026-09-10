@@ -154,7 +154,7 @@ def test_flask_alias_support_is_advisory_only():
     bundle, decision = fixture(ALIASED_SOURCE)
     original = copy.deepcopy(bundle)
     gate = assess_evidence(bundle, decision)
-    assert gate["passed"] and gate["gate_version"] == "6"
+    assert gate["passed"] and gate["gate_version"] == "7"
     assert gate["source_mappings"][0]["binding_name"] == "req"
     assert not gate["reachability_proven"] and not gate["source_mappings"][0]["binding_proven"]
     assert bundle == original

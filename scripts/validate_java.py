@@ -145,7 +145,10 @@ def main(fixture="java"):
                 "no_model_calls": report["triage_call_count"] == 0,
                 "expected_rule": all(c["rule_id"] == rule for c in report["candidates"]),
             }
-            if fixture in ("csharp-core", "csharp-minimal") and case == "vulnerable":
+            if (
+                fixture in ("csharp-core", "csharp-minimal", "csharp-webapi", "csharp-mvc")
+                and case == "vulnerable"
+            ):
                 candidate = report["candidates"][0] if report["candidates"] else None
                 if candidate is None:
                     checks["csharp_evidence_gate"] = False

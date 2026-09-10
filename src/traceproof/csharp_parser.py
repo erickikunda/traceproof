@@ -11,6 +11,73 @@ MAX_BYTES = 16 * 1024
 MAX_NODES = 50_000
 
 
+def classic_source(parameter, imports):
+    """Recognize only direct public HttpGet actions; still no framework binding proof."""
+    method = parameter.parent.parent if parameter.parent else None
+    owner = method.parent.parent if method and method.parent else None
+    if (
+        not method
+        or method.type != "method_declaration"
+        or not owner
+        or owner.type != "class_declaration"
+    ):
+        return False
+    modifiers = {n.text.decode() for n in method.children if n.type == "modifier"}
+    if "public" not in modifiers or modifiers & {"static", "abstract", "override"}:
+        return False
+    owner_modifiers = {n.text.decode() for n in owner.children if n.type == "modifier"}
+    if "public" not in owner_modifiers or owner_modifiers & {"abstract", "static"}:
+        return False
+    if any(n.type == "type_parameter_list" for target in (owner, method) for n in target.children):
+        return False
+    kind = parameter.child_by_field_name("type")
+    if kind is None or kind.text != b"string":
+        return False
+    bases = [n for n in owner.named_children if n.type == "base_list"]
+    if len(bases) != 1 or len(bases[0].named_children) != 1:
+        return False
+    base = bases[0].named_children[0].text.decode()
+    namespaces = ("System.Web.Mvc", "System.Web.Http")
+    for namespace, controller in zip(namespaces, ("Controller", "ApiController"), strict=True):
+        if base not in {controller, namespace + "." + controller}:
+            continue
+        if base == controller and f"using {namespace};" not in imports:
+            continue
+        if any(
+            f"using {other};" in imports
+            for other in (*namespaces, "Microsoft.AspNetCore.Mvc")
+            if other != namespace
+        ):
+            return False
+
+        def attributes(target):
+            return [
+                a.child_by_field_name("name").text.decode()
+                for group in target.named_children
+                if group.type == "attribute_list"
+                for a in group.named_children
+                if a.type == "attribute"
+            ]
+
+        def qualified(name, short, namespace=namespace):
+            return name in {namespace + "." + short, namespace + "." + short + "Attribute"} or (
+                name in {short, short + "Attribute"} and f"using {namespace};" in imports
+            )
+
+        attrs = attributes(method)
+        if not any(qualified(n, "HttpGet") for n in attrs) or any(
+            not any(qualified(n, allowed) for allowed in ("HttpGet", "Route")) for n in attrs
+        ):
+            return False
+        params = attributes(parameter)
+        return (
+            not params
+            if namespace == "System.Web.Mvc"
+            else (len(params) == 1 and qualified(params[0], "FromUri"))
+        )
+    return False
+
+
 def parse(source):
     empty = {"sources": [], "sinks": []}
     if len(source) > MAX_BYTES:
@@ -35,7 +102,18 @@ def parse(source):
     for node in nodes:
         if node.type.endswith("_declaration"):
             name = node.child_by_field_name("name")
-            if name and name.text.decode() in {"FromQuery", "FromQueryAttribute"}:
+            if name and name.text.decode() in {
+                "FromQuery",
+                "FromQueryAttribute",
+                "FromUri",
+                "FromUriAttribute",
+                "Controller",
+                "ApiController",
+                "HttpGet",
+                "HttpGetAttribute",
+                "Route",
+                "RouteAttribute",
+            }:
                 return {**empty, "status": "unsupported_context"}
     imports = [n.text.decode().strip() for n in nodes if n.type == "using_directive"]
     allowed = {"using Microsoft.AspNetCore.Mvc;", "using Microsoft.AspNetCore.Builder;"}
@@ -46,6 +124,8 @@ def parse(source):
     sources, sinks = [], []
     for node in nodes:
         location = dict(line=node.start_point.row + 1, end_line=node.end_point.row + 1)
+        if node.type == "parameter" and classic_source(node, imports):
+            sources.append(location)
         if node.type == "attribute":
             name = node.child_by_field_name("name")
             written = name.text.decode() if name else ""
