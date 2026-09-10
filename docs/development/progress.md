@@ -1,4 +1,4 @@
-# Implementation progress after Slice 41
+# Implementation progress after Slice 42
 
 ## Priority reset — 10 September 2026
 
@@ -25,6 +25,9 @@ evidence qualification remain open; L1 is still partial.
 
 Slice 41 adds a narrow Java SQL advisory gate for retained RequestParam-to-executeQuery
 flows. Broader Java evidence and built Spring qualification remain pending.
+
+Slice 42 lets Java advisory gates use complete context assembled from bounded
+evidence expansions. Build qualification and broader language coverage remain open.
 
 ## Historical delivery assessment
 

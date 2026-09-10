@@ -85,3 +85,55 @@ def test_java_missing_flow_and_negative_advice_rejected():
     assert not assess_evidence(
         bundle, decision.model_copy(update={"verdict": "likely_false_positive"})
     )["passed"]
+
+
+def expanded_fixture():
+    bundle, decision = fixture()
+    source = bundle["snippets"][0]["text"] + "// retained context\n" * 45
+    lines = source.splitlines(keepends=True)
+    for snippet in bundle["snippets"]:
+        snippet.update(
+            text="".join(lines[8:15]), excerpt_line=9, excerpt_end_line=15, source_line_count=60
+        )
+    for index, (start, end) in enumerate([(1, 8), (16, 40), (41, 60)], 3):
+        bundle["snippets"].append(
+            dict(
+                id=f"E{index}",
+                role="expansion",
+                path="LookupController.java",
+                sha256="pinned",
+                excerpt_line=start,
+                excerpt_end_line=end,
+                text="".join(lines[start - 1 : end]),
+            )
+        )
+    return bundle, decision
+
+
+def test_complete_expansion_enables_larger_java_file():
+    bundle, decision = expanded_fixture()
+    assert assess_evidence(bundle, decision)["passed"]
+
+
+def test_expansion_gaps_conflicts_and_wrong_hash_fail():
+    from traceproof.java_claims import complete_context
+
+    for change in ["gap", "conflict", "hash", "count", "foreign"]:
+        bundle, decision = expanded_fixture()
+        if change == "gap":
+            bundle["snippets"].pop()
+        elif change == "conflict":
+            conflicting = deepcopy(bundle["snippets"][0])
+            conflicting["text"] = conflicting["text"].replace("GetMapping", "PutMapping")
+            bundle["snippets"].append(conflicting)
+        elif change == "hash":
+            bundle["snippets"][-1]["sha256"] = "different"
+        elif change == "count":
+            bundle["snippets"][0]["source_line_count"] = 61
+        else:
+            bundle["snippets"][2]["text"] = bundle["snippets"][2]["text"].replace(
+                "org.springframework.web.bind.annotation.RequestParam", "foreign.RequestParam"
+            )
+        assert not assess_evidence(bundle, decision)["passed"]
+        if change != "foreign":
+            assert complete_context(bundle, bundle["snippets"][0]) is None

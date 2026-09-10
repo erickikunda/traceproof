@@ -1,6 +1,6 @@
 # TraceProof CLI user and operator guide
 
-**Scope:** laptop POC through Slice 41, SQLite schema 0009. Commands are run from the repository checkout on Linux/macOS using Python 3.12+. This guide describes implemented behavior. Git/GCS acquisition, HTTP API hosting, distributed workers, authenticated reviewers and OpenShift deployment are future work.
+**Scope:** laptop POC through Slice 42, SQLite schema 0009. Commands are run from the repository checkout on Linux/macOS using Python 3.12+. This guide describes implemented behavior. Git/GCS acquisition, HTTP API hosting, distributed workers, authenticated reviewers and OpenShift deployment are future work.
 
 ## Evidence gate version 3
 
@@ -577,3 +577,13 @@ reports remain unchanged; old triage keys may conflict across gate versions.
 Use check-evidence for a local recheck without model spend. Existing provider,
 classification and budget requirements apply to new triage. Java reports remain
 incomplete; passing evidence is advisory and never confirms or suppresses a finding.
+
+### Java context expansion (Slice 42)
+
+Gate 5 can combine same-snapshot/file/hash excerpts into complete Java context.
+Use the existing expand-bundle workflow to supply missing ranges, then check-evidence
+against the new bundle. Missing lines or conflicting overlaps fail conservatively.
+All expansion byte, range, depth and snippet limits still apply; no automatic model
+calls occur. This supports larger files within those limits, but does not supply missing
+flow steps or enable Java negative advice. Gate-version changes may conflict with old
+triage keys; preserve uncertain calls rather than retrying them under new identities.

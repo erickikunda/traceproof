@@ -7,7 +7,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-GATE_VERSION = "4"
+GATE_VERSION = "5"
 POLICIES = {
     "java/sql-injection": {"class": "sql_injection", "sinks": ["executeQuery"], "language": "java"},
     "py/code-injection": {"class": "code_injection", "sinks": ["eval", "exec"]},
@@ -306,7 +306,7 @@ def assess_evidence(bundle, decision):
                 if policy.get("language") == "java":
                     from traceproof.java_claims import anchors as java_anchors
 
-                    located = java_anchors(snippet, claim)
+                    located = java_anchors(bundle, snippet, claim)
                 else:
                     located = anchors(
                         window, claim, policy, mapping.get("binding_name") if mapping else None
