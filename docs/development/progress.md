@@ -1,4 +1,4 @@
-# Implementation progress after Slice 38
+# Implementation progress after Slice 39
 
 ## Priority reset — 10 September 2026
 
@@ -15,6 +15,9 @@ enhancements; retain necessary correctness/security fixes and language-workflow 
 
 Slice 38 adds bounded, resumable Java syntax indexing and pre-extraction parse gates.
 Java semantic resolution, evidence policies and Spring remain unqualified.
+
+Slice 39 adds snapshot-bound Spring annotation syntax observations; runtime binding,
+Java LLM evidence and framework extraction qualification remain open.
 
 ## Historical delivery assessment
 

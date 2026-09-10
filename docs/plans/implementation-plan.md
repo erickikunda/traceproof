@@ -63,7 +63,8 @@ slices. Do not schedule a new convenience command merely to produce another numb
 
 **Delivered initial slice:** Slice 37 adds language selection/coverage contracts and a
 real dependency-free Java extraction-to-candidate/report fixture. L0 and L1 remain partial.
-Slice 38 adds bounded Java syntax indexing; semantic resolution remains unqualified.
+Slices 38–39 add bounded Java syntax indexing and Spring annotation observations;
+semantic resolution and runtime bindings remain unqualified.
 **Next implementation slice:** Java evidence qualification and Spring request bindings, followed
 by real Spring fixtures and separately qualified Maven/Gradle profiles in L1.
 Keep existing operator entry points and add options only where language selection or

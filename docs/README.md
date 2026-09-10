@@ -56,3 +56,5 @@ The design and plan are proposals; the slice status and README describe what act
 - [Thirty-sixth-slice status](development/slice-36.md): conservative Flask request alias mapping in evidence gate 3.
 
 - [Slice 38](development/slice-38.md): bounded Java syntax indexing and parse coverage.
+
+- [Slice 39](development/slice-39.md): Spring annotation syntax evidence inventory.

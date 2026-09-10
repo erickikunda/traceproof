@@ -14,7 +14,7 @@ from traceproof.indexing import verified_source
 from traceproof.java_parser import MAX_BYTES
 from traceproof.persistence import IndexedFile, SourceIndex
 
-VERSION = f"java-syntax-v1-ts{version('tree-sitter')}-java{version('tree-sitter-java')}"
+VERSION = f"java-syntax-v2-ts{version('tree-sitter')}-java{version('tree-sitter-java')}"
 
 
 def parse_isolated(source):
@@ -89,6 +89,8 @@ def build_java_index(store, run_id):
             "java_files": len(rows),
             "parsed_java_files": sum(r["status"] == "parsed" for r in rows),
             "symbol_count": sum(len(r["symbols"]) for r in rows),
+            "annotation_count": sum(len(r.get("annotations", [])) for r in rows),
+            "framework_observations": framework_observations(rows),
             "unresolved_call_count": sum(len(r["calls"]) for r in rows),
             "syntax_gate": "ready"
             if rows and all(r["status"] == "parsed" for r in rows)
@@ -100,3 +102,53 @@ def build_java_index(store, run_id):
         index = session.get(SourceIndex, index_id)
         index.report, index.state = report, "published"
     return report
+
+
+SPRING_PREFIX = "org.springframework.web.bind.annotation."
+SPRING_NAMES = {
+    "RequestMapping",
+    "GetMapping",
+    "PostMapping",
+    "PutMapping",
+    "DeleteMapping",
+    "PatchMapping",
+    "RequestParam",
+    "PathVariable",
+    "RequestBody",
+    "RequestHeader",
+    "CookieValue",
+    "RequestPart",
+    "ModelAttribute",
+    "RestController",
+}
+
+
+def framework_observations(rows):
+    """Bounded syntax hints, never proof of framework identity or external reachability."""
+    items, total = [], 0
+    for row in rows:
+        for annotation in row.get("annotations", []):
+            written = annotation["name"]
+            hint = annotation["qualified_name_hint"]
+            if written.rsplit(".", 1)[-1] not in SPRING_NAMES:
+                continue
+            total += 1
+            if len(items) < 200:
+                items.append(
+                    {
+                        **annotation,
+                        "path": row["path"],
+                        "sha256": row["sha256"],
+                        "spring_namespace_hint": hint == SPRING_PREFIX + written.rsplit(".", 1)[-1],
+                        "request_binding_proven": False,
+                    }
+                )
+    return {
+        "version": "1",
+        "scope": "annotation_syntax_only",
+        "items": items,
+        "total": total,
+        "truncated": total > len(items),
+        "framework_runtime": "unknown",
+        "reachability_proven": False,
+    }

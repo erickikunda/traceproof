@@ -1,6 +1,6 @@
 # TraceProof CLI user and operator guide
 
-**Scope:** laptop POC through Slice 38, SQLite schema 0009. Commands are run from the repository checkout on Linux/macOS using Python 3.12+. This guide describes implemented behavior. Git/GCS acquisition, HTTP API hosting, distributed workers, authenticated reviewers and OpenShift deployment are future work.
+**Scope:** laptop POC through Slice 39, SQLite schema 0009. Commands are run from the repository checkout on Linux/macOS using Python 3.12+. This guide describes implemented behavior. Git/GCS acquisition, HTTP API hosting, distributed workers, authenticated reviewers and OpenShift deployment are future work.
 
 ## Evidence gate version 3
 
@@ -546,3 +546,13 @@ Standalone codeql-extract records syntax coverage but can still attempt extracti
 inspect the retained scope. Successful reports expose the index in language_scope.
 No new migration or command is required. Syntax parsing does not establish Java
 semantic or Spring support; readiness remains incomplete. See Slice 38 for limits.
+
+### Spring annotation observations (Slice 39)
+
+New Java indexes include `framework_observations` in the retained syntax index.
+Each observation identifies its file/hash, annotation line and declaration target.
+The first 200 matching annotation names are returned; inspect total/truncated.
+A Spring namespace hint is not proof of runtime binding or an externally reachable
+endpoint. Wildcard imports remain unresolved. No Java LLM policy or build-profile
+support is enabled by these observations. Reusing an old report returns its original
+contents; a new scan uses the versioned parser and retains fresh observations.
