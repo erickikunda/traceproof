@@ -28,6 +28,7 @@ def scan_import(
     java_profile="dependency-free",
     allow_csharp_downloads=False,
     csharp_dependency_profile=None,
+    csharp_offline=False,
 ):
     resources = resource_settings(threads, ram_mb)
     validate_selection(language, java_profile)
@@ -66,6 +67,7 @@ def scan_import(
                 java_profile=java_profile,
                 allow_csharp_downloads=allow_csharp_downloads,
                 csharp_dependency_profile=csharp_dependency_profile,
+                csharp_offline=csharp_offline,
             )
         except TraceProofError as exc:
             # Expected row failures remain explicit; infrastructure errors stop the command.

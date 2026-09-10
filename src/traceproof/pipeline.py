@@ -14,6 +14,7 @@ from traceproof.languages import (
     validate_extraction_scope,
     validate_selection,
 )
+from traceproof.network_isolation import MODE, validate_offline
 from traceproof.persistence import Run, ScanAttempt, exclusive_worker
 from traceproof.reports import publish_report
 from traceproof.scanning import analyze, query_entry
@@ -33,6 +34,7 @@ def scan_run(
     java_profile="dependency-free",
     allow_csharp_downloads=False,
     csharp_dependency_profile=None,
+    csharp_offline=False,
 ):
     resources = resource_settings(threads, ram_mb)
     validate_selection(language, java_profile)
@@ -46,6 +48,9 @@ def scan_run(
             _, manifest, _ = verified_source(store, run_id)
             language = select_language(manifest, language)
             validate_selection(language, java_profile)
+        validate_offline(
+            language, csharp_dependency_profile, allow_csharp_downloads, csharp_offline
+        )
         dependency_id = None
         if csharp_dependency_profile is not None:
             if language != "csharp":
@@ -61,6 +66,11 @@ def scan_run(
                     select(ScanAttempt)
                     .where(
                         ScanAttempt.run_id == run_id,
+                        func.coalesce(
+                            ScanAttempt.report["language_scope"]["network_isolation"].as_string(),
+                            "none",
+                        )
+                        == (MODE if csharp_offline else "none"),
                         func.coalesce(
                             ScanAttempt.report["language_scope"]["dependency_profile"][
                                 "id"
@@ -131,6 +141,7 @@ def scan_run(
             java_profile=java_profile,
             allow_csharp_downloads=allow_csharp_downloads,
             csharp_dependency_profile=csharp_dependency_profile,
+            csharp_offline=csharp_offline,
             **resources,
         )
         result.update(

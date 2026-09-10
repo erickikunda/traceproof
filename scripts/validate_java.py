@@ -46,6 +46,7 @@ def main(fixture="java"):
     parser.add_argument("--project-layout", choices=["flat", "maven", "gradle"], default="flat")
     parser.add_argument("--auto-language", action="store_true")
     parser.add_argument("--csharp-dependency-profile", type=Path)
+    parser.add_argument("--csharp-offline", action="store_true")
     args = parser.parse_args()
     if args.project_layout != "flat" and args.java_profile != "source-only":
         parser.error("Project layouts require the source-only profile")
@@ -102,7 +103,8 @@ def main(fixture="java"):
                 query,
                 language="auto" if args.auto_language else language,
                 java_profile=args.java_profile,
-                allow_csharp_downloads=csharp,
+                allow_csharp_downloads=csharp and not args.csharp_offline,
+                csharp_offline=args.csharp_offline,
                 csharp_dependency_profile=args.csharp_dependency_profile,
             )
             if case == "incomplete":
@@ -141,6 +143,11 @@ def main(fixture="java"):
                 "no_model_calls": report["triage_call_count"] == 0,
                 "expected_rule": all(c["rule_id"] == rule for c in report["candidates"]),
             }
+            if args.csharp_offline:
+                checks["network_denial"] = (
+                    report["language_scope"]["dependency_profile"]["network_denial_verified"]
+                    is True
+                )
             if spring:
                 observations = report["language_scope"]["syntax_index"]["framework_observations"]
                 checks["spring_annotations"] = observations["total"] == 3 and all(

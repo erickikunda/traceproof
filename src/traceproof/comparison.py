@@ -7,7 +7,7 @@ from traceproof.bundles import canonical
 from traceproof.domain import TraceProofError
 from traceproof.reports import get_report, markdown_cell
 
-COMPARISON_VERSION = "5"
+COMPARISON_VERSION = "6"
 
 
 def identity(value):
@@ -50,6 +50,10 @@ def compatibility(before, after):
         (after.get("language_scope") or {}).get("dependency_profile") or {}
     ).get("id"):
         gaps.append("dependency_profile:unknown_or_different")
+    if (before.get("language_scope") or {}).get("network_isolation", "none") != (
+        after.get("language_scope") or {}
+    ).get("network_isolation", "none"):
+        gaps.append("network_isolation:different")
     for label, report in (("baseline", before), ("current", after)):
         if not report.get("snapshot_id"):
             gaps.append(f"{label}:snapshot_unknown")

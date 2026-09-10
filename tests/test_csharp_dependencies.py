@@ -129,3 +129,72 @@ def test_sdk_version_mismatch_stops_before_extraction(
             csharp_dependency_profile=path,
         )
     assert result["status"] == "dependency_toolchain_mismatch"
+
+
+def test_isolation_failure_is_durable_and_launches_no_extractor(
+    store, archive, manifest, tmp_path, monkeypatch
+):
+    import subprocess
+    import zipfile
+
+    from test_indexing import captured
+
+    from traceproof.codeql import extract, extraction_status
+    from traceproof.persistence import exclusive_worker
+
+    path = profile(tmp_path)
+    with zipfile.ZipFile(archive, "w") as out:
+        out.writestr("C.cs", "class C {}")
+    run = captured(store, archive, manifest)
+    monkeypatch.setattr("traceproof.codeql.shutil.which", lambda _: "/trusted/codeql")
+    monkeypatch.setattr("traceproof.codeql.offline_command", lambda _: ["/sandbox"])
+
+    def denied(*args, **kwargs):
+        raise subprocess.CalledProcessError(71, args[0])
+
+    monkeypatch.setattr("traceproof.codeql.subprocess.run", denied)
+    monkeypatch.setattr(
+        "traceproof.codeql.subprocess.Popen", lambda *a, **k: pytest.fail("extraction launched")
+    )
+    with exclusive_worker(store.root):
+        result = extract(
+            store, run, language="csharp", csharp_dependency_profile=path, csharp_offline=True
+        )
+    assert result["status"] == "network_isolation_unavailable"
+    assert not result["language_scope"]["dependency_profile"]["network_denial_verified"]
+    assert extraction_status(store, result["attempt_id"])["status"] == result["status"]
+
+
+def test_offline_request_does_not_reuse_network_enabled_scan(store, scanned, tmp_path, monkeypatch):
+    from traceproof import pipeline
+    from traceproof.persistence import ScanAttempt
+
+    path = profile(tmp_path)
+    with store.transaction() as session:
+        attempt = session.get(ScanAttempt, scanned[2])
+        attempt.report = {
+            **attempt.report,
+            "language": "csharp",
+            "language_scope": {
+                "adapter_profile": "csharp-source-only-v1",
+                "dependency_profile": {"id": load_profile(path)["id"]},
+                "network_isolation": "none",
+            },
+        }
+    query = tmp_path / "query.ql"
+    query.write_text("// query")
+
+    def preflight(*args):
+        raise TraceProofError("Reached extraction preflight")
+
+    monkeypatch.setattr(pipeline, "verified_source", preflight)
+    with pytest.raises(TraceProofError, match="Reached extraction"):
+        pipeline.scan_run(
+            store,
+            scanned[1],
+            query,
+            language="csharp",
+            skip_existing=True,
+            csharp_dependency_profile=path,
+            csharp_offline=True,
+        )

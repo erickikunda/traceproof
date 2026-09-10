@@ -76,3 +76,5 @@ The design and plan are proposals; the slice status and README describe what act
 Current C# status: initial source-only extraction plus pinned SDK/reference profiles;
 the classic fixture passes with matching references. C# LLM and broad framework
 qualification remain pending. See Slice 46.
+
+- [Slice 47: local C# offline extraction](development/slice-47.md)

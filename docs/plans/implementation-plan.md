@@ -39,6 +39,63 @@ compiled-language extraction builds are separate from exploit reproduction.
 
 ## 2. Implementation order and dependencies
 
+### Hard POC acceptance requirement: OCP dev execution
+
+Added 10 September 2026: the POC must be runnable and testable in the bank's
+OpenShift Container Platform development environment. This is an early POC gate,
+not deferred entirely to M6. M6/M7 retain enterprise pilot and fleet qualification.
+Docker-based local checks are preparation; only execution in the target OCP dev
+cluster satisfies this requirement. OpenShift Local is optional, not a prerequisite.
+
+Prioritize the following bounded delivery steps alongside language qualification,
+before more macOS-specific runtime work:
+
+1. **OCP-1 — Linux image and local restricted-runtime smoke test.** Package the CLI
+   in an approved glibc-based Linux image (UBI candidate), pin Python dependencies,
+   Linux CodeQL/query packs and platform-specific toolchains. Establish cluster CPU
+   architecture before finalizing image architecture. Test arbitrary non-root UID,
+   dropped capabilities, no privilege escalation, read-only root filesystem and
+   explicit writable scratch/state. No Docker socket or privileged nested containers.
+   Run real Python/Java/C# fixtures with networking disabled where dependencies are
+   pre-provisioned. Publish image digests, SBOM and reproducible build instructions.
+2. **OCP-2 — Namespace-scoped deployment bundle.** Provide Job manifests/Kustomize
+   overlays, ServiceAccount with token automount disabled unless required, minimum
+   RBAC, requests/limits, deadlines, bounded retries, ConfigMaps/Secrets, PVC mounts,
+   and default-deny NetworkPolicies. Let SCC assign namespace-valid identities;
+   do not request anyuid or privileged SCC. Configure corporate CAs and approved
+   registry/dependency preparation separately from extraction. Extraction pods must
+   not carry LLM credentials. The macOS offline flag is not the OCP isolation mechanism.
+3. **OCP-3 — Durable state and staged execution.** Qualify PostgreSQL persistence
+   and migration execution for shared OCP use; current SQLite/local locking must not
+   be scaled across workers or assumed safe on arbitrary PVC filesystems. A first
+   single-Job smoke test may use local ephemeral SQLite and export reports to PVC,
+   explicitly without restart/durability claims. Separate intake, offline extraction
+   and allowed-egress triage into stage-specific Jobs/artifacts before live model
+   testing. Redis/distributed leases are required only when introducing concurrent
+   orchestration, not for the first CLI Job. No hosted API is required for this gate.
+4. **OCP-4 — Real cluster acceptance.** Deploy pinned images in the bank dev namespace;
+   demonstrate archive/CSV from PVC through supported-language scan and retrieved
+   JSON/HTML report, correct SCC admission/SELinux volume access, enforced extraction
+   egress denial, successful allowed gateway traffic in the triage stage, restart/
+   retry handling and bounded resource behavior. Record exact OCP version, image
+   architecture, storage class, policies, fixture outcomes and limitations. Local
+   Docker success must never be reported as OCP qualification.
+
+Inputs needed from the platform team: OCP version and worker architecture, namespace
+and allowed SCC, approved base images/registry, storage classes/access modes and quota,
+PostgreSQL/Redis endpoints when applicable, corporate CA/proxy requirements, permitted
+LLM/GCS/internal dependency endpoints and namespace RBAC/NetworkPolicy permissions.
+Proceed with configurable manifests and local synthetic fixtures while these are pending.
+
+RHCOS is the node OS; application dependencies belong in the OCI image/PVC rather than
+being installed onto cluster nodes. OCP uses CRI-O. Docker builds/runs are suitable for
+local image preparation but do not reproduce OCP SCC, SELinux, admission or cluster CNI.
+
+References:
+- [Red Hat RHCOS architecture](https://docs.redhat.com/en/documentation/openshift_container_platform/4.19/html-multi/architecture/architecture-rhcos)
+- [OpenShift image guidelines](https://docs.redhat.com/en/documentation/openshift_container_platform/4.19/html-multi/images/creating-images)
+- [CodeQL setup](https://docs.github.com/en/code-security/how-tos/find-and-fix-code-vulnerabilities/scan-from-the-command-line/set-up-codeql-cli)
+
 ### Immediate priority: multi-language POC
 
 Deliver the following sequence before discretionary CLI refinement. The order starts with
@@ -73,8 +130,9 @@ unqualified. Next: establish isolated build execution and approved dependency ac
 for L1. If externally blocked, continue C#/ASP.NET L2 as specified above.
 Slices 45–46 add C# extraction/reporting and pinned SDK/reference profiles. The classic
 fixture miss is resolved with matching references; the pair passes under macOS network
-denial. Next: application-managed isolation and enforced offline Linux container validation,
-private-feed/Windows-worker integration and broader C# evidence remain open.
+denial. Slice 47 adds application-managed macOS offline C# extraction with a pinned
+profile, fail-closed enforcement and isolation-aware reuse. Next: enforced offline
+Linux container validation, private-feed/Windows-worker integration and broader C# evidence.
 Slice 44 adds opt-in single-language auto selection. L6 still requires query routing,
 per-language fan-out and consolidated repository reporting.
 Keep existing operator entry points and add options only where language selection or

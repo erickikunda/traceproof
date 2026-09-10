@@ -24,6 +24,7 @@ from traceproof.languages import (
     validate_extraction_scope,
     validate_selection,
 )
+from traceproof.network_isolation import MODE, offline_command, validate_offline
 from traceproof.persistence import CodeqlAttempt
 
 
@@ -39,6 +40,7 @@ def extract(
     java_profile="dependency-free",
     allow_csharp_downloads=False,
     csharp_dependency_profile=None,
+    csharp_offline=False,
 ):
     """Caller holds exclusive_worker; attempts and artifacts are never overwritten."""
     resources = resource_settings(threads, ram_mb)
@@ -51,10 +53,11 @@ def extract(
     adapter = adapter_for(language)
     if csharp_dependency_profile is not None and language != "csharp":
         raise TraceProofError("C# dependency profiles require the csharp language")
+    validate_offline(language, csharp_dependency_profile, allow_csharp_downloads, csharp_offline)
     dependency_profile = (
         load_profile(csharp_dependency_profile) if csharp_dependency_profile else None
     )
-    if language == "csharp" and not allow_csharp_downloads:
+    if language == "csharp" and not allow_csharp_downloads and not csharp_offline:
         raise TraceProofError(
             "C# extraction may download a .NET SDK and NuGet dependencies; "
             "explicit allow-csharp-downloads is required"
@@ -62,7 +65,8 @@ def extract(
     scope = validate_extraction_scope(manifest, language, java_profile)
     scope["language_selection"] = "automatic" if requested_language == "auto" else "explicit"
     if language == "csharp":
-        scope["extractor_downloads_allowed"] = True
+        scope["extractor_downloads_allowed"] = not csharp_offline
+        scope["network_isolation"] = MODE if csharp_offline else "none"
     if language == "java":
         scope["syntax_index"] = build_java_index(store, run_id)
     if dependency_profile:
@@ -123,12 +127,29 @@ def extract(
             "TMPDIR": str(root),
             "LANG": "en_US.UTF-8",
         }
+        prefix = []
+        if csharp_offline:
+            try:
+                prefix = offline_command([])
+                subprocess.run(
+                    [*prefix, "/usr/bin/true"],
+                    cwd=root,
+                    env=env,
+                    capture_output=True,
+                    timeout=10,
+                    check=True,
+                )
+            except (TraceProofError, OSError, subprocess.SubprocessError):
+                result["status"] = "network_isolation_unavailable"
+                with store.transaction() as session:
+                    session.get(CodeqlAttempt, attempt_id).result = result
+                return result
         if dependency_profile:
             env.update(dependency_environment(dependency_profile, root))
             env["PATH"] = str(dependency_profile["sdk"]) + os.pathsep + env["PATH"]
             try:
                 sdk = subprocess.run(
-                    [str(dependency_profile["sdk"] / "dotnet"), "--version"],
+                    [*prefix, str(dependency_profile["sdk"] / "dotnet"), "--version"],
                     cwd=root,
                     env=env,
                     capture_output=True,
@@ -145,7 +166,7 @@ def extract(
                 return result
         try:
             version = subprocess.run(
-                [executable, "version", "--format=json"],
+                [*prefix, executable, "version", "--format=json"],
                 env=env,
                 cwd=root,
                 capture_output=True,
@@ -179,7 +200,7 @@ def extract(
         with (root / "extract.log").open("wb") as log:
             try:
                 process = subprocess.Popen(
-                    command,
+                    [*prefix, *command],
                     cwd=root,
                     env=env,
                     stdin=subprocess.DEVNULL,
@@ -189,6 +210,8 @@ def extract(
                 )
                 try:
                     code = process.wait(timeout=timeout)
+                    if code == 0 and csharp_offline:
+                        scope["dependency_profile"]["network_denial_verified"] = True
                     result.update(status="extracted" if code == 0 else "failed", exit_code=code)
                 except subprocess.TimeoutExpired:
                     os.killpg(process.pid, signal.SIGKILL)

@@ -42,8 +42,8 @@ miss; C# evidence and both ASP.NET framework lanes remain unqualified.
 
 Slice 46 resolves the specific classic ASP.NET fixture miss with pinned framework
 references and SDK. The classic vulnerable/fixed pair now passes under externally
-enforced macOS network denial (1/0 candidates). Application-managed isolation, Linux
-container qualification and broader C# evidence/framework qualification remain open.
+enforced macOS network denial (1/0 candidates). Slice 47 adds application-managed macOS extraction network isolation. Linux container
+qualification and broader C# evidence/framework qualification remain open.
 
 ## Historical delivery assessment
 

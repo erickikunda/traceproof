@@ -353,6 +353,7 @@ def codeql_extract(
     java_profile: str = "dependency-free",
     allow_csharp_downloads: bool = False,
     csharp_dependency_profile: Path | None = None,
+    csharp_offline: bool = False,
 ):
     """Opt-in local extraction; creates diagnostics, not security findings."""
     from traceproof.codeql import extract
@@ -371,6 +372,7 @@ def codeql_extract(
                 java_profile=java_profile,
                 allow_csharp_downloads=allow_csharp_downloads,
                 csharp_dependency_profile=csharp_dependency_profile,
+                csharp_offline=csharp_offline,
             )
 
     perform(operation)
@@ -423,6 +425,7 @@ def scan_run_command(
     java_profile: str = "dependency-free",
     allow_csharp_downloads: bool = False,
     csharp_dependency_profile: Path | None = None,
+    csharp_offline: bool = False,
 ):
     """Index, gate, extract, query and publish one captured run; no model calls."""
     from traceproof.pipeline import scan_run
@@ -440,6 +443,7 @@ def scan_run_command(
             java_profile=java_profile,
             allow_csharp_downloads=allow_csharp_downloads,
             csharp_dependency_profile=csharp_dependency_profile,
+            csharp_offline=csharp_offline,
         )
     )
 
@@ -460,6 +464,7 @@ def scan_import_command(
     java_profile: str = "dependency-free",
     allow_csharp_downloads: bool = False,
     csharp_dependency_profile: Path | None = None,
+    csharp_offline: bool = False,
 ):
     """Sequentially scan selected import rows; existing query attempts are skipped by default."""
     from traceproof.batch_scan import scan_import
@@ -480,6 +485,7 @@ def scan_import_command(
             java_profile=java_profile,
             allow_csharp_downloads=allow_csharp_downloads,
             csharp_dependency_profile=csharp_dependency_profile,
+            csharp_offline=csharp_offline,
         )
     )
 

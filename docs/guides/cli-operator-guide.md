@@ -625,11 +625,14 @@ profile resolves the known classic fixture miss. Select profiles matching the ta
 framework; this does not qualify arbitrary projects. SDK/CodeQL version mismatches fail.
 Profile changes prevent reuse of an earlier profile's scan attempt.
 
-Keep --allow-csharp-downloads: ordinary CLI scans do not enforce network denial. The
-classic fixture pair passed under an external macOS sandbox with networking denied
-(see Slice 46 for reproduction); this does not enable isolation for other invocations.
-Reports retain network_denial_verified=false because the application does not attest
-the external sandbox. Linux/OpenShift container validation remains pending.
+For macOS offline extraction, add --csharp-offline and omit --allow-csharp-downloads.
+This requires the pinned profile. The app checks and applies network denial to SDK/
+CodeQL version inspection and extraction, including child processes. Failure to establish
+isolation blocks extraction; there is no network fallback. Successful extraction records
+network_denial_verified=true. This option does not isolate query execution or LLM calls,
+and is not a filesystem/build sandbox. Linux is unsupported by this option and fails
+closed. The earlier explicit download opt-in remains available for other local runs.
+See Slice 47 for validation and reproduction.
 Mount SDK/reference directories read-only in deployment and give each scan writable
 scratch. The macOS SDK is not portable to a Linux/OpenShift worker. Reports remain
 incomplete and C# LLM advice is still unsupported. No migration.
