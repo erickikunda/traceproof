@@ -7,7 +7,12 @@ from traceproof.codeql_resources import resource_settings
 from traceproof.domain import TraceProofError
 from traceproof.indexing import build_index, verified_source
 from traceproof.java_index import build_java_index
-from traceproof.languages import select_language, validate_extraction_scope, validate_selection
+from traceproof.languages import (
+    adapter_for,
+    select_language,
+    validate_extraction_scope,
+    validate_selection,
+)
 from traceproof.persistence import Run, ScanAttempt, exclusive_worker
 from traceproof.reports import publish_report
 from traceproof.scanning import analyze, query_entry
@@ -25,6 +30,7 @@ def scan_run(
     ram_mb=2048,
     language="python",
     java_profile="dependency-free",
+    allow_csharp_downloads=False,
 ):
     resources = resource_settings(threads, ram_mb)
     validate_selection(language, java_profile)
@@ -52,10 +58,12 @@ def scan_run(
                         == language,
                         func.coalesce(
                             ScanAttempt.report["language_scope"]["adapter_profile"].as_string(),
-                            "java-dependency-free-v1" if language == "java" else "python-source-v1",
+                            adapter_for(language).profile,
                         )
                         == (
-                            f"java-{java_profile}-v1" if language == "java" else "python-source-v1"
+                            f"java-{java_profile}-v1"
+                            if language == "java"
+                            else adapter_for(language).profile
                         ),
                     )
                     .order_by(ScanAttempt.created_at.desc(), ScanAttempt.id.desc())
@@ -97,15 +105,17 @@ def scan_run(
         else:
             _, manifest, _ = verified_source(store, run_id)
             result["language_scope"] = validate_extraction_scope(manifest, language, java_profile)
-            result["java_syntax_index"] = build_java_index(store, run_id)
-            if result["java_syntax_index"]["syntax_gate"] != "ready":
-                return {**result, "reason": "Java syntax index is blocked"}
+            if language == "java":
+                result["java_syntax_index"] = build_java_index(store, run_id)
+                if result["java_syntax_index"]["syntax_gate"] != "ready":
+                    return {**result, "reason": "Java syntax index is blocked"}
         extraction = extract(
             store,
             run_id,
             timeout=extraction_timeout,
             language=requested_language,
             java_profile=java_profile,
+            allow_csharp_downloads=allow_csharp_downloads,
             **resources,
         )
         result.update(

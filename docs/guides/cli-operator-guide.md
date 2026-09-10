@@ -1,6 +1,6 @@
 # TraceProof CLI user and operator guide
 
-**Scope:** laptop POC through Slice 44, SQLite schema 0009. Commands are run from the repository checkout on Linux/macOS using Python 3.12+. This guide describes implemented behavior. Git/GCS acquisition, HTTP API hosting, distributed workers, authenticated reviewers and OpenShift deployment are future work.
+**Scope:** laptop POC through Slice 45, SQLite schema 0009. Commands are run from the repository checkout on Linux/macOS using Python 3.12+. This guide describes implemented behavior. Git/GCS acquisition, HTTP API hosting, distributed workers, authenticated reviewers and OpenShift deployment are future work.
 
 ## Evidence gate version 3
 
@@ -606,3 +606,12 @@ Supply the correct query yourself; auto does not choose queries or run all langu
 For Java build layouts, add `--java-profile source-only` explicitly. Reports retain
 whether language selection was automatic. scan-import applies one query across its
 page, so group repositories by query applicability. No migration or build execution.
+
+### Initial C# scanning (Slice 45)
+
+Select --language csharp (or auto for a C#-only snapshot) and provide a compatible
+C# query plus --allow-csharp-downloads. CodeQL may download an SDK and access NuGet;
+without the opt-in, extraction is blocked. Only .cs files enter the copied source tree.
+Project files, binaries and Razor views are omitted. Reports remain incomplete,
+and C# LLM triage is unsupported. Classic ASP.NET has a known fixture miss; this is
+not qualified ASP.NET coverage. See Slice 45 for reproduction and bank prerequisites.

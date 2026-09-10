@@ -147,3 +147,29 @@ def test_auto_skip_resolves_to_existing_language(store, scanned, tmp_path):
     result = pipeline.scan_run(store, scanned[1], query, language="auto", skip_existing=True)
     assert result["status"] == "skipped_existing_attempt"
     assert result["language"] == "python" and result["requested_language"] == "auto"
+
+
+def test_csharp_selection_and_explicit_scope():
+    from traceproof.languages import select_language
+
+    snapshot = manifest("Controllers/Lookup.cs", "App.csproj", "View.cshtml", "dependency.dll")
+    assert select_language(snapshot, "auto") == "csharp"
+    scope = validate_extraction_scope(snapshot, "csharp")
+    assert scope["adapter_profile"] == "csharp-source-only-v1"
+    assert scope["omitted_file_count"] == 3 and scope["framework_coverage"] == "not_qualified"
+    assert scope["evidence_gate"] == "unsupported"
+
+
+def test_csharp_reports_do_not_inherit_python_readiness(store, scanned):
+    repo, run, attempt, _ = scanned
+    with store.transaction() as session:
+        record = session.get(ScanAttempt, attempt)
+        record.report = {
+            **record.report,
+            "language": "csharp",
+            "language_scope": validate_extraction_scope(manifest("C.cs"), "csharp"),
+        }
+    report = publish_report(store, repo, run, attempt)
+    assert report["static_review_readiness"]["state"] == "incomplete"
+    assert "csharp_semantic_index_not_qualified" in report["static_review_readiness"]["reasons"]
+    assert get_report(store, repo, report["report_id"]) == report

@@ -24,7 +24,9 @@ def static_readiness(session, snapshot_id, scan):
     reasons = []
     if language != "python":
         reasons.append(
-            "java_semantic_index_not_qualified" if language == "java" else "unsupported_language"
+            f"{language}_semantic_index_not_qualified"
+            if language in {"java", "csharp"}
+            else "unsupported_language"
         )
     elif not coverage:
         reasons.append("current_python_index_missing")
@@ -53,7 +55,7 @@ def static_readiness(session, snapshot_id, scan):
         "python_files": coverage.get("python_files"),
         "parsed_python_files": coverage.get("parsed_python_files"),
         "total_files": coverage.get("total_files"),
-        "scope": "Recorded extraction/query execution only; Java semantic indexing unqualified"
+        "scope": f"Recorded extraction/query execution; {language} semantic indexing unqualified"
         if language != "python"
         else "Python parsing and recorded static execution only",
         "security_completion_verified": False,

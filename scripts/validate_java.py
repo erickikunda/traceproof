@@ -23,8 +23,18 @@ from traceproof.reports import get_report, render_report
 
 def main(fixture="java"):
     spring = fixture == "spring"
-    filename = "LookupController.java" if spring else "DbLookup.java"
-    rule = "java/sql-injection" if spring else "java/concatenated-sql-query"
+    csharp = fixture.startswith("csharp")
+    language = "csharp" if csharp else "java"
+    filename = (
+        "LookupController.cs" if csharp else "LookupController.java" if spring else "DbLookup.java"
+    )
+    rule = (
+        "cs/sql-injection"
+        if csharp
+        else "java/sql-injection"
+        if spring
+        else "java/concatenated-sql-query"
+    )
     parser = argparse.ArgumentParser(
         description=f"Run {fixture} source-only Java acceptance fixtures"
     )
@@ -89,8 +99,9 @@ def main(fixture="java"):
                 store,
                 run,
                 query,
-                language="auto" if args.auto_language else "java",
+                language="auto" if args.auto_language else language,
                 java_profile=args.java_profile,
+                allow_csharp_downloads=csharp,
             )
             if case == "incomplete":
                 checks = {
@@ -118,10 +129,12 @@ def main(fixture="java"):
             checks = {
                 "candidate_count": report["candidate_count"] == expected,
                 "query_completed": report["analysis_status"] == "completed",
-                "java_scope": report["language"] == "java",
+                "language_scope": report["language"] == language,
                 "language_selection": report["language_scope"]["language_selection"]
                 == ("automatic" if args.auto_language else "explicit"),
-                "syntax_index": report["language_scope"]["syntax_index"]["syntax_gate"] == "ready",
+                "syntax_index": report["language_scope"]["semantic_index"] == "not_qualified"
+                if csharp
+                else report["language_scope"]["syntax_index"]["syntax_gate"] == "ready",
                 "honest_readiness": report["static_review_readiness"]["state"] == "incomplete",
                 "no_model_calls": report["triage_call_count"] == 0,
                 "expected_rule": all(c["rule_id"] == rule for c in report["candidates"]),

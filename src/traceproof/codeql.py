@@ -35,6 +35,7 @@ def extract(
     ram_mb=2048,
     language="python",
     java_profile="dependency-free",
+    allow_csharp_downloads=False,
 ):
     """Caller holds exclusive_worker; attempts and artifacts are never overwritten."""
     resources = resource_settings(threads, ram_mb)
@@ -45,25 +46,33 @@ def extract(
     requested_language = language
     language = select_language(manifest, language)
     adapter = adapter_for(language)
+    if language == "csharp" and not allow_csharp_downloads:
+        raise TraceProofError(
+            "C# extraction may download a .NET SDK and NuGet dependencies; "
+            "explicit allow-csharp-downloads is required"
+        )
     scope = validate_extraction_scope(manifest, language, java_profile)
     scope["language_selection"] = "automatic" if requested_language == "auto" else "explicit"
+    if language == "csharp":
+        scope["extractor_downloads_allowed"] = True
     if language == "java":
         scope["syntax_index"] = build_java_index(store, run_id)
     attempt_id = str(uuid4())
     root = store.root / "codeql" / attempt_id
     root.mkdir(parents=True, mode=0o700)
     extraction_tree = tree
-    if language == "java" and java_profile == "source-only":
+    copy_suffix = ".cs" if language == "csharp" else ".java"
+    if language == "csharp" or (language == "java" and java_profile == "source-only"):
         extraction_tree = root / "source"
         extraction_tree.mkdir(mode=0o700)
         for file in manifest.files:
-            if not file.path.lower().endswith(".java"):
+            if not file.path.lower().endswith(copy_suffix):
                 continue
             target = extraction_tree / file.path
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(tree / file.path, target)
             if hashlib.sha256(target.read_bytes()).hexdigest() != file.sha256:
-                raise TraceProofError("Java extraction copy failed integrity verification")
+                raise TraceProofError("Source extraction copy failed integrity verification")
     executable = shutil.which("codeql")
     result = {
         "schema_version": "1",
@@ -150,13 +159,13 @@ def extract(
             verified_source(store, run_id)
             if extraction_tree != tree:
                 for file in manifest.files:
-                    if file.path.lower().endswith(".java"):
+                    if file.path.lower().endswith(copy_suffix):
                         target = extraction_tree / file.path
                         if (
                             target.is_symlink()
                             or hashlib.sha256(target.read_bytes()).hexdigest() != file.sha256
                         ):
-                            raise TraceProofError("Java extraction copy changed")
+                            raise TraceProofError("Source extraction copy changed")
         except (TraceProofError, OSError):
             result["status"] = "integrity_failed"
     result["elapsed_seconds"] = round(time.monotonic() - started, 3)

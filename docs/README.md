@@ -68,3 +68,5 @@ The design and plan are proposals; the slice status and README describe what act
 - [Slice 43](development/slice-43.md): explicit copied-source Java profile for Maven/Gradle layouts.
 
 - [Slice 44](development/slice-44.md): opt-in automatic single-language selection.
+
+- [Slice 45](development/slice-45.md): initial C# extraction/reporting and explicit download boundary.

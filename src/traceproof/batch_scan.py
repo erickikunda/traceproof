@@ -26,6 +26,7 @@ def scan_import(
     ram_mb=2048,
     language="python",
     java_profile="dependency-free",
+    allow_csharp_downloads=False,
 ):
     resources = resource_settings(threads, ram_mb)
     validate_selection(language, java_profile)
@@ -62,6 +63,7 @@ def scan_import(
                 **resources,
                 language=language,
                 java_profile=java_profile,
+                allow_csharp_downloads=allow_csharp_downloads,
             )
         except TraceProofError as exc:
             # Expected row failures remain explicit; infrastructure errors stop the command.

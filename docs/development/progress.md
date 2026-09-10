@@ -1,4 +1,4 @@
-# Implementation progress after Slice 44
+# Implementation progress after Slice 45
 
 ## Priority reset — 10 September 2026
 
@@ -35,6 +35,10 @@ prerequisites. L1 remains partial.
 
 Slice 44 adds opt-in automatic selection for one detected supported source language.
 Mixed-language execution and query routing remain pending.
+
+Slice 45 starts L2 with opt-in C# source-only extraction/reporting. SDK/NuGet behavior
+requires explicit download consent. Classic ASP.NET detection qualification has a known
+miss; C# evidence and both ASP.NET framework lanes remain unqualified.
 
 ## Historical delivery assessment
 

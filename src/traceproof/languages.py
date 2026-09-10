@@ -17,6 +17,9 @@ class LanguageAdapter:
 
 
 ADAPTERS = {
+    "csharp": LanguageAdapter(
+        "csharp", "csharp", "csharp-source-only-v1", "not_qualified", "unsupported"
+    ),
     "python": LanguageAdapter(
         "python", "python", "python-source-v1", "python_ast", "python_claims"
     ),
@@ -48,7 +51,7 @@ EXTENSIONS = {
 
 def adapter_for(language):
     if language not in ADAPTERS:
-        raise TraceProofError("Implemented extraction languages are python and java")
+        raise TraceProofError("Implemented extraction languages are python, java and csharp")
     return ADAPTERS[language]
 
 
@@ -112,6 +115,17 @@ def validate_extraction_scope(manifest, language, java_profile="dependency-free"
     scope = language_scope(manifest, language)
     if not scope["selected_file_count"]:
         raise TraceProofError("Snapshot contains no files for the selected language")
+    if language == "csharp":
+        scope.update(
+            dependency_resolution="not_qualified",
+            generated_code="not_qualified",
+            build_execution="not_requested",
+            framework_coverage="not_qualified",
+            package_access="extractor_managed_not_qualified",
+            razor_views="omitted",
+            omitted_file_count=len(manifest.files) - scope["selected_file_count"],
+            extraction_input="verified_csharp_only_copy",
+        )
     if language == "java" and java_profile == "source-only":
         scope.update(
             adapter_profile="java-source-only-v1",
