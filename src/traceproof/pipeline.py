@@ -7,7 +7,7 @@ from traceproof.codeql_resources import resource_settings
 from traceproof.domain import TraceProofError
 from traceproof.indexing import build_index, verified_source
 from traceproof.java_index import build_java_index
-from traceproof.languages import adapter_for, validate_extraction_scope
+from traceproof.languages import adapter_for, validate_extraction_scope, validate_profile
 from traceproof.persistence import Run, ScanAttempt, exclusive_worker
 from traceproof.reports import publish_report
 from traceproof.scanning import analyze, query_entry
@@ -24,9 +24,11 @@ def scan_run(
     threads=2,
     ram_mb=2048,
     language="python",
+    java_profile="dependency-free",
 ):
     resources = resource_settings(threads, ram_mb)
     adapter_for(language)
+    validate_profile(language, java_profile)
     if not 1 <= extraction_timeout <= 3600 or not 1 <= query_timeout <= 3600:
         raise TraceProofError("Stage timeouts must be between 1 and 3600 seconds")
     store.require_initialized()
@@ -44,6 +46,13 @@ def scan_run(
                         ScanAttempt.run_id == run_id,
                         func.coalesce(ScanAttempt.report["language"].as_string(), "python")
                         == language,
+                        func.coalesce(
+                            ScanAttempt.report["language_scope"]["adapter_profile"].as_string(),
+                            "java-dependency-free-v1" if language == "java" else "python-source-v1",
+                        )
+                        == (
+                            f"java-{java_profile}-v1" if language == "java" else "python-source-v1"
+                        ),
                     )
                     .order_by(ScanAttempt.created_at.desc(), ScanAttempt.id.desc())
                     .limit(1)
@@ -80,12 +89,17 @@ def scan_run(
                 return {**result, "reason": "Python index is not ready; inspect repo-report"}
         else:
             _, manifest, _ = verified_source(store, run_id)
-            result["language_scope"] = validate_extraction_scope(manifest, language)
+            result["language_scope"] = validate_extraction_scope(manifest, language, java_profile)
             result["java_syntax_index"] = build_java_index(store, run_id)
             if result["java_syntax_index"]["syntax_gate"] != "ready":
                 return {**result, "reason": "Java syntax index is blocked"}
         extraction = extract(
-            store, run_id, timeout=extraction_timeout, language=language, **resources
+            store,
+            run_id,
+            timeout=extraction_timeout,
+            language=language,
+            java_profile=java_profile,
+            **resources,
         )
         result.update(
             extraction_id=extraction["attempt_id"],

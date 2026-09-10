@@ -74,3 +74,45 @@ def test_batch_skip_is_language_scoped(store, scanned, tmp_path, monkeypatch):
         pipeline.scan_run(store, scanned[1], query, skip_existing=True)["status"]
         == "skipped_existing_attempt"
     )
+
+
+def test_source_only_profile_discloses_omitted_inputs():
+    scope = validate_extraction_scope(
+        manifest("src/A.java", "pom.xml", "build.gradle", "X.kt", "a.jar"), "java", "source-only"
+    )
+    assert scope["adapter_profile"] == "java-source-only-v1"
+    assert scope["omitted_file_count"] == 4
+    assert scope["unselected_languages"] == ["kotlin"]
+    assert scope["dependency_resolution"] == "not_qualified"
+    with pytest.raises(TraceProofError):
+        validate_extraction_scope(manifest("a.py"), "python", "source-only")
+
+
+def test_skip_existing_does_not_cross_java_profiles(store, scanned, tmp_path, monkeypatch):
+    with store.transaction() as session:
+        record = session.get(ScanAttempt, scanned[2])
+        record.report = {
+            **record.report,
+            "language": "java",
+            "language_scope": {"adapter_profile": "java-source-only-v1"},
+        }
+    query = tmp_path / "q.ql"
+    query.write_text("// query")
+    assert (
+        pipeline.scan_run(
+            store,
+            scanned[1],
+            query,
+            language="java",
+            java_profile="source-only",
+            skip_existing=True,
+        )["status"]
+        == "skipped_existing_attempt"
+    )
+
+    def reached(*args):
+        raise TraceProofError("Different profile reached preflight")
+
+    monkeypatch.setattr(pipeline, "verified_source", reached)
+    with pytest.raises(TraceProofError, match="Different profile"):
+        pipeline.scan_run(store, scanned[1], query, language="java", skip_existing=True)

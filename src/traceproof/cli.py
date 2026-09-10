@@ -350,6 +350,7 @@ def codeql_extract(
     threads: Annotated[int, typer.Option(min=1, max=64)] = 2,
     ram_mb: Annotated[int, typer.Option(min=2048, max=262144)] = 2048,
     language: str = "python",
+    java_profile: str = "dependency-free",
 ):
     """Opt-in local extraction; creates diagnostics, not security findings."""
     from traceproof.codeql import extract
@@ -365,6 +366,7 @@ def codeql_extract(
                 threads=threads,
                 ram_mb=ram_mb,
                 language=language,
+                java_profile=java_profile,
             )
 
     perform(operation)
@@ -414,6 +416,7 @@ def scan_run_command(
     threads: Annotated[int, typer.Option(min=1, max=64)] = 2,
     ram_mb: Annotated[int, typer.Option(min=2048, max=262144)] = 2048,
     language: str = "python",
+    java_profile: str = "dependency-free",
 ):
     """Index, gate, extract, query and publish one captured run; no model calls."""
     from traceproof.pipeline import scan_run
@@ -428,6 +431,7 @@ def scan_run_command(
             threads=threads,
             ram_mb=ram_mb,
             language=language,
+            java_profile=java_profile,
         )
     )
 
@@ -445,6 +449,7 @@ def scan_import_command(
     threads: Annotated[int, typer.Option(min=1, max=64)] = 2,
     ram_mb: Annotated[int, typer.Option(min=2048, max=262144)] = 2048,
     language: str = "python",
+    java_profile: str = "dependency-free",
 ):
     """Sequentially scan selected import rows; existing query attempts are skipped by default."""
     from traceproof.batch_scan import scan_import
@@ -462,6 +467,7 @@ def scan_import_command(
             threads=threads,
             ram_mb=ram_mb,
             language=language,
+            java_profile=java_profile,
         )
     )
 

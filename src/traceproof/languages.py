@@ -72,11 +72,31 @@ def language_scope(manifest, language):
     }
 
 
-def validate_extraction_scope(manifest, language):
+def validate_profile(language, java_profile):
+    adapter_for(language)
+    if java_profile not in {"dependency-free", "source-only"} or (
+        language != "java" and java_profile != "dependency-free"
+    ):
+        raise TraceProofError(
+            "Java profile must be dependency-free or source-only; source-only requires java"
+        )
+
+
+def validate_extraction_scope(manifest, language, java_profile="dependency-free"):
+    validate_profile(language, java_profile)
     scope = language_scope(manifest, language)
     if not scope["selected_file_count"]:
         raise TraceProofError("Snapshot contains no files for the selected language")
-    if language == "java":
+    if language == "java" and java_profile == "source-only":
+        scope.update(
+            adapter_profile="java-source-only-v1",
+            dependency_resolution="not_qualified",
+            generated_code="not_qualified",
+            build_execution="not_requested",
+            omitted_file_count=len(manifest.files) - scope["selected_file_count"],
+            extraction_input="verified_java_only_copy",
+        )
+    if language == "java" and java_profile == "dependency-free":
         blocked_names = {
             "pom.xml",
             "build.gradle",

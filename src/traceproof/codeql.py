@@ -1,5 +1,6 @@
 """Opt-in local language-selected extraction diagnostics; no security queries or source builds."""
 
+import hashlib
 import json
 import os
 import shutil
@@ -20,7 +21,15 @@ from traceproof.persistence import CodeqlAttempt
 
 
 def extract(
-    store, run_id, timeout=300, skip_baseline=False, *, threads=2, ram_mb=2048, language="python"
+    store,
+    run_id,
+    timeout=300,
+    skip_baseline=False,
+    *,
+    threads=2,
+    ram_mb=2048,
+    language="python",
+    java_profile="dependency-free",
 ):
     """Caller holds exclusive_worker; attempts and artifacts are never overwritten."""
     resources = resource_settings(threads, ram_mb)
@@ -28,12 +37,24 @@ def extract(
     if not 1 <= timeout <= 3600:
         raise TraceProofError("Extraction timeout must be between 1 and 3600 seconds")
     run, manifest, tree = verified_source(store, run_id)
-    scope = validate_extraction_scope(manifest, language)
+    scope = validate_extraction_scope(manifest, language, java_profile)
     if language == "java":
         scope["syntax_index"] = build_java_index(store, run_id)
     attempt_id = str(uuid4())
     root = store.root / "codeql" / attempt_id
     root.mkdir(parents=True, mode=0o700)
+    extraction_tree = tree
+    if language == "java" and java_profile == "source-only":
+        extraction_tree = root / "source"
+        extraction_tree.mkdir(mode=0o700)
+        for file in manifest.files:
+            if not file.path.lower().endswith(".java"):
+                continue
+            target = extraction_tree / file.path
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(tree / file.path, target)
+            if hashlib.sha256(target.read_bytes()).hexdigest() != file.sha256:
+                raise TraceProofError("Java extraction copy failed integrity verification")
     executable = shutil.which("codeql")
     result = {
         "schema_version": "1",
@@ -87,7 +108,7 @@ def extract(
             str(root / "database"),
             f"--language={adapter.extractor}",
             "--build-mode=none",
-            f"--source-root={tree}",
+            f"--source-root={extraction_tree}",
             f"--threads={threads}",
             f"--ram={ram_mb}",
             f"--common-caches={root / 'cache'}",
@@ -118,7 +139,16 @@ def extract(
                 result["status"] = "launch_failed"
         try:
             verified_source(store, run_id)
-        except TraceProofError:
+            if extraction_tree != tree:
+                for file in manifest.files:
+                    if file.path.lower().endswith(".java"):
+                        target = extraction_tree / file.path
+                        if (
+                            target.is_symlink()
+                            or hashlib.sha256(target.read_bytes()).hexdigest() != file.sha256
+                        ):
+                            raise TraceProofError("Java extraction copy changed")
+        except (TraceProofError, OSError):
             result["status"] = "integrity_failed"
     result["elapsed_seconds"] = round(time.monotonic() - started, 3)
     with store.transaction() as session:

@@ -30,7 +30,13 @@ def main(fixture="java"):
     )
     parser.add_argument("query", type=Path)
     parser.add_argument("output", type=Path)
+    parser.add_argument(
+        "--java-profile", choices=["dependency-free", "source-only"], default="dependency-free"
+    )
+    parser.add_argument("--project-layout", choices=["flat", "maven", "gradle"], default="flat")
     args = parser.parse_args()
+    if args.project_layout != "flat" and args.java_profile != "source-only":
+        parser.error("Project layouts require the source-only profile")
     root = args.output.resolve()
     root.mkdir(parents=True, exist_ok=False)
     query = args.query.resolve(strict=True)
@@ -48,7 +54,20 @@ def main(fixture="java"):
                 Path(__file__).resolve().parents[1] / "tests/fixtures" / fixture / case / filename
             )
             with zipfile.ZipFile(archive, "w") as zipped:
-                zipped.write(source, filename)
+                zipped.write(
+                    source,
+                    filename if args.project_layout == "flat" else "src/main/java/" + filename,
+                )
+                if args.project_layout == "maven":
+                    zipped.writestr(
+                        "pom.xml",
+                        "<project><modelVersion>4.0.0</modelVersion><groupId>synthetic</groupId><artifactId>fixture</artifactId><version>1</version></project>",
+                    )
+                elif args.project_layout == "gradle":
+                    zipped.writestr(
+                        "build.gradle",
+                        'throw new RuntimeException("Build evaluation forbidden in this fixture")',
+                    )
             row = dict(
                 repo_id=f"{fixture}-{case}",
                 source_type="pvc",
@@ -65,7 +84,7 @@ def main(fixture="java"):
             with exclusive_worker(store.root):
                 captured = process(store, ArtifactStore(store.root), batch)
             run = captured["items"][0]["run_id"]
-            result = scan_run(store, run, query, language="java")
+            result = scan_run(store, run, query, language="java", java_profile=args.java_profile)
             if case == "incomplete":
                 checks = {
                     "parse_blocked": result["status"] == "blocked"

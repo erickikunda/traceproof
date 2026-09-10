@@ -64,3 +64,5 @@ The design and plan are proposals; the slice status and README describe what act
 - [Slice 41](development/slice-41.md): Java SQL advisory evidence gate.
 
 - [Slice 42](development/slice-42.md): complete Java context from bounded evidence expansions.
+
+- [Slice 43](development/slice-43.md): explicit copied-source Java profile for Maven/Gradle layouts.

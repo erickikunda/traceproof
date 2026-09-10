@@ -1,4 +1,4 @@
-# Implementation progress after Slice 42
+# Implementation progress after Slice 43
 
 ## Priority reset — 10 September 2026
 
@@ -28,6 +28,10 @@ flows. Broader Java evidence and built Spring qualification remain pending.
 
 Slice 42 lets Java advisory gates use complete context assembled from bounded
 evidence expansions. Build qualification and broader language coverage remain open.
+
+Slice 43 adds explicit Java-only copied-source extraction for Maven/Gradle layouts.
+This does not qualify builds; isolated build execution and approved dependencies remain
+prerequisites. L1 remains partial.
 
 ## Historical delivery assessment
 
