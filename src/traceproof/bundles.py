@@ -14,7 +14,7 @@ from traceproof.persistence import Candidate, EvidenceBundle, ScanAttempt, exclu
 from traceproof.python_parser import MAX_BYTES
 from traceproof.sarif import MAX_SARIF_BYTES, bind_location, fingerprint, indexed
 
-BUILDER_VERSION = "3"
+BUILDER_VERSION = "4"
 MAX_LOCATIONS = 8
 MAX_BUNDLE_BYTES = 32 * 1024
 MAX_SOURCE_BYTES = 16 * 1024
@@ -130,6 +130,10 @@ def _build_bundle(store, attempt_id, candidate_fingerprint):
             if end > len(lines) or end - start + 1 > 40:
                 raise TraceProofError("range_limit")
             start, end = max(1, start - 3), min(len(lines), end + 3)
+            # Small Java files retain imports and declaration context for syntax gates.
+            # Existing cumulative source/envelope limits still apply.
+            if record.path.endswith(".java") and len(lines) <= 40:
+                start, end = 1, len(lines)
             text = "".join(lines[start - 1 : end])
             size = len(text.encode())
             if source_bytes + size > MAX_SOURCE_BYTES:

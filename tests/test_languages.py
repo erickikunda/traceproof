@@ -19,7 +19,10 @@ def test_inventory_and_explicit_capabilities():
     scope = language_scope(manifest("A.java", "app.py", "web.ts", "main.go", "README.md"), "java")
     assert scope["selected_file_count"] == 1
     assert scope["unselected_languages"] == ["go", "python", "typescript"]
-    assert scope["semantic_index"] == "not_qualified" and scope["evidence_gate"] == "unsupported"
+    assert (
+        scope["semantic_index"] == "not_qualified"
+        and scope["evidence_gate"] == "spring_requestparam_sql_review_v1"
+    )
     with pytest.raises(TraceProofError, match="Implemented"):
         adapter_for("rust")
 

@@ -66,7 +66,8 @@ real dependency-free Java extraction-to-candidate/report fixture. L0 and L1 rema
 Slices 38–39 add bounded Java syntax indexing and Spring annotation observations;
 semantic resolution and runtime bindings remain unqualified.
 Slice 40 adds a real source-only Spring-style SQL path fixture matrix.
-**Next implementation slice:** Java SQL evidence-policy qualification, followed
+Slice 41 enables a narrow Java SQL advisory policy; broader evidence remains open.
+**Next implementation slice:** broader Java evidence and separately qualified Spring build profiles, followed
 by real Spring fixtures and separately qualified Maven/Gradle profiles in L1.
 Keep existing operator entry points and add options only where language selection or
 safe build-profile selection requires them.

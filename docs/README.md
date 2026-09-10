@@ -60,3 +60,5 @@ The design and plan are proposals; the slice status and README describe what act
 - [Slice 39](development/slice-39.md): Spring annotation syntax evidence inventory.
 
 - [Slice 40](development/slice-40.md): source-only Spring-style SQL path acceptance.
+
+- [Slice 41](development/slice-41.md): Java SQL advisory evidence gate.

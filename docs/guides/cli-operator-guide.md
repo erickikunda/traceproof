@@ -1,6 +1,6 @@
 # TraceProof CLI user and operator guide
 
-**Scope:** laptop POC through Slice 40, SQLite schema 0009. Commands are run from the repository checkout on Linux/macOS using Python 3.12+. This guide describes implemented behavior. Git/GCS acquisition, HTTP API hosting, distributed workers, authenticated reviewers and OpenShift deployment are future work.
+**Scope:** laptop POC through Slice 41, SQLite schema 0009. Commands are run from the repository checkout on Linux/macOS using Python 3.12+. This guide describes implemented behavior. Git/GCS acquisition, HTTP API hosting, distributed workers, authenticated reviewers and OpenShift deployment are future work.
 
 ## Evidence gate version 3
 
@@ -565,3 +565,15 @@ controllers and malformed source. Outputs include validation.json, exact JSON/HT
 reports and a source-containing vulnerable evidence bundle. No model calls or Spring
 builds run. A retained modeled path is not proof of deployed reachability. Java
 readiness remains incomplete; Maven/Gradle and Java LLM policies are still pending.
+
+### Java SQL advisory gate (Slice 41)
+
+Gate 4 enables only java/sql-injection with complete small-file Java context,
+explicit Spring RequestParam and executeQuery syntax on retained flow endpoints.
+It supports needs_review with unknown guards; Java false-positive suggestions cannot
+pass yet. Build a new bundle to retain full Java files of at most 40 lines within
+existing byte limits. Larger/partial context stays insufficient. Old bundles and
+reports remain unchanged; old triage keys may conflict across gate versions.
+Use check-evidence for a local recheck without model spend. Existing provider,
+classification and budget requirements apply to new triage. Java reports remain
+incomplete; passing evidence is advisory and never confirms or suppresses a finding.

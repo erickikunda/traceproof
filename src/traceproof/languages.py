@@ -21,7 +21,11 @@ ADAPTERS = {
         "python", "python", "python-source-v1", "python_ast", "python_claims"
     ),
     "java": LanguageAdapter(
-        "java", "java", "java-dependency-free-v1", "not_qualified", "unsupported"
+        "java",
+        "java",
+        "java-dependency-free-v1",
+        "not_qualified",
+        "spring_requestparam_sql_review_v1",
     ),
 }
 EXTENSIONS = {

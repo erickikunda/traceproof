@@ -1,4 +1,4 @@
-# Implementation progress after Slice 40
+# Implementation progress after Slice 41
 
 ## Priority reset — 10 September 2026
 
@@ -22,6 +22,9 @@ Java LLM evidence and framework extraction qualification remain open.
 Slice 40 adds real source-only Spring-style SQL path acceptance with vulnerable,
 fixed, foreign-annotation and malformed-source cases. Built Spring and Java LLM
 evidence qualification remain open; L1 is still partial.
+
+Slice 41 adds a narrow Java SQL advisory gate for retained RequestParam-to-executeQuery
+flows. Broader Java evidence and built Spring qualification remain pending.
 
 ## Historical delivery assessment
 

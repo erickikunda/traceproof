@@ -7,8 +7,9 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-GATE_VERSION = "3"
+GATE_VERSION = "4"
 POLICIES = {
+    "java/sql-injection": {"class": "sql_injection", "sinks": ["executeQuery"], "language": "java"},
     "py/code-injection": {"class": "code_injection", "sinks": ["eval", "exec"]},
     "py/command-line-injection": {
         "class": "command_injection",
@@ -42,8 +43,12 @@ def requirements(rule_id):
         "supported": rule_id in POLICIES,
         "policy": POLICIES.get(rule_id),
         "required": ["source", "sink", "flow", "guard"],
-        "negative_requires": "present guard and quoted counterevidence",
-        "modeled_source": "Flask request or alias import prefix; full-file evidence, no rebinding",
+        "negative_requires": "Java negative suggestions unsupported"
+        if rule_id == "java/sql-injection"
+        else "present guard and quoted counterevidence",
+        "modeled_source": "Explicit Spring RequestParam syntax; complete file required"
+        if rule_id == "java/sql-injection"
+        else "Flask request or alias import prefix; full-file evidence, no rebinding",
         "scope": "quote, syntax and recorded flow consistency only; not runtime proof",
     }
 
@@ -298,9 +303,14 @@ def assess_evidence(bundle, decision):
                     satisfied.add("flow")
             else:
                 mapping = flask_mapping(bundle, snippet) if claim.obligation == "source" else None
-                located = anchors(
-                    window, claim, policy, mapping.get("binding_name") if mapping else None
-                )
+                if policy.get("language") == "java":
+                    from traceproof.java_claims import anchors as java_anchors
+
+                    located = java_anchors(snippet, claim)
+                else:
+                    located = anchors(
+                        window, claim, policy, mapping.get("binding_name") if mapping else None
+                    )
                 if not located:
                     reason = "supported_syntax_not_in_quote"
                 else:
@@ -329,6 +339,10 @@ def assess_evidence(bundle, decision):
                 or sink["flow_step"] != sink["flow_steps"] - 1
             ):
                 continue
+            if policy.get("language") == "java":
+                thread = [n for n in bundle["snippets"] if n.get("flow_id") == source["flow_id"]]
+                if {n["flow_step"] for n in thread} != set(range(sink["flow_steps"])):
+                    continue
             if source["flow_step"] == 0:
                 linked = True
             elif mapping := flask_mapping(bundle, source):

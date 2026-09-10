@@ -13,7 +13,9 @@ from pathlib import Path
 
 from traceproof.artifacts import ArtifactStore
 from traceproof.bundles import build_bundle
+from traceproof.claims import assess_evidence
 from traceproof.intake import process, submit
+from traceproof.models import Decision
 from traceproof.persistence import Store, exclusive_worker
 from traceproof.pipeline import scan_run
 from traceproof.reports import get_report, render_report
@@ -130,6 +132,39 @@ def main(fixture="java"):
                         for nodes in threads.values()
                     )
                     (root / "vulnerable-bundle.json").write_text(json.dumps(bundle, indent=2))
+                    claims = []
+                    for kind, step, assessment in [
+                        ("source", 0, "present"),
+                        ("sink", 1, "present"),
+                        ("flow", 0, "present"),
+                        ("guard", 1, "unknown"),
+                    ]:
+                        item = next(n for n in flow if n["flow_step"] == step)
+                        claims.append(
+                            dict(
+                                obligation=kind,
+                                evidence_id=item["id"],
+                                line=item["line"],
+                                end_line=item["end_line"],
+                                assessment=assessment,
+                                quote=item["text"]
+                                .splitlines()[item["line"] - item["excerpt_line"]]
+                                .strip(),
+                                explanation="Synthetic fixture advisory check",
+                            )
+                        )
+                    decision = Decision(
+                        verdict="needs_review",
+                        rationale="Review modeled SQL flow",
+                        evidence_ids=sorted({c["evidence_id"] for c in claims}),
+                        counterevidence="Guard effectiveness unknown",
+                        claims=claims,
+                    )
+                    gate = assess_evidence(bundle, decision)
+                    checks["java_evidence_gate"] = (
+                        gate["passed"] and not gate["reachability_proven"]
+                    )
+                    (root / "vulnerable-gate.json").write_text(json.dumps(gate, indent=2))
             (root / f"{case}-report.json").write_text(render_report(report))
             (root / f"{case}-report.html").write_text(render_report(report, "html"))
             results.append(
