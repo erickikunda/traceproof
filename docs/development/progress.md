@@ -1,4 +1,10 @@
-# Implementation progress after Slice 21
+# Implementation progress after Slice 23
+
+Slice 23 adds local Ollama inference for POC testing; no additional detection-quality
+or enterprise-qualification credit is claimed.
+
+Slice 22 adds local prerequisite diagnostics. M0 environment qualification remains partial;
+no additional work-package credit is claimed.
 
 Slice 21 combines the existing source-only stages behind `scan-run` with prerequisite
 gates and exact-attempt publication. It adds no new detection coverage or package credit.

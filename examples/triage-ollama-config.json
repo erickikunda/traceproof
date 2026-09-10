@@ -1,0 +1,13 @@
+{
+  "provider": "ollama",
+  "model": "LiquidAI/lfm2.5-1.2b-instruct:latest",
+  "endpoint": "http://127.0.0.1:11434/api/chat",
+  "allowed_endpoint_hosts": ["127.0.0.1"],
+  "allowed_classifications": ["synthetic"],
+  "allow_source_transmission": true,
+  "max_output_tokens": 1024,
+  "timeout_seconds": 120,
+  "ollama_context_tokens": 32768,
+  "input_micro_usd_per_1k": 0,
+  "output_micro_usd_per_1k": 0
+}

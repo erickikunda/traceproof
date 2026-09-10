@@ -1,6 +1,6 @@
 # TraceProof CLI user and operator guide
 
-**Scope:** laptop POC through Slice 21, SQLite schema 0007. Commands are run from the repository checkout on Linux/macOS using Python 3.12+. This guide describes implemented behavior. Git/GCS acquisition, HTTP API hosting, distributed workers, authenticated reviewers and OpenShift deployment are future work.
+**Scope:** laptop POC through Slice 23, SQLite schema 0007. Commands are run from the repository checkout on Linux/macOS using Python 3.12+. This guide describes implemented behavior. Git/GCS acquisition, HTTP API hosting, distributed workers, authenticated reviewers and OpenShift deployment are future work.
 
 ## Start here
 
@@ -75,6 +75,12 @@ Finish writing archives before admission. Supply `sha256` to pin original archiv
 
 ## Run CodeQL and inspect candidates
 
+Before scanning, run `uv run traceproof doctor --query /absolute/approved.ql` for local
+prerequisite diagnostics and suggested fixes. `blocked` exits 1; omitting the query can
+return `incomplete` with exit 0. This command neither runs CodeQL nor changes the schema.
+It checks availability, not query compilation, sufficient capacity or enterprise approval.
+See [preflight details](../development/slice-22.md).
+
 For an already captured run, the source-only stages can be executed together:
 
 ```bash
@@ -128,7 +134,21 @@ For targeted inspection, `source-evidence RUN_ID PATH LINE END_LINE` reads a ver
 
 ### Live providers
 
-Only `triage` with a live configuration invokes a provider. Start with replay. Live operation requires an explicitly allowed source classification, HTTPS endpoint/host, model ID, pricing and transmission opt-in. Keep credentials in the designated environment variable, outside source archives and configuration files. OpenAI uses Responses; Anthropic uses Messages. No automatic provider fallback is available.
+For local POC inference, run an Ollama daemon with a locally installed completion model,
+edit `examples/triage-ollama-config.json` to select it, then use:
+
+```bash
+uv run traceproof triage-budget RUN_ID 100000
+uv run traceproof triage BUNDLE_ID examples/triage-ollama-config.json local-triage-1
+```
+
+No API key or `--replay` is needed. The endpoint is numeric loopback only, source/classification
+opt-in remains mandatory, and zero configured rates represent local compute without an
+estimated monetary cost. Ensure your daemon/model is local-only. A successful model reply
+must still pass evidence checks and never automatically confirms a vulnerability.
+See [Ollama setup and limits](../development/slice-23.md).
+
+Only `triage` with a non-replay configuration invokes a provider. Cloud operation requires an explicitly allowed source classification, HTTPS endpoint/host, model ID, pricing and transmission opt-in. Keep cloud credentials in the designated environment variable, outside source archives and configuration files. OpenAI uses Responses; Anthropic uses Messages. Ollama uses the local policy above. No automatic provider fallback is available.
 
 Configuration fields:
 

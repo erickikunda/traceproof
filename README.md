@@ -2,8 +2,15 @@
 
 Evidence-driven, LLM-assisted vulnerability discovery.
 
+Local POC model support: use `triage BUNDLE_ID examples/triage-ollama-config.json KEY`
+with a running Ollama daemon and a configured local model. No API key is needed.
+See [Ollama setup](docs/development/slice-23.md).
+
 For step-by-step use, report interpretation and recovery, read the
 [CLI user/operator guide](docs/guides/cli-operator-guide.md).
+
+Run `uv run traceproof doctor --query /absolute/approved.ql` to inspect local prerequisites
+and suggested fixes before scanning. It does not run CodeQL, migrations or models.
 
 Use `run-history REPO_ID` and `scan-history REPO_ID` to find previous work, including
 failed or unpublished scans. Both support `--offset` and `--limit`; scan history also

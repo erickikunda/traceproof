@@ -66,6 +66,21 @@ def index_run(ctx: typer.Context, run_id: str):
     perform(operation)
 
 
+@app.command("doctor")
+def doctor_command(ctx: typer.Context, query: Path | None = None):
+    """Inspect local prerequisites without running tools, migrations, scans or models."""
+    from traceproof.doctor import diagnose
+
+    def operation():
+        result = diagnose(ctx.obj, query)
+        if result["status"] == "blocked":
+            typer.echo(render_json(result))
+            raise typer.Exit(1)
+        return result
+
+    perform(operation)
+
+
 @app.command("record-review")
 def record_review_command(
     ctx: typer.Context, repo_id: str, attempt_id: str, fingerprint: str, request: Path, key: str

@@ -58,7 +58,7 @@ class Reply(StrictModel):
 
 
 class ModelConfig(StrictModel):
-    provider: Literal["replay", "openai", "anthropic"]
+    provider: Literal["replay", "openai", "anthropic", "ollama"]
     model: str = Field(min_length=1, max_length=200)
     endpoint: str = ""
     allowed_endpoint_hosts: list[str] = Field(default_factory=list)
@@ -70,10 +70,29 @@ class ModelConfig(StrictModel):
     timeout_seconds: int = Field(default=60, ge=1, le=120)
     input_micro_usd_per_1k: int = Field(default=0, ge=0, le=1_000_000_000)
     output_micro_usd_per_1k: int = Field(default=0, ge=0, le=1_000_000_000)
+    ollama_context_tokens: int = Field(default=32768, ge=4096, le=131072)
 
     @model_validator(mode="after")
     def live_policy(self):
-        if self.provider != "replay":
+        if self.provider == "ollama":
+            url = urlsplit(self.endpoint)
+            if (
+                url.scheme != "http"
+                or url.hostname not in {"127.0.0.1", "::1"}
+                or url.hostname not in self.allowed_endpoint_hosts
+                or url.path != "/api/chat"
+                or url.username
+                or url.password
+                or url.query
+                or url.fragment
+                or not url.port
+            ):
+                raise ValueError(
+                    "Ollama requires an allowed numeric loopback HTTP /api/chat endpoint"
+                )
+            if "cloud" in self.model.lower():
+                raise ValueError("Use a locally installed Ollama model, not a cloud model")
+        elif self.provider != "replay":
             url = urlsplit(self.endpoint)
             if (
                 url.scheme != "https"
@@ -107,6 +126,31 @@ def request_body(bundle, config):
     schema = Decision.model_json_schema()
     # Live Structured Outputs requires every property. Legacy replay may omit claims locally.
     schema["required"] = list(schema["properties"])
+    if config.provider == "ollama":
+        body = {
+            "model": config.model,
+            "stream": False,
+            "think": False,
+            "format": ollama_schema(schema),
+            "messages": [
+                {"role": "system", "content": INSTRUCTIONS},
+                {
+                    "role": "user",
+                    "content": canonical(
+                        {"bundle": bundle, "requirements": requirements(bundle["rule_id"])}
+                    ).decode(),
+                },
+            ],
+            "options": {
+                "temperature": 0,
+                "num_predict": config.max_output_tokens,
+                "num_ctx": config.ollama_context_tokens,
+            },
+        }
+        # Conservative byte bound avoids knowingly relying on daemon prompt truncation.
+        if len(canonical(body)) + 4096 + config.max_output_tokens > config.ollama_context_tokens:
+            raise TraceProofError("Ollama context budget too small for this evidence request")
+        return body
     if config.provider == "anthropic":
         return {
             "model": config.model,
@@ -171,6 +215,8 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
 
 
 class LiveAdapter:
+    requires_api_key = True
+
     def __init__(self, config):
         self.config = config
 
@@ -178,14 +224,14 @@ class LiveAdapter:
         config = self.config
         if not config.allow_source_transmission:
             raise TraceProofError("Live source transmission is disabled")
-        secret = os.environ.get(config.api_key_env)
-        if not secret:
+        secret = os.environ.get(config.api_key_env) if self.requires_api_key else None
+        if self.requires_api_key and not secret:
             raise TraceProofError("Configured API-key environment variable is absent")
         # Isolate network I/O so even a server trickling bytes has a total wall-clock bound.
         child = subprocess.run(
             [sys.executable, "-I", "-m", "traceproof.models"],
             input=canonical({"config": config.model_dump(), "body": body}),
-            env={config.api_key_env: secret},
+            env={config.api_key_env: secret} if self.requires_api_key else {},
             capture_output=True,
             timeout=config.timeout_seconds + 3,
             check=False,
@@ -198,8 +244,8 @@ class LiveAdapter:
         config = self.config
         if not config.allow_source_transmission:
             raise TraceProofError("Live source transmission is disabled")
-        secret = os.environ.get(config.api_key_env)
-        if not secret:
+        secret = os.environ.get(config.api_key_env) if self.requires_api_key else None
+        if self.requires_api_key and not secret:
             raise TraceProofError("Configured API-key environment variable is absent")
         context = ssl.create_default_context(cafile=config.ca_file)
         opener = urllib.request.build_opener(
@@ -246,7 +292,56 @@ def live_adapter(config):
         return OpenAIAdapter(config)
     if config.provider == "anthropic":
         return AnthropicAdapter(config)
+    if config.provider == "ollama":
+        return OllamaAdapter(config)
     raise TraceProofError("Replay requires an explicit fixture")
+
+
+class OllamaAdapter(LiveAdapter):
+    identity = "ollama-chat-v1"
+    requires_api_key = False
+    parse = staticmethod(lambda raw: parse_ollama_response(raw))
+
+    def headers(self, secret):
+        return {"Content-Type": "application/json"}
+
+
+def ollama_schema(schema):
+    """Inline definitions and relax wire bounds for local grammar compatibility."""
+    definitions = schema.get("$defs", {})
+
+    def expand(value):
+        if isinstance(value, list):
+            return [expand(item) for item in value]
+        if not isinstance(value, dict):
+            return value
+        if "$ref" in value:
+            return expand(definitions[value["$ref"].removeprefix("#/$defs/")])
+        return {key: expand(item) for key, item in value.items() if key != "$defs"}
+
+    return anthropic_schema(expand(schema))
+
+
+def parse_ollama_response(raw):
+    doc = json.loads(raw)
+    usage = None
+    if "prompt_eval_count" in doc and "eval_count" in doc:
+        usage = Usage.model_validate(
+            {"input_tokens": doc["prompt_eval_count"], "output_tokens": doc["eval_count"]}
+        )
+    if doc.get("done") is not True or doc.get("done_reason") != "stop":
+        return Reply(status="incomplete", usage=usage)
+    try:
+        message = doc["message"]
+        if message.get("role") != "assistant" or message.get("tool_calls") or message.get("images"):
+            raise ValueError()
+        return Reply(
+            status="completed",
+            usage=usage,
+            decision=Decision.model_validate_json(message["content"]),
+        )
+    except (ValidationError, ValueError, KeyError, TypeError):
+        return Reply(status="invalid_output", usage=usage)
 
 
 def anthropic_schema(value):

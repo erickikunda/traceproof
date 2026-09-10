@@ -94,16 +94,22 @@ def triage(store, bundle_id: str, config: ModelConfig, adapter: Adapter, key: st
         if config.provider != "replay":
             if not config.allow_source_transmission:
                 raise TraceProofError("Live source transmission is disabled")
-            if not os.environ.get(config.api_key_env):
+            if config.provider in {"openai", "anthropic"} and not os.environ.get(
+                config.api_key_env
+            ):
                 raise TraceProofError(
                     "Set the configured API-key environment variable before live triage"
                 )
         body = request_body(bundle, config)
+        # Preserve existing replay/cloud idempotency hashes when adding local-only settings.
+        policy_identity = config.model_dump(
+            exclude={"ollama_context_tokens"} if config.provider != "ollama" else set()
+        )
         digest = hashlib.sha256(
             canonical(
                 {
                     "body": body,
-                    "config": config.model_dump(),
+                    "config": policy_identity,
                     "adapter": adapter.identity,
                     "prompt_version": PROMPT_VERSION,
                     "gate_version": GATE_VERSION,
@@ -163,7 +169,7 @@ def triage(store, bundle_id: str, config: ModelConfig, adapter: Adapter, key: st
                 "output_micro_usd_per_1k": config.output_micro_usd_per_1k,
                 "max_output_tokens": config.max_output_tokens,
                 "classification": bundle["classification"],
-                "config_sha256": hashlib.sha256(canonical(config.model_dump())).hexdigest(),
+                "config_sha256": hashlib.sha256(canonical(policy_identity)).hexdigest(),
                 "adapter_identity": adapter.identity,
                 "simulated": config.provider == "replay",
                 "reserved_micro_usd": reservation,
