@@ -40,6 +40,8 @@ def anchor(candidate):
 
 def compatibility(before, after):
     gaps = []
+    if before.get("language", "python") != after.get("language", "python"):
+        gaps.append("language:different")
     for label, report in (("baseline", before), ("current", after)):
         if not report.get("snapshot_id"):
             gaps.append(f"{label}:snapshot_unknown")

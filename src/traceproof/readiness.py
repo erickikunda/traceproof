@@ -7,6 +7,8 @@ from traceproof.persistence import SourceIndex
 
 
 def static_readiness(session, snapshot_id, scan):
+    language = scan.get("language", "python")
+    language_scope = scan.get("language_scope") or {}
     index = (
         session.scalar(
             select(SourceIndex).where(
@@ -15,12 +17,16 @@ def static_readiness(session, snapshot_id, scan):
                 SourceIndex.state == "published",
             )
         )
-        if snapshot_id
+        if snapshot_id and language == "python"
         else None
     )
     coverage = index.report if index and index.report else {}
     reasons = []
-    if not coverage:
+    if language != "python":
+        reasons.append(
+            "java_semantic_index_not_qualified" if language == "java" else "unsupported_language"
+        )
+    elif not coverage:
         reasons.append("current_python_index_missing")
     elif coverage.get("python_index_gate") != "ready":
         reasons.append("python_index_blocked")
@@ -32,9 +38,13 @@ def static_readiness(session, snapshot_id, scan):
         reasons.append("unmapped_candidates_or_unknown_locations")
     if scan.get("candidate_count") is None:
         reasons.append("candidate_count_unknown")
+    if language_scope.get("unselected_languages"):
+        reasons.append("unselected_languages_present")
     return {
         "version": "1",
         "state": "incomplete" if reasons else "ready_for_review",
+        "language": language,
+        "language_scope": language_scope or None,
         "reasons": reasons,
         "index_id": index.id if index else None,
         "index_version": index.version if index else None,
@@ -42,6 +52,8 @@ def static_readiness(session, snapshot_id, scan):
         "python_files": coverage.get("python_files"),
         "parsed_python_files": coverage.get("parsed_python_files"),
         "total_files": coverage.get("total_files"),
-        "scope": "Python parsing and recorded static execution only",
+        "scope": "Recorded extraction/query execution only; Java semantic indexing unqualified"
+        if language != "python"
+        else "Python parsing and recorded static execution only",
         "security_completion_verified": False,
     }

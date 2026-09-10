@@ -55,6 +55,8 @@ def analyze(store, extraction_id, queries, timeout=600, *, threads=2, ram_mb=204
         "snapshot_id": manifest.snapshot_id,
         "classification": manifest.classification,
         "extraction_id": extraction_id,
+        "language": extraction.get("language", "python"),
+        "language_scope": extraction.get("language_scope"),
         "status": "running",
         "requested_resources": resources,
         "timeout_seconds": timeout,

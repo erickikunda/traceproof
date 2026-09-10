@@ -1,6 +1,6 @@
 # TraceProof CLI user and operator guide
 
-**Scope:** laptop POC through Slice 36, SQLite schema 0009. Commands are run from the repository checkout on Linux/macOS using Python 3.12+. This guide describes implemented behavior. Git/GCS acquisition, HTTP API hosting, distributed workers, authenticated reviewers and OpenShift deployment are future work.
+**Scope:** laptop POC through Slice 37, SQLite schema 0009. Commands are run from the repository checkout on Linux/macOS using Python 3.12+. This guide describes implemented behavior. Git/GCS acquisition, HTTP API hosting, distributed workers, authenticated reviewers and OpenShift deployment are future work.
 
 ## Evidence gate version 3
 
@@ -513,3 +513,27 @@ No explicit pause/cancel controls exist yet. `worker --max-items` bounds intake 
 ## Further reference
 
 Use `COMMAND --help` for exact arguments and pagination flags. [Slice contracts](../README.md) document version-specific limits; the [implementation plan](../plans/implementation-plan.md) tracks upcoming capabilities. The API companion guide is scheduled with the first hosted API and will add HTTP authentication, submission/polling, retry and error workflows to its OpenAPI reference.
+
+## Initial Java static profile (Slice 37)
+
+`codeql-extract`, `scan-run` and `scan-import` accept `--language java`; Python remains
+the default. Supply an installed Java CodeQL query to analysis or the scan runner.
+Each invocation selects one language; there is no automatic multi-language fan-out.
+Reports retain that language and an inventory of other detected source languages.
+
+This first Java profile supports dependency-free source using build mode `none`. It
+rejects Maven/Gradle/Ant build descriptors, wrappers, JARs and Kotlin inputs. Spring,
+external dependencies and generated code are not qualified. Java semantic indexing
+and LLM evidence support are still pending, so Java reports remain **incomplete**,
+even when CodeQL succeeds. Retrieve them using the exact report ID or latest-attempt;
+`latest-completed` requires static review readiness and will not select them.
+
+The repeatable local acceptance script uses a new output directory:
+
+```sh
+uv run python scripts/validate_java.py /path/to/java-queries/Security/CWE/CWE-089/SqlConcatenated.ql work/java-acceptance
+```
+
+It checks a JDBC concatenation fixture (one candidate) and a prepared-statement
+fixture (zero), preserves incomplete readiness, and makes no model calls. These
+fixtures do not establish repository security or measured recall.

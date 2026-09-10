@@ -12,7 +12,7 @@ from traceproof.indexing import build_index, query_index, report_markdown, repos
 from traceproof.intake import import_status, process, render_json, run_status, submit
 from traceproof.persistence import Store, exclusive_worker
 
-app = typer.Typer(no_args_is_help=True, help="TraceProof — local intake and Python coverage")
+app = typer.Typer(no_args_is_help=True, help="TraceProof — local intake and security scan coverage")
 
 
 @app.callback()
@@ -349,14 +349,23 @@ def codeql_extract(
     ] = False,
     threads: Annotated[int, typer.Option(min=1, max=64)] = 2,
     ram_mb: Annotated[int, typer.Option(min=2048, max=262144)] = 2048,
+    language: str = "python",
 ):
-    """Opt-in local Python extraction; creates diagnostics, not security findings."""
+    """Opt-in local extraction; creates diagnostics, not security findings."""
     from traceproof.codeql import extract
 
     def operation():
         ctx.obj.require_initialized()
         with exclusive_worker(ctx.obj.root):
-            return extract(ctx.obj, run_id, timeout, skip_baseline, threads=threads, ram_mb=ram_mb)
+            return extract(
+                ctx.obj,
+                run_id,
+                timeout,
+                skip_baseline,
+                threads=threads,
+                ram_mb=ram_mb,
+                language=language,
+            )
 
     perform(operation)
 
@@ -404,6 +413,7 @@ def scan_run_command(
     query_timeout: Annotated[int, typer.Option(min=1, max=3600)] = 600,
     threads: Annotated[int, typer.Option(min=1, max=64)] = 2,
     ram_mb: Annotated[int, typer.Option(min=2048, max=262144)] = 2048,
+    language: str = "python",
 ):
     """Index, gate, extract, query and publish one captured run; no model calls."""
     from traceproof.pipeline import scan_run
@@ -417,6 +427,7 @@ def scan_run_command(
             query_timeout,
             threads=threads,
             ram_mb=ram_mb,
+            language=language,
         )
     )
 
@@ -433,6 +444,7 @@ def scan_import_command(
     query_timeout: Annotated[int, typer.Option(min=1, max=3600)] = 600,
     threads: Annotated[int, typer.Option(min=1, max=64)] = 2,
     ram_mb: Annotated[int, typer.Option(min=2048, max=262144)] = 2048,
+    language: str = "python",
 ):
     """Sequentially scan selected import rows; existing query attempts are skipped by default."""
     from traceproof.batch_scan import scan_import
@@ -449,6 +461,7 @@ def scan_import_command(
             query_timeout,
             threads=threads,
             ram_mb=ram_mb,
+            language=language,
         )
     )
 

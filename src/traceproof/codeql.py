@@ -1,4 +1,4 @@
-"""Opt-in local Python extraction diagnostics; no security queries or source builds."""
+"""Opt-in local language-selected extraction diagnostics; no security queries or source builds."""
 
 import json
 import os
@@ -14,15 +14,20 @@ from sqlalchemy import select
 from traceproof.codeql_resources import resource_settings
 from traceproof.domain import TraceProofError
 from traceproof.indexing import verified_source
+from traceproof.languages import adapter_for, validate_extraction_scope
 from traceproof.persistence import CodeqlAttempt
 
 
-def extract(store, run_id, timeout=300, skip_baseline=False, *, threads=2, ram_mb=2048):
+def extract(
+    store, run_id, timeout=300, skip_baseline=False, *, threads=2, ram_mb=2048, language="python"
+):
     """Caller holds exclusive_worker; attempts and artifacts are never overwritten."""
     resources = resource_settings(threads, ram_mb)
+    adapter = adapter_for(language)
     if not 1 <= timeout <= 3600:
         raise TraceProofError("Extraction timeout must be between 1 and 3600 seconds")
     run, manifest, tree = verified_source(store, run_id)
+    scope = validate_extraction_scope(manifest, language)
     attempt_id = str(uuid4())
     root = store.root / "codeql" / attempt_id
     root.mkdir(parents=True, mode=0o700)
@@ -40,7 +45,8 @@ def extract(store, run_id, timeout=300, skip_baseline=False, *, threads=2, ram_m
         "timeout_seconds": timeout,
         "requested_resources": resources,
         "build_mode": "none",
-        "language": "python",
+        "language": language,
+        "language_scope": scope,
         "baseline_requested": not skip_baseline,
     }
     with store.transaction() as session:
@@ -76,7 +82,7 @@ def extract(store, run_id, timeout=300, skip_baseline=False, *, threads=2, ram_m
             "database",
             "create",
             str(root / "database"),
-            "--language=python",
+            f"--language={adapter.extractor}",
             "--build-mode=none",
             f"--source-root={tree}",
             f"--threads={threads}",

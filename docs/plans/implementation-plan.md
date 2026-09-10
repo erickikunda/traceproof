@@ -8,8 +8,8 @@ No benchmark or production capacity qualification has been completed.
 
 **Priority change:** Language and framework coverage is now the immediate delivery priority.
 Java/Spring, C#/ASP.NET, JavaScript/TypeScript, Rust and Go take precedence over additional
-CLI conveniences, presentation formats, history commands and storage tooling. The current
-implementation remains Python-only; this plan does not imply those targets are delivered.
+CLI conveniences, presentation formats, history commands and storage tooling. Slice 37 adds an initial dependency-free Java static profile; the full requested
+language/framework targets remain open.
 The Python-only vertical slice is the foundation, not the revised POC completion target.
 
 ## 1. Delivery objective
@@ -61,9 +61,10 @@ These subpackages replace the former single Java/Spring expansion item M3.1; the
 additional scope, not seven equally sized tasks. They can span multiple implementation
 slices. Do not schedule a new convenience command merely to produce another numbered slice.
 
-**Next implementation slice:** L0 adapter/capability contracts, removal of Python-only
-dispatch/readiness assumptions, and a minimal real Java extraction-to-candidate/report
-fixture. Build only the plumbing necessary for that vertical slice; expand Spring in L1.
+**Delivered initial slice:** Slice 37 adds language selection/coverage contracts and a
+real dependency-free Java extraction-to-candidate/report fixture. L0 and L1 remain partial.
+**Next implementation slice:** Java semantic indexing and evidence qualification, followed
+by real Spring fixtures and separately qualified Maven/Gradle profiles in L1.
 Keep existing operator entry points and add options only where language selection or
 safe build-profile selection requires them.
 

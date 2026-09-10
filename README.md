@@ -430,3 +430,27 @@ bounded logical file sizes without deletion. See [Slice 35](docs/development/sli
 
 Evidence gate 3 supports bounded Flask request aliases with full-file and rebinding checks.
 Old triage keys may conflict across gate versions; see [Slice 36](docs/development/slice-36.md).
+
+## Initial Java static profile (Slice 37)
+
+`codeql-extract`, `scan-run` and `scan-import` accept `--language java`; Python remains
+the default. Supply an installed Java CodeQL query to analysis or the scan runner.
+Each invocation selects one language; there is no automatic multi-language fan-out.
+Reports retain that language and an inventory of other detected source languages.
+
+This first Java profile supports dependency-free source using build mode `none`. It
+rejects Maven/Gradle/Ant build descriptors, wrappers, JARs and Kotlin inputs. Spring,
+external dependencies and generated code are not qualified. Java semantic indexing
+and LLM evidence support are still pending, so Java reports remain **incomplete**,
+even when CodeQL succeeds. Retrieve them using the exact report ID or latest-attempt;
+`latest-completed` requires static review readiness and will not select them.
+
+The repeatable local acceptance script uses a new output directory:
+
+```sh
+uv run python scripts/validate_java.py /path/to/java-queries/Security/CWE/CWE-089/SqlConcatenated.ql work/java-acceptance
+```
+
+It checks a JDBC concatenation fixture (one candidate) and a prepared-statement
+fixture (zero), preserves incomplete readiness, and makes no model calls. These
+fixtures do not establish repository security or measured recall.

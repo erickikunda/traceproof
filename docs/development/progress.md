@@ -1,11 +1,11 @@
-# Implementation progress after Slice 36
+# Implementation progress after Slice 37
 
 ## Priority reset — 10 September 2026
 
 The [implementation plan v0.2](../plans/implementation-plan.md) now prioritizes Java/Spring,
-C#/ASP.NET, JavaScript/TypeScript, Rust and Go over further CLI refinement. These remain
-unimplemented in TraceProof. Next: shared language contracts and a real Java scan-to-report
-fixture, followed by the language sequence and mixed-repository acceptance in plan §2.
+C#/ASP.NET, JavaScript/TypeScript, Rust and Go over further CLI refinement. Slice 37 delivers shared language selection/coverage and a dependency-free Java static
+scan-to-report fixture. L0/L1 remain partial: Java semantic indexing, evidence qualification
+and Spring/Maven/Gradle profiles come next, followed by the sequence in plan §2.
 
 The estimates and 64-package table below are a **historical baseline for the former scope**.
 M3.1 has expanded into seven substantial subpackages; no current expanded-scope completion

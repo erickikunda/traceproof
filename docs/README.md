@@ -6,8 +6,8 @@ first hosted API, as scheduled in the implementation plan.
 
 **Current priority:** multi-language coverage before further CLI refinements. The revised
 plan starts with shared adapter contracts and Java/Spring, followed by C#/ASP.NET,
-JavaScript/TypeScript, Rust, Go and mixed-language qualification. Current implemented
-security scanning remains Python-only.
+JavaScript/TypeScript, Rust, Go and mixed-language qualification. Slice 37 adds dependency-free Java static scanning alongside Python; Java semantic
+indexing, LLM evidence and Spring builds remain unqualified.
 
 - [System design](architecture/system-design.md): leadership use cases, swimlane,
   data-flow/sequence diagrams, evidence policy, report contracts and enterprise architecture.
@@ -52,4 +52,5 @@ The design and plan are proposals; the slice status and README describe what act
 - [Thirty-third-slice status](development/slice-33.md): paginated import history with dispatch filters and intake counts.
 - [Thirty-fourth-slice status](development/slice-34.md): CodeQL extraction history, including failures before query analysis.
 - [Thirty-fifth-slice status](development/slice-35.md): bounded storage inventory and artifact-reference audit without deletion.
+- [Thirty-seventh-slice status](development/slice-37.md): shared language coverage and initial Java static scanning.
 - [Thirty-sixth-slice status](development/slice-36.md): conservative Flask request alias mapping in evidence gate 3.

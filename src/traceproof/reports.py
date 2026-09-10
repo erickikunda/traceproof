@@ -185,12 +185,14 @@ def projection(session, repo_id, run_id, attempt_id):
         raise TraceProofError("Stored candidate count does not reconcile; report not published")
     return {
         "schema_version": "1",
-        "projection_version": "4",
+        "projection_version": "5",
         "report_kind": "repository_summary",
         "repo_id": repo_id,
         "run_id": run.id,
         "snapshot_id": run.snapshot_id,
         "profile": run.profile,
+        "language": scan.get("language", "python"),
+        "language_scope": scan.get("language_scope"),
         "owner": (admitted.spec or {}).get("owner") if admitted else None,
         "classification": snapshot.manifest.get("classification") if snapshot else None,
         "run_state": run.state,
@@ -450,6 +452,10 @@ def render_report(report, format="json"):
         common["static_review_readiness"] = report.get("static_review_readiness", {}).get(
             "state", "unknown"
         )
+        common["language"] = report.get("language", "python")
+        common["unselected_languages"] = canonical(
+            (report.get("language_scope") or {}).get("unselected_languages", [])
+        ).decode()
         fields = list(common)
         if format == "candidates-csv":
             fields += [
@@ -479,6 +485,7 @@ def render_report(report, format="json"):
     readiness = report.get("static_review_readiness", {}).get("state", "unknown")
     summary = (
         f"Repository: {report['repo_id']} | Analysis: {report['analysis_status']} | "
+        f"Language: {report.get('language', 'python')} | "
         f"Candidates: {report['candidate_count']} | Coverage verified: false | "
         f"Static review readiness: {readiness}"
     )

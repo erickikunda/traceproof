@@ -1,11 +1,12 @@
 """Explicit local source-only orchestration; no automatic model calls or retries."""
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from traceproof.codeql import extract
 from traceproof.codeql_resources import resource_settings
 from traceproof.domain import TraceProofError
-from traceproof.indexing import build_index
+from traceproof.indexing import build_index, verified_source
+from traceproof.languages import adapter_for, validate_extraction_scope
 from traceproof.persistence import Run, ScanAttempt, exclusive_worker
 from traceproof.reports import publish_report
 from traceproof.scanning import analyze, query_entry
@@ -21,8 +22,10 @@ def scan_run(
     skip_existing=False,
     threads=2,
     ram_mb=2048,
+    language="python",
 ):
     resources = resource_settings(threads, ram_mb)
+    adapter_for(language)
     if not 1 <= extraction_timeout <= 3600 or not 1 <= query_timeout <= 3600:
         raise TraceProofError("Stage timeouts must be between 1 and 3600 seconds")
     store.require_initialized()
@@ -36,7 +39,11 @@ def scan_run(
             if skip_existing:
                 previous = session.scalar(
                     select(ScanAttempt)
-                    .where(ScanAttempt.run_id == run_id)
+                    .where(
+                        ScanAttempt.run_id == run_id,
+                        func.coalesce(ScanAttempt.report["language"].as_string(), "python")
+                        == language,
+                    )
                     .order_by(ScanAttempt.created_at.desc(), ScanAttempt.id.desc())
                     .limit(1)
                 )
@@ -63,12 +70,19 @@ def scan_run(
             "report_id": None,
             "model_calls": 0,
             "security_completion_verified": False,
+            "language": language,
         }
-        index = build_index(store, run_id)
-        result["python_index_gate"] = index["python_index_gate"]
-        if index["python_index_gate"] != "ready":
-            return {**result, "reason": "Python index is not ready; inspect repo-report"}
-        extraction = extract(store, run_id, timeout=extraction_timeout, **resources)
+        if language == "python":
+            index = build_index(store, run_id)
+            result["python_index_gate"] = index["python_index_gate"]
+            if index["python_index_gate"] != "ready":
+                return {**result, "reason": "Python index is not ready; inspect repo-report"}
+        else:
+            _, manifest, _ = verified_source(store, run_id)
+            result["language_scope"] = validate_extraction_scope(manifest, language)
+        extraction = extract(
+            store, run_id, timeout=extraction_timeout, language=language, **resources
+        )
         result.update(
             extraction_id=extraction["attempt_id"],
             stopped_after="extraction",
