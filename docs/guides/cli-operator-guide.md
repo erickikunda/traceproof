@@ -1,6 +1,6 @@
 # TraceProof CLI user and operator guide
 
-**Scope:** laptop POC through Slice 19, SQLite schema 0007. Commands are run from the repository checkout on Linux/macOS using Python 3.12+. This guide describes implemented behavior. Git/GCS acquisition, HTTP API hosting, distributed workers, authenticated reviewers and OpenShift deployment are future work.
+**Scope:** laptop POC through Slice 20, SQLite schema 0007. Commands are run from the repository checkout on Linux/macOS using Python 3.12+. This guide describes implemented behavior. Git/GCS acquisition, HTTP API hosting, distributed workers, authenticated reviewers and OpenShift deployment are future work.
 
 ## Start here
 
@@ -225,6 +225,13 @@ Retrieval supports JSON, Markdown and all five benchmark CSV formats without ree
 or input files. History includes incomplete publications. Protect evaluator-sensitive
 records and retain approved inputs separately for reproducibility. See
 [durable scorecards](../development/slice-19.md).
+
+Use `benchmark-compare DATASET_ID BASELINE_SCORECARD_ID CURRENT_SCORECARD_ID --format
+markdown` to compare saved evaluations. Incompatible datasets, labels, evaluators, rule
+sets or incomplete results produce explicit reasons and unknown deltas. Comparable
+results show provisional location matches gained/lost and current-minus-baseline proxy
+deltas. Query/tool changes are disclosed, not assigned causal credit. No scans or input
+files are needed. See [benchmark comparison](../development/slice-20.md).
 
 ## Recovery and routine operations
 

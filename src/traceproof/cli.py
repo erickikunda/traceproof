@@ -187,6 +187,20 @@ def benchmark_history_command(
     perform(lambda: scorecard_history(ctx.obj, dataset_id, offset, limit))
 
 
+@app.command("benchmark-compare")
+def benchmark_compare_command(
+    ctx: typer.Context, dataset_id: str, baseline_id: str, current_id: str, format: str = "json"
+):
+    """Compare two exact saved scorecards with explicit comparability gates."""
+    from traceproof.benchmark_comparison import compare_scorecards, render_comparison
+
+    perform(
+        lambda: render_comparison(
+            compare_scorecards(ctx.obj, dataset_id, baseline_id, current_id), format
+        )
+    )
+
+
 @app.command("publish-report")
 def publish_report_command(
     ctx: typer.Context, repo_id: str, run_id: str | None = None, attempt_id: str | None = None

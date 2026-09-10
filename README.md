@@ -332,6 +332,10 @@ DATASET_ID` to list publications, and `benchmark-get DATASET_ID SCORECARD_ID --f
 markdown` to retrieve one without reevaluating inputs. Run `init` for migration 0007.
 See [Slice 19](docs/development/slice-19.md).
 
+Compare saved scorecards with `benchmark-compare DATASET_ID BASELINE_ID CURRENT_ID`;
+add `--format markdown` for a readable report. Incompatible or incomplete evaluations
+withhold deltas. See [Slice 20](docs/development/slice-20.md).
+
 ## Development
 
 Run the real CodeQL acceptance suite with an approved local `CodeInjection.ql` entry:

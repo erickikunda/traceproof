@@ -1,4 +1,4 @@
-# Implementation progress after Slice 19
+# Implementation progress after Slice 20
 
 Slices 15–16 add the verified CLI guide, an API documentation delivery gate and repository
 run/query-attempt histories. These extend existing partial packages; work-package credit
@@ -28,11 +28,11 @@ rough progress indicator, not an earned-value forecast or release acceptance dec
 | M1: intake and durable execution | 7 | 3 | 1 | 3 | 3.5 / 7 |
 | M2: scan-to-report POC | 10 | 4 | 6 | 0 | 7 / 10 |
 | M3: quality and reuse | 9 | 0 | 3 | 6 | 1.5 / 9 |
-| M4: benchmark reporting | 8 | 0 | 4 | 4 | 2 / 8 |
+| M4: benchmark reporting | 8 | 0 | 5 | 3 | 2.5 / 8 |
 | M5: multiworker and portfolio exports | 8 | 0 | 0 | 8 | 0 / 8 |
 | M6: OpenShift pilot | 7 | 0 | 0 | 7 | 0 / 7 |
 | M7: production qualification | 7 | 0 | 0 | 7 | 0 / 7 |
-| **Total** | **64** | **9** | **20** | **35** | **19 / 64 ≈ 30%** |
+| **Total** | **64** | **9** | **21** | **34** | **19.5 / 64 ≈ 30%** |
 
 M0–M2 receive 15.5 / 25 points, or 62%. The source-only CLI path is usable, but the full
 milestones include work beyond that narrow demonstration. No entire milestone is
@@ -59,7 +59,8 @@ declared accepted merely because its central demonstration works.
 | M3.8 | Partial: append-only local operator review assertions, evidence ownership, revision checks and report history; authenticated reviewers, suppression expiry and rule-gap records remain |
 | Other M3 packages | Unimplemented at the stated acceptance level: Java/Spring, independent exploration/review, dependency/secret adapters, layered cache invalidation and measured cost/quality ablations. Anthropic transport exists, but selective independent review in M3.4 does not; no additional package credit is claimed |
 | M4.3, M4.5–M4.7 | Partial: pinned offline report selection, conservative location matching and JSON/Markdown recall-proxy scorecards; full scan configuration, structural/adjudicated matching, per-class metrics and persisted multi-format scorecards remain |
-| M4.1, M4.2, M4.4, M4.8 | Unimplemented operationally: durable corpus registration/applicability review, evaluator-only scan dispatch and benchmark version regression |
+| M4.8 | Partial: compatible saved scorecard comparison and provisional label transitions; cost/latency, model attribution and adjudicated regression gates remain |
+| M4.1, M4.2, M4.4 | Unimplemented operationally: durable corpus registration/applicability review and evaluator-only scan dispatch |
 | M5–M7 | Unimplemented operationally: distributed orchestration, GCS, enterprise authorization, OpenShift and production load/recovery/quality qualification |
 
 ## What the percentages do not establish
