@@ -33,8 +33,8 @@ or executable is copied into the image. The source-only Java lane uses a separat
 Linux JDK, including jmods. Slice 49 identified missing inferred Spring artifacts. Slice 50 supplies a pinned
 six-JAR local Maven repository alongside the full JDK; the JDK alone is insufficient.
 Slice 51 adds Linux .NET SDK 10.0.100 and pinned net48 reference assemblies for
-basic C# and classic ASP.NET fixtures. This does not qualify ASP.NET Core or broad
-classic MVC/Web API coverage. No Maven/Gradle build execution is qualified.
+basic C# and classic ASP.NET fixtures. Slice 52 adds a separate ASP.NET Core MVC
+fixture pair. Minimal APIs and broad classic MVC/Web API coverage remain unqualified. No Maven/Gradle build execution is qualified.
 
 ## Run acceptance
 
@@ -43,6 +43,7 @@ uv run python scripts/validate_container.py work/container-acceptance-001
 uv run python scripts/validate_container.py work/container-java-001 --suite java
 uv run python scripts/validate_container.py work/container-csharp-001 --suite csharp
 uv run python scripts/validate_container.py work/container-classic-001 --suite csharp-classic
+uv run python scripts/validate_container.py work/container-core-001 --suite csharp-core
 # Spring suites automatically select the pinned fixture dependency profile.
 uv run python scripts/validate_container.py work/container-spring-001 --suite spring
 uv run python scripts/validate_container.py work/container-spring-maven-001 --suite spring --project-layout maven
@@ -166,3 +167,20 @@ evidence. No LLM calls or .NET application builds occur in these synthetic fixtu
 C# semantic indexing/evidence support and real framework/build qualification remain
 open. Linux success with reference assemblies does not imply Windows-only builds
 can run on OCP. No shared-PVC/SQLite durability or OCP SCC/SELinux testing is claimed.
+
+### ASP.NET Core MVC (Slice 52)
+
+`--suite csharp-core` selects `/opt/traceproof/csharp-dependencies/core-profile.json`.
+The image creates this profile from the already checksum-pinned .NET SDK 10.0.100,
+using its .NETCore.App.Ref and AspNetCore.App.Ref 10.0.0 reference packs. The SDK and
+reference files are inventoried and verified by the existing profile loader; runtime
+integrity checks and report profile identity apply. No additional download is needed.
+The net48 profile remains separate and unchanged.
+
+The synthetic controller uses ApiController, Route, HttpGet and FromQuery annotations
+with DbCommand SQL execution. The vulnerable concatenation produces one candidate;
+the parameterized counterpart produces zero. Both retain incomplete readiness and
+unsupported C# LLM evidence. This fixture does not establish minimal API, Razor,
+Entity Framework, full project build or broad ASP.NET coverage. Container restrictions
+and the distinction between external network denial and app attestation remain the
+same as the other C# suites.

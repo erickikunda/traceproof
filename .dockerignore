@@ -36,3 +36,7 @@
 !tests/fixtures/csharp/**
 !tests/fixtures/csharp-classic/
 !tests/fixtures/csharp-classic/**
+
+!scripts/validate_csharp_core.py
+!tests/fixtures/csharp-core/
+!tests/fixtures/csharp-core/**

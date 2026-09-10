@@ -146,8 +146,10 @@ Linux container validation, private-feed/Windows-worker integration and broader 
 Slice 44 adds opt-in single-language auto selection. L6 still requires query routing,
 per-language fan-out and consolidated repository reporting.
 Slice 51 adds the pinned Linux ARM64 .NET SDK/net48 image profile and C#/classic
-ASP.NET offline fixture validation. Next: broader ASP.NET Core/classic framework
-fixtures and C# evidence support; Windows build execution remains separate.
+ASP.NET offline fixture validation. Slice 52 adds a separate ASP.NET Core MVC
+FromQuery/SQL fixture pair using matching .NET 10 reference packs under network denial.
+Next: Core minimal API/classic MVC-Web API qualification and C# evidence support,
+then L3 JavaScript/TypeScript. Windows build execution remains separate.
 Keep existing operator entry points and add options only where language selection or
 safe build-profile selection requires them.
 

@@ -42,12 +42,15 @@ COPY --from=codeql /opt/codeql-bundle /opt/codeql-bundle
 COPY containers/java-profile.json /opt/traceproof/dependencies/java-profile.json
 COPY work/container-inputs/java-repository /opt/traceproof/dependencies/java-repository
 COPY containers/runtime_probe.py /opt/traceproof/runtime_probe.py
-COPY scripts/validate_java.py scripts/validate_spring.py scripts/validate_csharp.py scripts/validate_csharp_classic.py scripts/pin_csharp_dependencies.py /opt/traceproof/scripts/
+COPY scripts/validate_java.py scripts/validate_spring.py scripts/validate_csharp.py scripts/validate_csharp_classic.py scripts/validate_csharp_core.py scripts/pin_csharp_dependencies.py /opt/traceproof/scripts/
 COPY tests/fixtures/csharp /opt/traceproof/tests/fixtures/csharp
 COPY tests/fixtures/csharp-classic /opt/traceproof/tests/fixtures/csharp-classic
+COPY tests/fixtures/csharp-core /opt/traceproof/tests/fixtures/csharp-core
+COPY containers/prepare_core_profile.py /opt/traceproof/prepare_core_profile.py
 COPY containers/net48-inventory.json /opt/traceproof/net48-inventory.json
 RUN /opt/traceproof-venv/bin/python -c "import json; from pathlib import Path; from traceproof.csharp_dependencies import inventory; assert inventory(Path('/opt/traceproof/csharp-dependencies/net48')) == json.loads(Path('/opt/traceproof/net48-inventory.json').read_text())"
 RUN /opt/traceproof-venv/bin/python /opt/traceproof/scripts/pin_csharp_dependencies.py /opt/traceproof/csharp-dependencies --sdk dotnet --references net48 --sdk-version 10.0.100 --codeql-version 2.27.0
+RUN /opt/traceproof-venv/bin/python /opt/traceproof/prepare_core_profile.py
 COPY tests/fixtures/java /opt/traceproof/tests/fixtures/java
 COPY tests/fixtures/spring /opt/traceproof/tests/fixtures/spring
 RUN mkdir -p /work /inputs /reports && chmod 0770 /work /reports && \

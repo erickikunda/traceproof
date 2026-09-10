@@ -192,3 +192,7 @@ blocked by the container; the profile itself does not enforce network isolation.
 Slice 51 brings the pinned .NET SDK/net48 profile to Linux ARM64 containers and
 validates basic C#/classic ASP.NET fixtures with networking denied. This does not
 qualify ASP.NET Core, broad classic MVC/Web API coverage, C# LLM evidence or OCP.
+
+Slice 52 qualifies the ASP.NET Core MVC FromQuery/DbCommand SQL fixture pair in
+restricted Linux containers with a separate pinned Core reference profile. Minimal
+APIs, broad classic MVC/Web API and C# LLM evidence remain open.
