@@ -37,3 +37,5 @@ first hosted API, as scheduled in the implementation plan.
 - [Twenty-sixth-slice status](development/slice-26.md): read-only import report inventory and CSV dashboard export.
 
 The design and plan are proposals; the slice status and README describe what actually runs.
+
+- [Twenty-seventh-slice status](development/slice-27.md): verified original SARIF export for exact query attempts.

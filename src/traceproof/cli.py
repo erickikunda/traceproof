@@ -29,7 +29,10 @@ def configure(
 def perform(operation):
     try:
         result = operation()
-        typer.echo(result if isinstance(result, str) else render_json(result))
+        if isinstance(result, bytes):
+            typer.echo(result, nl=False)
+        else:
+            typer.echo(result if isinstance(result, str) else render_json(result))
     except TraceProofError as exc:
         typer.echo(render_json({"error": str(exc)}), err=True)
         raise typer.Exit(1) from exc
@@ -238,6 +241,14 @@ def get_report_command(
     from traceproof.reports import get_report, render_report
 
     perform(lambda: render_report(get_report(ctx.obj, repo_id, report_id, run_id), format))
+
+
+@app.command("get-sarif")
+def get_sarif_command(ctx: typer.Context, repo_id: str, attempt_id: str):
+    """Export original verified SARIF bytes for an exact attempt; may contain sensitive detail."""
+    from traceproof.sarif_export import get_sarif
+
+    perform(lambda: get_sarif(ctx.obj, repo_id, attempt_id))
 
 
 @app.command("report-history")

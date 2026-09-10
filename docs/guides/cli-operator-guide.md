@@ -1,6 +1,26 @@
 # TraceProof CLI user and operator guide
 
-**Scope:** laptop POC through Slice 26, SQLite schema 0008. Commands are run from the repository checkout on Linux/macOS using Python 3.12+. This guide describes implemented behavior. Git/GCS acquisition, HTTP API hosting, distributed workers, authenticated reviewers and OpenShift deployment are future work.
+**Scope:** laptop POC through Slice 27, SQLite schema 0008. Commands are run from the repository checkout on Linux/macOS using Python 3.12+. This guide describes implemented behavior. Git/GCS acquisition, HTTP API hosting, distributed workers, authenticated reviewers and OpenShift deployment are future work.
+
+## Export original SARIF for a viewer
+
+```bash
+uv run traceproof scan-history REPO_ID
+uv run traceproof get-sarif REPO_ID ATTEMPT_ID > results.sarif
+```
+
+Choose the exact query attempt, also available in a published report's `attempt_id`.
+The command verifies repository scope, the stored SHA-256 and the 16 MiB file limit
+before writing original bytes. Completed and partial attempts with a recorded digest
+are eligible; unavailable, linked or modified artifacts fail. Nothing is rescanned.
+Errors go to stderr with exit 1; check exit status because shell redirection can leave
+an empty file on failure. Use a new destination to avoid overwriting an existing export.
+
+Raw SARIF may expose source-related messages, flows, paths and diagnostics. Review it
+before sharing; use the summary CSV for routine dashboard consumption. The original
+SARIF does not include later TraceProof model/operator decisions. Consult the matching
+report for readiness: partial or zero-alert output does not establish a secure repository.
+See [Slice 27](../development/slice-27.md) for the retrieval contract.
 
 ## Retrieve reports for an import batch
 

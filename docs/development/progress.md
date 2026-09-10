@@ -1,4 +1,8 @@
-# Implementation progress after Slice 26
+# Implementation progress after Slice 27
+
+Slice 27 adds integrity-checked original SARIF retrieval for exact repository/attempt
+identities. M2.8 remains partial because the full finding/coverage contract is still open;
+package credit is unchanged.
 
 Slice 26 adds read-only import report inventory and CSV export, scoped to admitted runs
 with explicit missing-report states. Local reporting improves; package credit is unchanged.

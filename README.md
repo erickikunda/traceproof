@@ -398,3 +398,7 @@ See [Slice 03 status](docs/development/slice-03.md) for static analysis and the 
 Use `traceproof import-reports IMPORT_ID --limit 1000 --format csv` to export report
 availability for a CSV import. Missing/failed work stays visible; returned report IDs
 support exact retrieval. See [Slice 26](docs/development/slice-26.md).
+
+Use `traceproof get-sarif REPO_ID ATTEMPT_ID > results.sarif` to retrieve verified original
+CodeQL output for a SARIF viewer. Raw output may contain sensitive details; see
+[Slice 27](docs/development/slice-27.md).
