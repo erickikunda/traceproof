@@ -310,6 +310,80 @@ def get_report(store, repo_id, report_id=None, run_id=None):
         return verified(record)
 
 
+def resolve_report(store, repo_id, selection="latest-attempt"):
+    """Return a live selection envelope without altering immutable report content."""
+    if selection not in {"latest-attempt", "latest-completed"}:
+        raise TraceProofError("Unknown report selection mode")
+    with store.transaction() as session:
+        latest_run = selected_run(session, repo_id)
+        latest_attempt = session.scalar(
+            select(ScanAttempt)
+            .where(ScanAttempt.run_id == latest_run.id)
+            .order_by(ScanAttempt.created_at.desc(), ScanAttempt.id.desc())
+            .limit(1)
+        )
+        # Rank source work, not publication time: republishing old work cannot make it current.
+        records = bounded(
+            session,
+            select(PublishedReport)
+            .join(Run, PublishedReport.run_id == Run.id)
+            .outerjoin(
+                ScanAttempt, PublishedReport.content["attempt_id"].as_string() == ScanAttempt.id
+            )
+            .where(Run.repo_id == repo_id)
+            .order_by(
+                Run.created_at.desc(),
+                Run.id.desc(),
+                ScanAttempt.created_at.desc(),
+                ScanAttempt.id.desc(),
+                PublishedReport.version.desc(),
+            ),
+        )
+        chosen = None
+        for record in records:
+            report = verified(record)
+            if selection == "latest-attempt":
+                eligible = report["run_id"] == latest_run.id and report["attempt_id"] == (
+                    latest_attempt.id if latest_attempt else None
+                )
+            else:
+                eligible = (
+                    report.get("static_review_readiness", {}).get("state") == "ready_for_review"
+                )
+            if eligible:
+                chosen = report
+                break
+        current = bool(
+            chosen
+            and chosen["run_id"] == latest_run.id
+            and chosen["attempt_id"] == (latest_attempt.id if latest_attempt else None)
+        )
+        return {
+            "schema_version": "1",
+            "repo_id": repo_id,
+            "selection": selection,
+            "completion_scope": (
+                "Published Python static-review readiness; not security completeness"
+            ),
+            "selected_report_id": chosen["report_id"] if chosen else None,
+            "selected_is_latest_attempt": current,
+            "latest_run_id": latest_run.id,
+            "latest_run_state": latest_run.state,
+            "latest_attempt_id": latest_attempt.id if latest_attempt else None,
+            "latest_analysis_status": latest_attempt.report.get("status", "unknown")
+            if latest_attempt
+            else "not_started",
+            "warnings": (
+                ["No eligible published report"]
+                if chosen is None
+                else []
+                if current
+                else ["Selected report does not describe the latest admitted work"]
+            ),
+            "report": chosen,
+        }
+
+
 def report_history(store, repo_id, offset=0, limit=100):
     if offset < 0 or not 1 <= limit <= 1000:
         raise TraceProofError("Invalid report pagination")

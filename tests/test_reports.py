@@ -68,6 +68,73 @@ def test_new_failed_attempt_never_falls_back(store, scanned):
     assert get_report(store, repo, first["report_id"]) == first
 
 
+def test_explicit_completed_selection_discloses_newer_work(store, scanned):
+    from traceproof.indexing import build_index
+    from traceproof.reports import resolve_report
+
+    repo, run, attempt, _ = scanned
+    build_index(store, run)
+    with store.transaction() as session:
+        scan = session.get(ScanAttempt, attempt)
+        scan.report = {
+            **scan.report,
+            "execution_complete": True,
+            "diagnostic_errors": 0,
+            "unmapped_candidates": 0,
+        }
+    first = publish_report(store, repo)
+    assert first["static_review_readiness"]["state"] == "ready_for_review"
+    assert resolve_report(store, repo, "latest-completed")["report"] == first
+    with store.transaction() as session:
+        session.add(
+            ScanAttempt(
+                id="new-failed",
+                run_id=run,
+                created_at="9999",
+                report={"status": "failed", "candidate_count": None},
+            )
+        )
+    assert resolve_report(store, repo)["report"] is None
+    selected = resolve_report(store, repo, "latest-completed")
+    assert selected["report"] == first
+    assert selected["latest_analysis_status"] == "failed"
+    assert selected["warnings"] and not selected["selected_is_latest_attempt"]
+    failed = publish_report(store, repo)
+    assert resolve_report(store, repo)["report"] == failed
+    assert resolve_report(store, repo, "latest-completed")["report"] == first
+    assert get_report(store, repo, first["report_id"]) == first
+    # Republishing an old attempt must not replace latest-work selection.
+    publish_report(store, repo, attempt_id=attempt)
+    assert resolve_report(store, repo)["report"] == failed
+    with store.transaction() as session:
+        session.add(
+            Run(
+                id="new-run",
+                repo_id=repo,
+                state="failed",
+                profile="standard",
+                created_at="9999",
+                snapshot_id=None,
+            )
+        )
+    envelope = resolve_report(store, repo, "latest-completed")
+    assert envelope["latest_run_id"] == "new-run"
+    assert envelope["latest_analysis_status"] == "not_started"
+    assert envelope["warnings"] and not envelope["selected_is_latest_attempt"]
+    assert resolve_report(store, repo)["report"] is None
+
+
+def test_selection_rejects_invalid_mode_and_missing_repo(store, scanned):
+    from traceproof.reports import resolve_report
+
+    repo, _, _, _ = scanned
+    assert resolve_report(store, repo, "latest-completed")["selected_report_id"] is None
+    with pytest.raises(TraceProofError, match="selection"):
+        resolve_report(store, repo, "silent-fallback")
+    with pytest.raises(TraceProofError, match="not found"):
+        resolve_report(store, "other")
+
+
 def test_new_run_without_analysis_has_explicit_report(store, scanned):
     repo, _, _, _ = scanned
     previous = publish_report(store, repo)

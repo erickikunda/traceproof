@@ -1,4 +1,4 @@
-# Implementation progress after Slice 12
+# Implementation progress after Slice 14
 
 **Planning estimate: approximately 25–30% of the full implementation plan and 60–65%
 of M0–M2.** The rounded conversational estimates are about one quarter overall and
@@ -38,14 +38,14 @@ declared accepted merely because its central demonstration works.
 | M1.3, M1.6, M1.7 | Unimplemented: Git acquisition, explicit pause/cancel controls, PostgreSQL contract qualification |
 | M2.1, M2.2 | Implemented local Python scope: inventory/conservative resolution, CodeQL extraction/query execution and candidate ingestion |
 | M2.3, M2.4 | Partial: index gates/bundles exist; full coverage obligations and security-map semantics remain |
-| M2.5 | Partial: replay and opt-in OpenAI transport exist; live gateway compatibility has not been validated |
+| M2.5 | Partial: replay and opt-in OpenAI/Anthropic transports exist; live gateway compatibility has not been validated |
 | M2.6 | Partial: bounded advisory triage and two class policies exist; broader evidence/accepted-verdict semantics remain |
 | M2.7 | Partial: exact occurrence references and advisory history exist; stable reviewed finding-family records across edits remain |
-| M2.8 | Partial: immutable reports and formats exist; full finding/coverage report contract and latest-completed selection remain |
+| M2.8 | Partial: immutable reports, formats and explicit latest-completed selection with freshness disclosure exist; full finding/coverage report contract remains |
 | M2.9, M2.10 | Implemented local scope: scan/candidate CSV exports and single-worker reservations/stop rules |
 | M3.2, M3.7 | Partial: narrow Flask source mapping and conservative observation comparison; broader models and coverage-qualified resolution remain |
 | M3.8 | Partial: append-only local operator review assertions, evidence ownership, revision checks and report history; authenticated reviewers, suppression expiry and rule-gap records remain |
-| Other M3 packages | Unimplemented at the stated acceptance level: Java/Spring, independent exploration/review, Anthropic, dependency/secret adapters, layered cache invalidation and measured cost/quality ablations |
+| Other M3 packages | Unimplemented at the stated acceptance level: Java/Spring, independent exploration/review, dependency/secret adapters, layered cache invalidation and measured cost/quality ablations. Anthropic transport exists, but selective independent review in M3.4 does not; no additional package credit is claimed |
 | M4.3, M4.5–M4.7 | Partial: pinned offline report selection, conservative location matching and JSON/Markdown recall-proxy scorecards; full scan configuration, structural/adjudicated matching, per-class metrics and persisted multi-format scorecards remain |
 | M4.1, M4.2, M4.4, M4.8 | Unimplemented operationally: durable corpus registration/applicability review, evaluator-only scan dispatch and benchmark version regression |
 | M5–M7 | Unimplemented operationally: distributed orchestration, GCS, enterprise authorization, OpenShift and production load/recovery/quality qualification |

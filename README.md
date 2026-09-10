@@ -278,6 +278,8 @@ See [Slice 12 contract](docs/development/slice-12.md).
 
 Anthropic Messages is also available through an explicit `provider: "anthropic"` model policy. Configure the approved endpoint, model, pricing and `api_key_env` explicitly; all live transmission remains opt-in. See [Slice 13 contract](docs/development/slice-13.md) for setup and accounting limits.
 
+Use `traceproof resolve-report REPO_ID --selection latest-completed` to retrieve the latest published static review-ready report together with disclosure of newer work. The default `latest-attempt` mode never falls back. See [Slice 14 contract](docs/development/slice-14.md) for freshness semantics and JSON fields.
+
 ## Benchmark contract preparation
 
 Slice 10 validates separate repository manifests and evaluator-only labels. It does not

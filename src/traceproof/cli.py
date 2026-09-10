@@ -192,6 +192,14 @@ def report_history_command(
     perform(lambda: report_history(ctx.obj, repo_id, offset, limit))
 
 
+@app.command("resolve-report")
+def resolve_report_command(ctx: typer.Context, repo_id: str, selection: str = "latest-attempt"):
+    """Select a published report with current-work disclosure in a JSON envelope."""
+    from traceproof.reports import resolve_report
+
+    perform(lambda: resolve_report(ctx.obj, repo_id, selection))
+
+
 @app.command("compare-reports")
 def compare_reports_command(
     ctx: typer.Context, repo_id: str, baseline_id: str, current_id: str, format: str = "json"
