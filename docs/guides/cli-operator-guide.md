@@ -649,3 +649,26 @@ Supplying a profile does not enforce offline execution. CodeQL can infer additio
 artifacts; keep network disabled in the runner when scanning offline. The container
 Spring fixture uses a six-JAR pinned profile; this is not broad Spring qualification.
 No Maven/Gradle builds or live LLM calls are introduced. No migration.
+
+### C# SQL advisory evidence (Slice 56)
+
+Gate 6 enables advisory review for `cs/sql-injection` when complete bounded C# source
+contains an explicit ASP.NET Core FromQuery parameter and a CommandText assignment
+anchored to the endpoints of a complete retained CodeQL thread. It supports the
+qualified Core MVC/minimal API fixture shapes. Classic FromUri, implicit MVC binding,
+raw request access, alternate SQL APIs and guard counterevidence remain unqualified.
+
+Use the existing bundle-build, check-evidence and triage workflows. New bundles use
+builder 5 and retain complete C# files up to 40 lines within existing byte budgets.
+Larger files require consistent evidence expansions covering every line; reconstructed
+context is capped at 16 KiB. Missing context, parser failure, conditional compilation,
+ambiguous imports/aliases and local FromQuery lookalikes fail closed. A passing gate
+checks quoted syntax and recorded flow consistency; it proves neither runtime request
+binding nor exploitability. C# false-positive advice cannot pass this gate.
+
+Provider classification, consent, token budgets and model configuration still apply.
+No provider is enabled automatically. Old bundles/reports remain immutable; build a
+new bundle to use the new context policy. Existing triage keys may conflict across
+gate versions; use a new request key. Reports remain incomplete and findings remain
+unreviewed until the existing operator-review workflow is used. This supersedes earlier
+blanket statements that all C# triage is unsupported; support is narrow and advisory.

@@ -7,8 +7,13 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-GATE_VERSION = "5"
+GATE_VERSION = "6"
 POLICIES = {
+    "cs/sql-injection": {
+        "class": "sql_injection",
+        "sinks": ["CommandText"],
+        "language": "csharp",
+    },
     "java/sql-injection": {"class": "sql_injection", "sinks": ["executeQuery"], "language": "java"},
     "py/code-injection": {"class": "code_injection", "sinks": ["eval", "exec"]},
     "py/command-line-injection": {
@@ -43,10 +48,12 @@ def requirements(rule_id):
         "supported": rule_id in POLICIES,
         "policy": POLICIES.get(rule_id),
         "required": ["source", "sink", "flow", "guard"],
-        "negative_requires": "Java negative suggestions unsupported"
-        if rule_id == "java/sql-injection"
+        "negative_requires": "Java/C# negative suggestions unsupported"
+        if rule_id in ("java/sql-injection", "cs/sql-injection")
         else "present guard and quoted counterevidence",
-        "modeled_source": "Explicit Spring RequestParam syntax; complete file required"
+        "modeled_source": "Explicit ASP.NET Core FromQuery syntax; complete file required"
+        if rule_id == "cs/sql-injection"
+        else "Explicit Spring RequestParam syntax; complete file required"
         if rule_id == "java/sql-injection"
         else "Flask request or alias import prefix; full-file evidence, no rebinding",
         "scope": "quote, syntax and recorded flow consistency only; not runtime proof",
@@ -307,6 +314,10 @@ def assess_evidence(bundle, decision):
                     from traceproof.java_claims import anchors as java_anchors
 
                     located = java_anchors(bundle, snippet, claim)
+                elif policy.get("language") == "csharp":
+                    from traceproof.csharp_claims import anchors as csharp_anchors
+
+                    located = csharp_anchors(bundle, snippet, claim)
                 else:
                     located = anchors(
                         window, claim, policy, mapping.get("binding_name") if mapping else None
@@ -339,7 +350,7 @@ def assess_evidence(bundle, decision):
                 or sink["flow_step"] != sink["flow_steps"] - 1
             ):
                 continue
-            if policy.get("language") == "java":
+            if policy.get("language") in ("java", "csharp"):
                 thread = [n for n in bundle["snippets"] if n.get("flow_id") == source["flow_id"]]
                 if {n["flow_step"] for n in thread} != set(range(sink["flow_steps"])):
                     continue

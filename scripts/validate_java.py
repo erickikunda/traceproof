@@ -145,6 +145,60 @@ def main(fixture="java"):
                 "no_model_calls": report["triage_call_count"] == 0,
                 "expected_rule": all(c["rule_id"] == rule for c in report["candidates"]),
             }
+            if fixture in ("csharp-core", "csharp-minimal") and case == "vulnerable":
+                candidate = report["candidates"][0] if report["candidates"] else None
+                if candidate is None:
+                    checks["csharp_evidence_gate"] = False
+                else:
+                    bundle = build_bundle(store, result["attempt_id"], candidate["fingerprint"])
+                    flow = [n for n in bundle["snippets"] if n.get("flow_id") is not None]
+                    claims = []
+                    if flow:
+                        thread = [n for n in flow if n["flow_id"] == flow[0]["flow_id"]]
+                        first = min(thread, key=lambda n: n["flow_step"])
+                        last = max(thread, key=lambda n: n["flow_step"])
+                        for kind, item, assessment in [
+                            ("source", first, "present"),
+                            ("sink", last, "present"),
+                            ("flow", first, "present"),
+                            ("guard", last, "unknown"),
+                        ]:
+                            lines = item["text"].splitlines()
+                            quote = "\n".join(
+                                lines[
+                                    item["line"] - item["excerpt_line"] : item["end_line"]
+                                    - item["excerpt_line"]
+                                    + 1
+                                ]
+                            ).strip()
+                            claims.append(
+                                dict(
+                                    obligation=kind,
+                                    evidence_id=item["id"],
+                                    line=item["line"],
+                                    end_line=item["end_line"],
+                                    assessment=assessment,
+                                    quote=quote,
+                                    explanation="Synthetic C# advisory check",
+                                )
+                            )
+                    decision = Decision(
+                        verdict="needs_review",
+                        rationale="Review modeled SQL flow",
+                        evidence_ids=sorted({c["evidence_id"] for c in claims}),
+                        counterevidence="Guard effectiveness unknown",
+                        claims=claims,
+                    )
+                    gate = assess_evidence(bundle, decision)
+                    checks["csharp_evidence_gate"] = (
+                        gate["passed"] and not gate["reachability_proven"]
+                    )
+                    negative = assess_evidence(
+                        bundle, decision.model_copy(update={"verdict": "likely_false_positive"})
+                    )
+                    checks["negative_advice_blocked"] = not negative["passed"]
+                    (root / "vulnerable-bundle.json").write_text(json.dumps(bundle, indent=2))
+                    (root / "vulnerable-gate.json").write_text(json.dumps(gate, indent=2))
             if args.csharp_offline:
                 checks["network_denial"] = (
                     report["language_scope"]["dependency_profile"]["network_denial_verified"]

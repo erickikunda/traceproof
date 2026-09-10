@@ -239,3 +239,21 @@ enable builds of submitted repositories.
 Razor DLLs provide metadata only: .cshtml files remain omitted. Full dependency closure,
 custom binders, filters, view rendering, IIS/Windows builds and broad MVC coverage are
 unqualified. C# LLM evidence remains unsupported and report readiness stays incomplete.
+
+### C# advisory gate acceptance (Slice 56)
+
+The existing `csharp-core` and `csharp-minimal` suites now additionally build a bundle
+from the vulnerable result and check synthetic source/sink/flow/unknown-guard claims.
+The gate must pass for review, keep reachability_proven=false and reject a negative
+verdict. The validator exports vulnerable-bundle.json and vulnerable-gate.json alongside
+the normal reports. No LLM call is made, so this tests evidence validation without
+provider credentials or spend. Plain scans still require explicit triage to get advice.
+
+The image includes the locked tree-sitter-c-sharp 0.23.5 grammar. Parsing occurs in an
+isolated Python subprocess with a 10-second wall timeout, 5-second CPU limit, 16 KiB
+source bound, 50,000-node bound and 512 MiB Linux address-space limit. macOS lacks the
+same reliable address-space limit. This is a syntax parser, not a semantic C# index.
+
+This updates the earlier Core fixture notes: a narrow FromQuery/CommandText evidence
+gate is now available. Classic MVC/Web API and other C# sources still lack qualified
+source evidence. Razor views, runtime guards and full builds remain unqualified.

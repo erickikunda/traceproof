@@ -157,7 +157,7 @@ def test_csharp_selection_and_explicit_scope():
     scope = validate_extraction_scope(snapshot, "csharp")
     assert scope["adapter_profile"] == "csharp-source-only-v1"
     assert scope["omitted_file_count"] == 3 and scope["framework_coverage"] == "not_qualified"
-    assert scope["evidence_gate"] == "unsupported"
+    assert scope["evidence_gate"] == "core_fromquery_sql_review_v1"
 
 
 def test_csharp_reports_do_not_inherit_python_readiness(store, scanned):

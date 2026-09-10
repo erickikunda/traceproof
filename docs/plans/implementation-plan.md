@@ -151,7 +151,9 @@ FromQuery/SQL fixture pair using matching .NET 10 reference packs under network 
 Slice 53 adds a separate Core minimal API MapGet/SQL fixture pair using the same
 pinned Core profile. Slice 54 adds classic Web API ApiController/FromUri SQL fixtures
 with a separately pinned assembly profile. Slice 55 adds classic MVC Controller/SQL
-fixtures using pinned MVC/Web Pages/Razor metadata references. Next: C# evidence support,
+fixtures using pinned MVC/Web Pages/Razor metadata references. Slice 56 enables a narrow
+Core FromQuery/CommandText SQL advisory gate with complete syntax context and retained
+CodeQL paths. Next: classic C# source evidence and broader framework qualification,
 then L3 JavaScript/TypeScript. Windows build execution remains separate.
 Keep existing operator entry points and add options only where language selection or
 safe build-profile selection requires them.

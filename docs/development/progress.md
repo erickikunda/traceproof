@@ -209,3 +209,8 @@ Slice 55 adds the classic MVC Controller/action-parameter SQL fixture pair with 
 separate pinned MVC profile. The pair passes with 1/0 candidates under restricted
 Linux execution. Core MVC, minimal API, classic Web API and classic MVC now have
 individual SQL fixture pairs; broader C# evidence remains the next L2 obligation.
+
+Slice 56 adds narrow C# SQL advisory evidence for explicit Core FromQuery parameters
+and CommandText assignments on complete retained CodeQL paths. Syntax parsing is
+bounded and isolated; guard effectiveness and runtime reachability remain unproven.
+Classic C# source evidence and broader framework qualification remain open.
