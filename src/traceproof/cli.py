@@ -637,7 +637,7 @@ def import_control_command(
     reason: str,
     expected_revision: Annotated[int, typer.Option(min=0)],
 ):
-    """Pause/resume import dispatch at row boundaries; does not interrupt running tools."""
+    """Pause, resume or permanently cancel import dispatch at row boundaries."""
     from traceproof.import_controls import set_control
 
     perform(lambda: set_control(ctx.obj, import_id, state, key, reason, expected_revision))

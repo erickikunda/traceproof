@@ -1,4 +1,7 @@
-# Implementation progress after Slice 31
+# Implementation progress after Slice 32
+
+Slice 32 adds terminal import dispatch cancellation. M1.6 remains partial because full
+run/process and distributed cancellation are not implemented; package credit is unchanged.
 
 Slice 31 adds durable import dispatch pause/resume and audit history. M1.6 is now partial:
 running processes are not interrupted, and cancellation/distributed controls remain open.

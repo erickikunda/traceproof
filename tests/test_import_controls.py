@@ -50,7 +50,8 @@ def test_pause_resume_idempotency_and_cli(store, archive, manifest):
     assert control_status(store, batch, limit=1)["next_offset"] == 1
 
 
-def test_pause_during_capture_stops_next_row(store, archive, manifest, monkeypatch):
+@pytest.mark.parametrize("state", ["paused", "cancelled"])
+def test_pause_during_capture_stops_next_row(store, archive, manifest, monkeypatch, state):
     batch = submit(
         store, manifest([row(archive), row(archive, repo_id="second")]), archive.parent, "boundary"
     )
@@ -59,14 +60,14 @@ def test_pause_during_capture_stops_next_row(store, archive, manifest, monkeypat
 
     def capture(*args):
         result = original(*args)
-        set_control(store, batch, "paused", "pause", "Stop after current row", 0)
+        set_control(store, batch, state, "stop", "Stop after current row", 0)
         return result
 
     monkeypatch.setattr(artifacts, "capture", capture)
     with exclusive_worker(store.root):
         result = process(store, artifacts, batch)
     assert [item["state"] for item in result["items"]] == ["snapshotted", "ready"]
-    assert result["dispatch_control"]["state"] == "paused"
+    assert result["dispatch_control"]["state"] == state
 
 
 def test_scan_pause_boundary_and_resume_offset(store, archive, manifest, tmp_path, monkeypatch):

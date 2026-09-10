@@ -1,6 +1,24 @@
 # TraceProof CLI user and operator guide
 
-**Scope:** laptop POC through Slice 31, SQLite schema 0009. Commands are run from the repository checkout on Linux/macOS using Python 3.12+. This guide describes implemented behavior. Git/GCS acquisition, HTTP API hosting, distributed workers, authenticated reviewers and OpenShift deployment are future work.
+**Scope:** laptop POC through Slice 32, SQLite schema 0009. Commands are run from the repository checkout on Linux/macOS using Python 3.12+. This guide describes implemented behavior. Git/GCS acquisition, HTTP API hosting, distributed workers, authenticated reviewers and OpenShift deployment are future work.
+
+## Cancel remaining import dispatch
+
+```bash
+uv run traceproof import-control-status IMPORT_ID
+uv run traceproof import-control IMPORT_ID cancelled cancel-1 "No longer needed" --expected-revision 0
+```
+
+Use the revision returned by status. Cancellation is terminal for this import: it cannot
+be resumed. Use pause when you intend to continue later. Already-started rows may finish;
+completed work and report retrieval are preserved. `scan-import` reports cancelled with
+no continuation offset when it observes the stop. `--rescan` cannot bypass it.
+
+Explicit single-run operations and triage remain available; this cancels import dispatch,
+not running processes. If replacement work is needed, explicitly submit a new import with
+a new idempotency key. Repeating the original submission key returns the cancelled import.
+Keep using this or a newer application version once cancellations exist. No migration beyond
+0009 is needed. See [Slice 32](../development/slice-32.md).
 
 ## Pause and resume import dispatch
 

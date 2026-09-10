@@ -55,8 +55,8 @@ def control_status(store, import_id, offset=0, limit=100):
 
 
 def set_control(store, import_id, state, key, reason, expected_revision):
-    if state not in {"active", "paused"}:
-        raise TraceProofError("Import dispatch state must be active or paused")
+    if state not in {"active", "paused", "cancelled"}:
+        raise TraceProofError("Import dispatch state must be active, paused or cancelled")
     if not key.strip() or len(key) > 200 or not reason.strip() or len(reason) > 1000:
         raise TraceProofError("Provide a 1–200 character key and a 1–1000 character reason")
     if type(expected_revision) is not int or expected_revision < 0:
@@ -78,6 +78,8 @@ def set_control(store, import_id, state, key, reason, expected_revision):
                     raise TraceProofError("Import control key was used for a different request")
                 applied_revision = existing.revision
             else:
+                if current["state"] == "cancelled":
+                    raise TraceProofError("Import dispatch is cancelled and cannot be resumed")
                 if current["revision"] != expected_revision:
                     raise TraceProofError(
                         "Import control revision changed; inspect import-control-status"

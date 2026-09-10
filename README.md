@@ -415,3 +415,6 @@ bounded candidate page under an existing run budget. See [Slice 30](docs/develop
 Migration 0009 adds import dispatch pause/resume. Use `import-control-status` to read the
 revision and `import-control` to change it. Running rows finish; see
 [Slice 31](docs/development/slice-31.md) for boundaries and resume instructions.
+
+`import-control` also supports terminal `cancelled` dispatch state. It retains completed
+work and prevents subsequent batch dispatch; see [Slice 32](docs/development/slice-32.md).

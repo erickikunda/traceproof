@@ -29,13 +29,14 @@ def scan_import(
     if not 1 <= extraction_timeout <= 3600 or not 1 <= query_timeout <= 3600:
         raise TraceProofError("Stage timeouts must be between 1 and 3600 seconds")
     query = query_entry(store, query)
-    admitted = import_status(store, import_id)["items"]
+    intake = import_status(store, import_id)
+    admitted = intake["items"]
     selected = admitted[offset : offset + limit]
     results = []
-    paused = False
+    dispatch_state = intake["dispatch_control"]["state"]
     for item in selected:
-        if control_status(store, import_id, limit=1)["state"] == "paused":
-            paused = True
+        dispatch_state = control_status(store, import_id, limit=1)["state"]
+        if dispatch_state != "active":
             break
         row = {
             "item_id": item["item_id"],
@@ -67,8 +68,10 @@ def scan_import(
         "limit": limit,
         "total_rows": len(admitted),
         "selected_rows": len(selected),
-        "next_offset": offset + len(results) if offset + len(results) < len(admitted) else None,
-        "dispatch_status": "paused" if paused else "page_complete",
+        "next_offset": offset + len(results)
+        if dispatch_state != "cancelled" and offset + len(results) < len(admitted)
+        else None,
+        "dispatch_status": dispatch_state if dispatch_state != "active" else "page_complete",
         "rescan_requested": rescan,
         "counts": dict(Counter(row["status"] for row in results)),
         "items": results,

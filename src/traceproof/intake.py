@@ -223,7 +223,7 @@ def process(store: Store, artifacts: ArtifactStore, import_id: str, max_items: i
         if batch is None:
             raise TraceProofError("Import not found")
         root = Path(batch.input_root)
-        if current_control(session, import_id)["state"] == "paused":
+        if current_control(session, import_id)["state"] != "active":
             return import_status(store, import_id)
         interrupted = session.scalars(
             select(ImportItem).where(
@@ -242,7 +242,7 @@ def process(store: Store, artifacts: ArtifactStore, import_id: str, max_items: i
 
     for _ in range(max_items):
         with store.transaction() as session:
-            if current_control(session, import_id)["state"] == "paused":
+            if current_control(session, import_id)["state"] != "active":
                 break
             item = session.scalar(
                 select(ImportItem)
