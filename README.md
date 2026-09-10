@@ -319,6 +319,10 @@ reports remain explicit cases. Scores measure provisional candidate-location mat
 precision and confirmed recall remain unknown. No scans or model calls are dispatched.
 See [Slice 11 scope and score interpretation](docs/development/slice-11.md).
 
+The evaluator also supports `--format summary-csv`, `repositories-csv`, `labels-csv`
+and `candidates-csv` for dashboard ingestion. Keep the summary and join details using the
+scorecard identity. See [Slice 17 CSV contracts](docs/development/slice-17.md).
+
 ## Development
 
 Run the real CodeQL acceptance suite with an approved local `CodeInjection.ql` entry:

@@ -1,5 +1,7 @@
 import copy
+import csv
 import hashlib
+import io
 import json
 from uuid import uuid4
 
@@ -23,6 +25,70 @@ from traceproof.persistence import (
     exclusive_worker,
 )
 from traceproof.reports import publish_report
+
+
+def csv_rows(report, format):
+    return list(csv.DictReader(io.StringIO(render_scorecard(report, format))))
+
+
+def test_csv_grains_reconcile_and_preserve_scorecard(evaluation):
+    report = evaluation[3]()
+    before = copy.deepcopy(report)
+    summary = csv_rows(report, "summary-csv")[0]
+    assert summary["candidate_recall_proxy_numerator"] == "1"
+    assert summary["candidate_recall_proxy_denominator"] == "1"
+    assert summary["precision"] == summary["confirmed_recall"] == ""
+    assert json.loads(summary["evaluation_scope"]) == report["evaluation_scope"]
+    for grain in ["repositories", "labels", "candidates"]:
+        rows = csv_rows(report, grain + "-csv")
+        assert len(rows) == len(report[grain])
+        assert all(row["scorecard_id"] == report["scorecard_id"] for row in rows)
+        assert all(row["plan_sha256"] == report["plan_sha256"] for row in rows)
+        assert all(row["grain"] == grain for row in rows)
+    assert report == before == evaluation[3]()
+
+
+def test_csv_missing_scan_has_blank_count_and_explicit_label(evaluation):
+    evaluation[2]["reports"] = []
+    report = evaluation[3]()
+    repo = csv_rows(report, "repositories-csv")[0]
+    assert repo["candidate_count"] == "" and repo["report_id"] == ""
+    assert json.loads(repo["scope_gaps"]) == ["report_not_selected"]
+    assert csv_rows(report, "labels-csv")[0]["status"] == "not_evaluable"
+    assert csv_rows(report, "summary-csv")[0]["candidate_recall_proxy_denominator"] == "1"
+    assert csv_rows(report, "candidates-csv") == []
+    assert "scorecard_id" in render_scorecard(report, "candidates-csv").splitlines()[0]
+
+
+def test_csv_escaping_and_zero_denominator(evaluation):
+    report = evaluation[3]()
+    report["repositories"][0]["repo_id"] = " =FORMULA(),\nvalue"
+    assert csv_rows(report, "repositories-csv")[0]["repo_id"] == "' =FORMULA(),\nvalue"
+    evaluation[1]["labels"] = []
+    empty = evaluation[3]()
+    summary = csv_rows(empty, "summary-csv")[0]
+    assert summary["candidate_recall_proxy_denominator"] == "0"
+    assert summary["candidate_recall_proxy_value"] == ""
+    assert csv_rows(empty, "candidates-csv")[0]["status"] == "unjudged"
+
+
+def test_csv_cli(evaluation, store, tmp_path):
+    evaluation[3]()
+    result = CliRunner().invoke(
+        app,
+        [
+            "--state-dir",
+            str(store.root),
+            "benchmark-evaluate",
+            str(tmp_path / "manifest.json"),
+            str(tmp_path / "labels.json"),
+            str(tmp_path / "plan.json"),
+            "--format",
+            "summary-csv",
+        ],
+    )
+    assert result.exit_code == 0, result.output
+    assert list(csv.DictReader(io.StringIO(result.output)))[0]["repository_count"] == "1"
 
 
 @pytest.fixture

@@ -24,6 +24,7 @@ first hosted API, as scheduled in the implementation plan.
 - [Fourteenth-slice status](development/slice-14.md): explicit latest-attempt/latest-completed selection with current-work disclosure.
 - [Fifteenth-slice status](development/slice-15.md): CLI operator guide and verified synthetic walkthrough; API guide delivery gate.
 - [Sixteenth-slice status](development/slice-16.md): paginated repository runs and query attempts, including unpublished work.
+- [Seventeenth-slice status](development/slice-17.md): benchmark summary/repository/label/candidate CSV exports for dashboards.
 - [Progress assessment](development/progress.md): work-package estimates against the full implementation plan.
 
 The design and plan are proposals; the slice status and README describe what actually runs.

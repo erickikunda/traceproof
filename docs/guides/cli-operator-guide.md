@@ -1,6 +1,6 @@
 # TraceProof CLI user and operator guide
 
-**Scope:** laptop POC through Slice 16, SQLite schema 0006. Commands are run from the repository checkout on Linux/macOS using Python 3.12+. This guide describes implemented behavior. Git/GCS acquisition, HTTP API hosting, distributed workers, authenticated reviewers and OpenShift deployment are future work.
+**Scope:** laptop POC through Slice 17, SQLite schema 0006. Commands are run from the repository checkout on Linux/macOS using Python 3.12+. This guide describes implemented behavior. Git/GCS acquisition, HTTP API hosting, distributed workers, authenticated reviewers and OpenShift deployment are future work.
 
 ## Start here
 
@@ -193,6 +193,15 @@ Allowed states are `confirmed`, `false_positive`, `needs_review`, `deferred`. De
 Keep labels outside analyzed archives. `benchmark-schema` prints manifest, labels and evaluation-plan schemas. `benchmark-check MANIFEST --labels LABELS` checks the contract; add `--check-local-snapshots` for stored identity alignment. Example files in `examples/` have synthetic placeholder digests and are not a real corpus.
 
 `benchmark-evaluate MANIFEST LABELS PLAN --format markdown` evaluates exact published report IDs against evaluator-only labels without running scans. The plan pins analysis configuration and report selection. Results are provisional candidate-location recall proxies, not confirmed recall or precision. The 50-repository bank benchmark has not been run. See [evaluation details](../development/slice-11.md).
+
+For dashboard ingestion, use `--format summary-csv`, `repositories-csv`, `labels-csv` or
+`candidates-csv` and redirect each output to a separate file. Keep canonical JSON too.
+Each populated CSV row carries the scorecard ID and input digests; verify they match
+before joining on scorecard/repository IDs. Never sum the one-row summary after joining
+detail tables. Null metrics are blank, zero remains zero, and lists/count maps are JSON
+cells. Empty detail tables have headers only, so retain the summary. These exports expose
+evaluator labels and matching metadata; share only with the authorized evaluation audience.
+See [benchmark CSV contracts](../development/slice-17.md).
 
 ## Recovery and routine operations
 

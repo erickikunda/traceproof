@@ -1,8 +1,11 @@
-# Implementation progress after Slice 16
+# Implementation progress after Slice 17
 
 Slices 15–16 add the verified CLI guide, an API documentation delivery gate and repository
 run/query-attempt histories. These extend existing partial packages; work-package credit
 below remains unchanged.
+
+Slice 17 adds benchmark CSV projections at four explicit grains. M4.6 remains partial:
+persisted scorecards, per-class metrics and full adjudicated quality measures remain open.
 
 **Planning estimate: approximately 25–30% of the full implementation plan and 60–65%
 of M0–M2.** The rounded conversational estimates are about one quarter overall and

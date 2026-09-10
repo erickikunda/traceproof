@@ -1,6 +1,8 @@
 """Offline candidate-location scorecards; no scans or model calls."""
 
+import csv
 import hashlib
+import io
 from collections import Counter, defaultdict
 from typing import Literal
 
@@ -16,7 +18,7 @@ from traceproof.benchmark import (
 from traceproof.bundles import canonical
 from traceproof.domain import Digest, Identifier, TraceProofError
 from traceproof.persistence import Snapshot
-from traceproof.reports import get_report, markdown_cell
+from traceproof.reports import csv_cell, get_report, markdown_cell
 
 RULE_CWES = {"py/code-injection": {"CWE-94"}, "py/command-line-injection": {"CWE-78", "CWE-88"}}
 MAX_CANDIDATES = 20000
@@ -234,8 +236,13 @@ def evaluate_benchmark(store, manifest_path, labels_path, plan_path):
 def render_scorecard(report, format="json"):
     if format == "json":
         return canonical(report).decode()
+    if format in {"summary-csv", "repositories-csv", "labels-csv", "candidates-csv"}:
+        return scorecard_csv(report, format)
     if format != "markdown":
-        raise TraceProofError("Scorecard format must be json or markdown")
+        raise TraceProofError(
+            "Scorecard format must be json, markdown, summary-csv, repositories-csv, "
+            "labels-csv or candidates-csv"
+        )
     metric = report["candidate_recall_proxy"]
     lines = [
         "# TraceProof candidate-location scorecard",
@@ -262,3 +269,71 @@ def render_scorecard(report, format="json"):
         )
     lines.extend(["", *["- " + item for item in report["limitations"]]])
     return "\n".join(lines) + "\n"
+
+
+def scorecard_csv(report, format):
+    """Separate data grains with stable provenance; blank cells preserve unknown values."""
+    common = {
+        "export_schema_version": "1",
+        "grain": format.removesuffix("-csv"),
+        **{
+            key: report[key]
+            for key in (
+                "scorecard_id",
+                "evaluator_version",
+                "dataset_id",
+                "dataset_version",
+                "label_set_version",
+                "manifest_sha256",
+                "labels_sha256",
+                "plan_sha256",
+            )
+        },
+    }
+    if format == "summary-csv":
+        metric = report["candidate_recall_proxy"]
+        rows = [
+            {
+                "repository_count": report["repository_count"],
+                "label_count": report["label_count"],
+                "complete": report["complete"],
+                "candidate_recall_proxy_numerator": metric["numerator"],
+                "candidate_recall_proxy_denominator": metric["denominator"],
+                "candidate_recall_proxy_value": metric["value"],
+                "precision": report["precision"],
+                "confirmed_recall": report["confirmed_recall"],
+                "label_counts": report["label_counts"],
+                "candidate_counts": report["candidate_counts"],
+                "evaluation_scope": report["evaluation_scope"],
+            }
+        ]
+        fields = list(rows[0])
+    else:
+        grain = format.removesuffix("-csv")
+        fields = {
+            "repositories": [
+                "repo_id",
+                "report_id",
+                "status",
+                "scope_gaps",
+                "candidate_count",
+                "label_counts",
+            ],
+            "labels": ["repo_id", "label_id", "cwe", "status", "reasons", "candidate_fingerprints"],
+            "candidates": ["repo_id", "fingerprint", "status", "adjudication"],
+        }[grain]
+        rows = report[grain]
+    output = io.StringIO(newline="")
+    writer = csv.DictWriter(output, fieldnames=[*common, *fields], lineterminator="\n")
+    writer.writeheader()
+    for row in rows:
+        values = {**common, **{key: row[key] for key in fields}}
+        writer.writerow(
+            {
+                key: csv_cell(
+                    canonical(value).decode() if isinstance(value, (dict, list)) else value
+                )
+                for key, value in values.items()
+            }
+        )
+    return output.getvalue()
