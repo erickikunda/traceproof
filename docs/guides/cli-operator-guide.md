@@ -1,6 +1,6 @@
 # TraceProof CLI user and operator guide
 
-**Scope:** laptop POC through Slice 20, SQLite schema 0007. Commands are run from the repository checkout on Linux/macOS using Python 3.12+. This guide describes implemented behavior. Git/GCS acquisition, HTTP API hosting, distributed workers, authenticated reviewers and OpenShift deployment are future work.
+**Scope:** laptop POC through Slice 21, SQLite schema 0007. Commands are run from the repository checkout on Linux/macOS using Python 3.12+. This guide describes implemented behavior. Git/GCS acquisition, HTTP API hosting, distributed workers, authenticated reviewers and OpenShift deployment are future work.
 
 ## Start here
 
@@ -74,6 +74,19 @@ For your own inputs, CSV requires `repo_id,source_type,source_uri,owner,classifi
 Finish writing archives before admission. Supply `sha256` to pin original archive bytes before capture. Without it, capture time determines the pinned bytes. Reusing an import key with identical CSV bytes and root retrieves the same admission; changed source should use a new submission key. Invalid rows are reported independently. Links, path traversal and ambiguous archive members are rejected; nested archives are not recursively unpacked.
 
 ## Run CodeQL and inspect candidates
+
+For an already captured run, the source-only stages can be executed together:
+
+```bash
+uv run traceproof scan-run RUN_ID /absolute/approved.ql --extraction-timeout 300 --query-timeout 600
+```
+
+This indexes, checks readiness, extracts, queries and publishes the exact attempt. It
+never invokes an LLM. Inspect returned `status` and IDs: index/extraction failures stop
+with no new report, while failed query attempts produce incomplete reports. Repeating
+the command starts fresh extraction/queries; it is not an automatic retry. If publication
+fails, find the attempt with `scan-history` and publish it explicitly. Individual stages
+below remain useful for diagnosis. See [scan-run details](../development/slice-21.md).
 
 CodeQL must be on PATH, with an approved query and its dependencies installed locally. TraceProof does not download packs during analysis. Local acceptance has used CodeQL 2.27.0 and `codeql/python-queries` 1.8.10; the enterprise must supply its approved versions and usage entitlement.
 

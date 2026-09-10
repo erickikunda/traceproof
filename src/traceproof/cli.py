@@ -325,6 +325,20 @@ def codeql_status(ctx: typer.Context, attempt_id: str):
     perform(lambda: extraction_status(ctx.obj, attempt_id))
 
 
+@app.command("scan-run")
+def scan_run_command(
+    ctx: typer.Context,
+    run_id: str,
+    queries: Path,
+    extraction_timeout: Annotated[int, typer.Option(min=1, max=3600)] = 300,
+    query_timeout: Annotated[int, typer.Option(min=1, max=3600)] = 600,
+):
+    """Index, gate, extract, query and publish one captured run; no model calls."""
+    from traceproof.pipeline import scan_run
+
+    perform(lambda: scan_run(ctx.obj, run_id, queries, extraction_timeout, query_timeout))
+
+
 @app.command("source-evidence")
 def evidence(
     ctx: typer.Context, run_id: str, path: str, line: int, end_line: int, sha256: str | None = None

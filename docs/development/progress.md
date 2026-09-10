@@ -1,4 +1,7 @@
-# Implementation progress after Slice 20
+# Implementation progress after Slice 21
+
+Slice 21 combines the existing source-only stages behind `scan-run` with prerequisite
+gates and exact-attempt publication. It adds no new detection coverage or package credit.
 
 Slices 15–16 add the verified CLI guide, an API documentation delivery gate and repository
 run/query-attempt histories. These extend existing partial packages; work-package credit

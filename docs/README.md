@@ -28,6 +28,7 @@ first hosted API, as scheduled in the implementation plan.
 - [Eighteenth-slice status](development/slice-18.md): per-CWE benchmark proxy metrics with explicit missing-label and incomplete states.
 - [Nineteenth-slice status](development/slice-19.md): durable benchmark publication, history and exact retrieval with integrity checks.
 - [Twentieth-slice status](development/slice-20.md): compatibility-gated comparison of saved benchmark scorecards.
+- [Twenty-first-slice status](development/slice-21.md): source-only scan orchestration with prerequisite gates and exact-attempt publication.
 - [Progress assessment](development/progress.md): work-package estimates against the full implementation plan.
 
 The design and plan are proposals; the slice status and README describe what actually runs.

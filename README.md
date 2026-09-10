@@ -93,6 +93,11 @@ automatic artifact cleanup and a production container sandbox are not implemente
 
 ## Source evidence and security-query candidates
 
+For a captured run, `uv run traceproof scan-run RUN_ID /absolute/approved.ql` performs
+indexing, readiness checks, CodeQL extraction/queries and exact-attempt report publication.
+It makes no model calls. Inspect the returned status; repeated invocation starts fresh
+CodeQL work. See [Slice 21](docs/development/slice-21.md).
+
 Re-run `index-run` to build the v2 index required by `call-context`. Old indexes are
 retained; retrieve an old coverage report with `repo-report --run-id RUN_ID --index-id INDEX_ID`.
 

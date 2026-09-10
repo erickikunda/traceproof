@@ -21,6 +21,15 @@ from traceproof.persistence import Candidate, Run, ScanAttempt
 from traceproof.sarif import MAX_SARIF_BYTES, normalize
 
 
+def query_entry(store, queries):
+    queries = Path(queries).resolve(strict=True)
+    if not queries.is_file() or queries.suffix not in {".ql", ".qls"}:
+        raise TraceProofError("Provide a trusted local .ql query or .qls suite")
+    if queries.is_relative_to(store.root / "artifacts"):
+        raise TraceProofError("Queries must come from operator tooling, not scanned source")
+    return queries
+
+
 def analyze(store, extraction_id, queries, timeout=600):
     """Caller holds exclusive_worker. queries is a trusted operator-supplied local file."""
     if not 1 <= timeout <= 3600:
@@ -29,11 +38,7 @@ def analyze(store, extraction_id, queries, timeout=600):
     if extraction["status"] != "extracted":
         raise TraceProofError("Security queries require a successful extraction")
     run, manifest, tree = verified_source(store, extraction["run_id"])
-    queries = Path(queries).resolve(strict=True)
-    if not queries.is_file() or queries.suffix not in {".ql", ".qls"}:
-        raise TraceProofError("Provide a trusted local .ql query or .qls suite")
-    if queries.is_relative_to(store.root / "artifacts"):
-        raise TraceProofError("Queries must come from operator tooling, not scanned source")
+    queries = query_entry(store, queries)
     attempt_id = str(uuid4())
     root = store.root / "scans" / attempt_id
     root.mkdir(parents=True, mode=0o700)
