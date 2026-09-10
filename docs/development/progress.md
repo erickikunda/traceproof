@@ -204,3 +204,8 @@ L2 fixture coverage; it does not complete C# evidence or broad framework qualifi
 Slice 54 qualifies the classic Web API ApiController/FromUri SQL fixture pair with
 separate pinned net48/Web API references under Linux network denial. The pair produces
 1/0 candidates; C# evidence and classic MVC remain open. No schema migration.
+
+Slice 55 adds the classic MVC Controller/action-parameter SQL fixture pair with a
+separate pinned MVC profile. The pair passes with 1/0 candidates under restricted
+Linux execution. Core MVC, minimal API, classic Web API and classic MVC now have
+individual SQL fixture pairs; broader C# evidence remains the next L2 obligation.

@@ -50,3 +50,9 @@
 !tests/fixtures/csharp-webapi/**
 !work/container-inputs/webapi/
 !work/container-inputs/webapi/**
+
+!scripts/validate_csharp_mvc.py
+!tests/fixtures/csharp-mvc/
+!tests/fixtures/csharp-mvc/**
+!work/container-inputs/mvc/
+!work/container-inputs/mvc/**

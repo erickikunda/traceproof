@@ -1,0 +1,32 @@
+[
+  {
+    "name": "microsoft.aspnet.mvc",
+    "version": "5.3.0",
+    "url": "https://api.nuget.org/v3-flatcontainer/microsoft.aspnet.mvc/5.3.0/microsoft.aspnet.mvc.5.3.0.nupkg",
+    "sha256": "3b0c8c0ba7aab4cfb5f3e55b693f3cc28707d05c4310bcca2477872632ea7b82",
+    "files": {
+      "lib/net45/System.Web.Mvc.dll": "08f8fa0e96b552dcf089db28ddfbc63f5c04c2d232c7ff06453e4ffd0abc8b83"
+    }
+  },
+  {
+    "name": "microsoft.aspnet.webpages",
+    "version": "3.3.0",
+    "url": "https://api.nuget.org/v3-flatcontainer/microsoft.aspnet.webpages/3.3.0/microsoft.aspnet.webpages.3.3.0.nupkg",
+    "sha256": "0ddcd50f1c6a1aa2e0f76daa88d2a16d4dc22517eb34c65f18533a59eaabca00",
+    "files": {
+      "lib/net45/System.Web.Helpers.dll": "66564d2a190e6fd248d3c263303070066ccd53c2d026a616e32fc21dca826eef",
+      "lib/net45/System.Web.WebPages.dll": "d0eb457c448689e38e9079fd7700a2a6e5ff628eda2cf1990bf14241f87114fb",
+      "lib/net45/System.Web.WebPages.Deployment.dll": "d6294f0d696b02aafcacfcf6388ea964bd926d72d6256cd4513e23b68578cca0",
+      "lib/net45/System.Web.WebPages.Razor.dll": "e30e56adcf82dba8f340c8c2387722a47c9a4601a7fdd58979a4aa2846c2e7cb"
+    }
+  },
+  {
+    "name": "microsoft.aspnet.razor",
+    "version": "3.3.0",
+    "url": "https://api.nuget.org/v3-flatcontainer/microsoft.aspnet.razor/3.3.0/microsoft.aspnet.razor.3.3.0.nupkg",
+    "sha256": "4ed1a3afaa6624a93b00834174c465f0a1e5758fff7535530c68fcd7a35c4278",
+    "files": {
+      "lib/net45/System.Web.Razor.dll": "c76dc4744556edfbc694dbe5b93e4966e269062b0ffd1f74660cc2eaf64d4394"
+    }
+  }
+]

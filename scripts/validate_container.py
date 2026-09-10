@@ -28,6 +28,7 @@ def main():
             "csharp-core",
             "csharp-minimal",
             "csharp-webapi",
+            "csharp-mvc",
         ],
         default="python",
     )
@@ -49,8 +50,8 @@ def main():
             if args.suite in ("csharp-core", "csharp-minimal")
             else "profile.json"
         )
-        if args.suite == "csharp-webapi":
-            profile = "webapi-profile.json"
+        if args.suite in ("csharp-webapi", "csharp-mvc"):
+            profile = args.suite.removeprefix("csharp-") + "-profile.json"
         scan = (
             f"/opt/traceproof-venv/bin/python /opt/traceproof/scripts/validate_{script}.py "
             f"'{query}' /work/acceptance --csharp-dependency-profile "

@@ -47,6 +47,7 @@ uv run python scripts/validate_container.py work/container-classic-001 --suite c
 uv run python scripts/validate_container.py work/container-core-001 --suite csharp-core
 uv run python scripts/validate_container.py work/container-minimal-001 --suite csharp-minimal
 uv run python scripts/validate_container.py work/container-webapi-001 --suite csharp-webapi
+uv run python scripts/validate_container.py work/container-mvc-001 --suite csharp-mvc
 # Spring suites automatically select the pinned fixture dependency profile.
 uv run python scripts/validate_container.py work/container-spring-001 --suite spring
 uv run python scripts/validate_container.py work/container-spring-maven-001 --suite spring --project-layout maven
@@ -219,3 +220,22 @@ Route, HttpGet and FromUri. A DbCommand concatenation is paired with a parameter
 fix. This does not qualify System.Web.Mvc controllers, model binders, filters, IIS,
 Windows builds or C# LLM evidence. Readiness remains incomplete. The fixture source
 is not executed; bank OCP validation remains a later acceptance gate.
+
+### Classic ASP.NET MVC (Slice 55)
+
+`--suite csharp-mvc` selects `/opt/traceproof/csharp-dependencies/mvc-profile.json`.
+It combines net48 with six selected DLLs from MVC 5.3.0, Web Pages 3.3.0 and Razor
+3.3.0. `containers/mvc-packages.json` pins official NuGet package URLs, archive hashes
+and individual assembly hashes. The shared classic profile builder verifies the exact
+inventory before creating separate MVC and Web API profiles. Runtime integrity checks
+continue to apply. These versions are synthetic fixture inputs, not bank upgrade advice.
+
+The fixture derives from System.Web.Mvc.Controller, uses RoutePrefix/Route/HttpGet,
+and accepts a string action parameter. Its SQL concatenation and parameterized fix
+are scanned under the same network-denied restrictions as the other suites. The source
+is never executed. A separate compile sanity check of the trusted fixtures does not
+enable builds of submitted repositories.
+
+Razor DLLs provide metadata only: .cshtml files remain omitted. Full dependency closure,
+custom binders, filters, view rendering, IIS/Windows builds and broad MVC coverage are
+unqualified. C# LLM evidence remains unsupported and report readiness stays incomplete.
