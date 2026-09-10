@@ -3,7 +3,7 @@
 from sqlalchemy import func, select
 
 from traceproof.domain import TraceProofError
-from traceproof.persistence import Repository, Run, ScanAttempt
+from traceproof.persistence import CodeqlAttempt, Repository, Run, ScanAttempt
 
 
 def validate_page(offset, limit):
@@ -116,4 +116,62 @@ def scan_history(store, repo_id, run_id=None, offset=0, limit=100):
             **result,
             "run_id": run_id,
             "scope": "Stored query attempts; status/counts do not establish security completeness",
+        }
+
+
+def extraction_history(store, repo_id, run_id=None, offset=0, limit=100):
+    validate_page(offset, limit)
+    with store.transaction() as session:
+        require_repository(session, repo_id)
+        if run_id is not None:
+            run = session.get(Run, run_id)
+            if run is None or run.repo_id != repo_id:
+                raise TraceProofError("Run does not belong to repository")
+        scope = [Run.repo_id == repo_id]
+        if run_id is not None:
+            scope.append(Run.id == run_id)
+        total = session.scalar(
+            select(func.count()).select_from(CodeqlAttempt).join(Run).where(*scope)
+        )
+        created = CodeqlAttempt.result["created_at"].as_string()
+        attempts = session.scalars(
+            select(CodeqlAttempt)
+            .join(Run)
+            .where(*scope)
+            .order_by(
+                Run.created_at.desc(),
+                Run.id.desc(),
+                created.is_(None),
+                created.desc(),
+                CodeqlAttempt.id.desc(),
+            )
+            .offset(offset)
+            .limit(limit)
+        )
+        rows = []
+        for attempt in attempts:
+            result = attempt.result
+            resources = result.get("requested_resources")
+            rows.append(
+                {
+                    "attempt_id": attempt.id,
+                    "run_id": attempt.run_id,
+                    "created_at": result.get("created_at"),
+                    "status": result.get("status", "unknown"),
+                    "elapsed_seconds": result.get("elapsed_seconds"),
+                    "timeout_seconds": result.get("timeout_seconds"),
+                    "codeql_version": result.get("codeql_version"),
+                    "baseline_requested": result.get("baseline_requested"),
+                    "requested_resources": {
+                        key: resources.get(key) for key in ("threads", "ram_mb")
+                    }
+                    if isinstance(resources, dict)
+                    else None,
+                }
+            )
+        return {
+            **page(repo_id, offset, limit, total, rows),
+            "run_id": run_id,
+            "scope": "Stored extraction attempts; recorded running state does not prove liveness",
+            "ordering": "Newest runs, then newest dated attempts, then undated IDs descending",
         }

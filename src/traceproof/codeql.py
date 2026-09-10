@@ -6,6 +6,7 @@ import shutil
 import signal
 import subprocess
 import time
+from datetime import UTC, datetime
 from uuid import uuid4
 
 from sqlalchemy import select
@@ -29,6 +30,7 @@ def extract(store, run_id, timeout=300, skip_baseline=False, *, threads=2, ram_m
     result = {
         "schema_version": "1",
         "attempt_id": attempt_id,
+        "created_at": datetime.now(UTC).isoformat(),
         "run_id": run.id,
         "snapshot_id": manifest.snapshot_id,
         "status": "running",

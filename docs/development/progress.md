@@ -1,4 +1,7 @@
-# Implementation progress after Slice 33
+# Implementation progress after Slice 34
+
+Slice 34 adds extraction-attempt history and timestamps for new extraction records.
+This improves recovery visibility without additional work-package credit.
 
 Slice 33 adds paginated import discovery with dispatch state and intake counts. It extends
 local operational visibility without additional package credit.

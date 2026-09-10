@@ -369,6 +369,20 @@ def codeql_status(ctx: typer.Context, attempt_id: str):
     perform(lambda: extraction_status(ctx.obj, attempt_id))
 
 
+@app.command("extraction-history")
+def extraction_history_command(
+    ctx: typer.Context,
+    repo_id: str,
+    run_id: str | None = None,
+    offset: Annotated[int, typer.Option(min=0)] = 0,
+    limit: Annotated[int, typer.Option(min=1, max=1000)] = 100,
+):
+    """Discover CodeQL extraction attempts, including failures before query analysis."""
+    from traceproof.history import extraction_history
+
+    perform(lambda: extraction_history(ctx.obj, repo_id, run_id, offset, limit))
+
+
 @app.command("scan-run")
 def scan_run_command(
     ctx: typer.Context,

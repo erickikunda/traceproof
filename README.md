@@ -421,3 +421,6 @@ work and prevents subsequent batch dispatch; see [Slice 32](docs/development/sli
 
 Find previous batches with `import-history --state paused --limit 20` (omit the state
 filter for all imports). See [Slice 33](docs/development/slice-33.md).
+
+Recover extraction IDs with `extraction-history REPO_ID --run-id RUN_ID`, then inspect
+one with `codeql-status`. See [Slice 34](docs/development/slice-34.md).

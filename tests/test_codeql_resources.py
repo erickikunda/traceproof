@@ -44,6 +44,10 @@ def test_command_settings_and_durable_records(store, scanned, tmp_path, monkeypa
     monkeypatch.setattr(codeql.subprocess, "Popen", launch)
     extracted = codeql.extract(store, run, threads=3, ram_mb=4096)
     assert extracted["status"] == "extracted"
+    assert (
+        extracted["created_at"]
+        == codeql.extraction_status(store, extracted["attempt_id"])["created_at"]
+    )
     assert codeql.extraction_status(store, extracted["attempt_id"])["requested_resources"] == {
         "threads": 3,
         "ram_mb": 4096,

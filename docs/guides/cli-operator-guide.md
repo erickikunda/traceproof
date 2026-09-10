@@ -1,6 +1,24 @@
 # TraceProof CLI user and operator guide
 
-**Scope:** laptop POC through Slice 33, SQLite schema 0009. Commands are run from the repository checkout on Linux/macOS using Python 3.12+. This guide describes implemented behavior. Git/GCS acquisition, HTTP API hosting, distributed workers, authenticated reviewers and OpenShift deployment are future work.
+**Scope:** laptop POC through Slice 34, SQLite schema 0009. Commands are run from the repository checkout on Linux/macOS using Python 3.12+. This guide describes implemented behavior. Git/GCS acquisition, HTTP API hosting, distributed workers, authenticated reviewers and OpenShift deployment are future work.
+
+## Find a CodeQL extraction attempt
+
+```bash
+uv run traceproof extraction-history REPO_ID --limit 20
+uv run traceproof extraction-history REPO_ID --run-id RUN_ID
+uv run traceproof codeql-status EXTRACTION_ATTEMPT_ID
+```
+
+Use this history when extraction failed before a query attempt existed, or when you lost
+the extraction ID. Query attempts remain in `scan-history`. Extraction history shows
+recorded status, timing, version and resource settings; it neither starts work nor probes
+process liveness. A stored successful result does not verify retained database files.
+
+New records have creation timestamps. Legacy timestamps are null; dated attempts sort
+first within each run, followed by undated IDs in descending order. Runs are grouped newest
+first. Default limit is 100, maximum 1000; follow `next_offset` with `--offset`. Use exact
+IDs for further actions. See [Slice 34](../development/slice-34.md).
 
 ## Find a previous import
 
@@ -212,7 +230,7 @@ uv run traceproof scan-history REPO_ID --limit 100
 uv run traceproof scan-history REPO_ID --run-id RUN_ID --offset 0 --limit 100
 ```
 
-Follow `next_offset` until null. Pages contain at most 1000 rows, sorted by newest run admission and then newest attempt within each run. New work can shift offset pages between requests; this is not a frozen export. Failed attempts remain visible, unknown counts are null, and a run with no query attempt has no scan-history rows. Extraction attempts are separate: retain their IDs for `codeql-status`. Use `report-history` for published summary IDs.
+Follow `next_offset` until null. Pages contain at most 1000 rows, sorted by newest run admission and then newest attempt within each run. New work can shift offset pages between requests; this is not a frozen export. Failed attempts remain visible, unknown counts are null, and a run with no query attempt has no scan-history rows. Extraction attempts are separate: use `extraction-history` to find IDs for `codeql-status`. Use `report-history` for published summary IDs.
 
 ## First walkthrough: capture and index synthetic source
 
