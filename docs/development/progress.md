@@ -1,4 +1,7 @@
-# Implementation progress after Slice 32
+# Implementation progress after Slice 33
+
+Slice 33 adds paginated import discovery with dispatch state and intake counts. It extends
+local operational visibility without additional package credit.
 
 Slice 32 adds terminal import dispatch cancellation. M1.6 remains partial because full
 run/process and distributed cancellation are not implemented; package credit is unchanged.

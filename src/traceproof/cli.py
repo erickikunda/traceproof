@@ -628,6 +628,19 @@ def triage_status(
     perform(lambda: triage_report(ctx.obj, run_id, offset, limit))
 
 
+@app.command("import-history")
+def import_history_command(
+    ctx: typer.Context,
+    state: str | None = None,
+    offset: Annotated[int, typer.Option(min=0)] = 0,
+    limit: Annotated[int, typer.Option(min=1, max=1000)] = 100,
+):
+    """Find prior imports with dispatch state and intake counts; does not start work."""
+    from traceproof.import_history import import_history
+
+    perform(lambda: import_history(ctx.obj, state, offset, limit))
+
+
 @app.command("import-control")
 def import_control_command(
     ctx: typer.Context,

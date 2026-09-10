@@ -418,3 +418,6 @@ revision and `import-control` to change it. Running rows finish; see
 
 `import-control` also supports terminal `cancelled` dispatch state. It retains completed
 work and prevents subsequent batch dispatch; see [Slice 32](docs/development/slice-32.md).
+
+Find previous batches with `import-history --state paused --limit 20` (omit the state
+filter for all imports). See [Slice 33](docs/development/slice-33.md).

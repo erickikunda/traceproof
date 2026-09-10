@@ -1,6 +1,23 @@
 # TraceProof CLI user and operator guide
 
-**Scope:** laptop POC through Slice 32, SQLite schema 0009. Commands are run from the repository checkout on Linux/macOS using Python 3.12+. This guide describes implemented behavior. Git/GCS acquisition, HTTP API hosting, distributed workers, authenticated reviewers and OpenShift deployment are future work.
+**Scope:** laptop POC through Slice 33, SQLite schema 0009. Commands are run from the repository checkout on Linux/macOS using Python 3.12+. This guide describes implemented behavior. Git/GCS acquisition, HTTP API hosting, distributed workers, authenticated reviewers and OpenShift deployment are future work.
+
+## Find a previous import
+
+```bash
+uv run traceproof import-history --limit 20
+uv run traceproof import-history --state paused --limit 20
+uv run traceproof status IMPORT_ID
+uv run traceproof import-control-status IMPORT_ID
+uv run traceproof import-reports IMPORT_ID
+```
+
+History returns newest batches first with their IDs, latest dispatch state/revision and
+intake counts. Optional filters are active, paused and cancelled. Follow `next_offset` using
+`--offset`; default limit is 100, maximum 1000. Control changes or new imports can shift
+later pages. Intake counts do not describe scan completion or findings. Cancelled batches
+can retain unstarted rows, and active batches may already have completed intake.
+See [Slice 33](../development/slice-33.md) for the projection contract.
 
 ## Cancel remaining import dispatch
 
