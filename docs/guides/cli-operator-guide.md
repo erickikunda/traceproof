@@ -1,6 +1,6 @@
 # TraceProof CLI user and operator guide
 
-**Scope:** laptop POC through Slice 24, SQLite schema 0008. Commands are run from the repository checkout on Linux/macOS using Python 3.12+. This guide describes implemented behavior. Git/GCS acquisition, HTTP API hosting, distributed workers, authenticated reviewers and OpenShift deployment are future work.
+**Scope:** laptop POC through Slice 25, SQLite schema 0008. Commands are run from the repository checkout on Linux/macOS using Python 3.12+. This guide describes implemented behavior. Git/GCS acquisition, HTTP API hosting, distributed workers, authenticated reviewers and OpenShift deployment are future work.
 
 ## Start here
 
@@ -93,6 +93,14 @@ with no new report, while failed query attempts produce incomplete reports. Repe
 the command starts fresh extraction/queries; it is not an automatic retry. If publication
 fails, find the attempt with `scan-history` and publish it explicitly. Individual stages
 below remain useful for diagnosis. See [scan-run details](../development/slice-21.md).
+
+To scan a captured CSV batch sequentially, use `scan-import IMPORT_ID QUERY --limit 5`.
+Follow its `next_offset` with `--offset`; page positions include rejected/uncaptured rows.
+The default limit is one row. Existing query attempts, including failures, are skipped
+unless you pass `--rescan`. Inspect each row's outcome; mixed outcomes can exit zero.
+Expected row errors do not block later rows, but infrastructure errors stop the command.
+Per-run results are durable; save the JSON batch summary yourself. See
+[batch scanning](../development/slice-25.md).
 
 CodeQL must be on PATH, with an approved query and its dependencies installed locally. TraceProof does not download packs during analysis. Local acceptance has used CodeQL 2.27.0 and `codeql/python-queries` 1.8.10; the enterprise must supply its approved versions and usage entitlement.
 

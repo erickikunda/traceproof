@@ -32,6 +32,7 @@ first hosted API, as scheduled in the implementation plan.
 - [Twenty-second-slice status](development/slice-22.md): local prerequisite diagnostics and operator actions without tool execution.
 - [Twenty-third-slice status](development/slice-23.md): loopback-only Ollama adapter for local POC inference.
 - [Twenty-fourth-slice status](development/slice-24.md): fixed per-run request limits, including zero-priced local model work.
+- [Twenty-fifth-slice status](development/slice-25.md): bounded sequential import scanning with per-row outcomes and explicit rescans.
 - [Progress assessment](development/progress.md): work-package estimates against the full implementation plan.
 
 The design and plan are proposals; the slice status and README describe what actually runs.

@@ -1,14 +1,18 @@
 """Explicit local source-only orchestration; no automatic model calls or retries."""
 
+from sqlalchemy import select
+
 from traceproof.codeql import extract
 from traceproof.domain import TraceProofError
 from traceproof.indexing import build_index
-from traceproof.persistence import Run, exclusive_worker
+from traceproof.persistence import Run, ScanAttempt, exclusive_worker
 from traceproof.reports import publish_report
 from traceproof.scanning import analyze, query_entry
 
 
-def scan_run(store, run_id, queries, extraction_timeout=300, query_timeout=600):
+def scan_run(
+    store, run_id, queries, extraction_timeout=300, query_timeout=600, *, skip_existing=False
+):
     if not 1 <= extraction_timeout <= 3600 or not 1 <= query_timeout <= 3600:
         raise TraceProofError("Stage timeouts must be between 1 and 3600 seconds")
     store.require_initialized()
@@ -19,6 +23,25 @@ def scan_run(store, run_id, queries, extraction_timeout=300, query_timeout=600):
             if run is None:
                 raise TraceProofError("Run not found")
             repo_id = run.repo_id
+            if skip_existing:
+                previous = session.scalar(
+                    select(ScanAttempt)
+                    .where(ScanAttempt.run_id == run_id)
+                    .order_by(ScanAttempt.created_at.desc(), ScanAttempt.id.desc())
+                    .limit(1)
+                )
+                if previous is not None:
+                    return {
+                        "schema_version": "1",
+                        "repo_id": repo_id,
+                        "run_id": run_id,
+                        "status": "skipped_existing_attempt",
+                        "attempt_id": previous.id,
+                        "analysis_status": previous.report.get("status", "unknown"),
+                        "report_id": None,
+                        "model_calls": 0,
+                        "reason": "Existing attempt retained; use explicit rescan to run again",
+                    }
         result = {
             "schema_version": "1",
             "repo_id": repo_id,

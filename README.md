@@ -100,6 +100,10 @@ automatic artifact cleanup and a production container sandbox are not implemente
 
 ## Source evidence and security-query candidates
 
+After archive capture, `scan-import IMPORT_ID /absolute/approved.ql --limit 5` scans a
+bounded page of CSV rows sequentially. Existing query attempts are skipped unless
+`--rescan` is supplied. See [Slice 25](docs/development/slice-25.md).
+
 For a captured run, `uv run traceproof scan-run RUN_ID /absolute/approved.ql` performs
 indexing, readiness checks, CodeQL extraction/queries and exact-attempt report publication.
 It makes no model calls. Inspect the returned status; repeated invocation starts fresh

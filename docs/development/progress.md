@@ -1,4 +1,7 @@
-# Implementation progress after Slice 24
+# Implementation progress after Slice 25
+
+Slice 25 adds bounded sequential import scanning. This is local orchestration, not
+distributed scheduling or throughput qualification; package credit is unchanged.
 
 Slice 24 adds durable request limits alongside monetary budgets, including zero-priced
 local inference. This strengthens the existing local controls without new package credit.

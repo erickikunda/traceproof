@@ -354,6 +354,27 @@ def scan_run_command(
     perform(lambda: scan_run(ctx.obj, run_id, queries, extraction_timeout, query_timeout))
 
 
+@app.command("scan-import")
+def scan_import_command(
+    ctx: typer.Context,
+    import_id: str,
+    queries: Path,
+    offset: Annotated[int, typer.Option(min=0)] = 0,
+    limit: Annotated[int, typer.Option(min=1, max=1000)] = 1,
+    rescan: bool = False,
+    extraction_timeout: Annotated[int, typer.Option(min=1, max=3600)] = 300,
+    query_timeout: Annotated[int, typer.Option(min=1, max=3600)] = 600,
+):
+    """Sequentially scan selected import rows; existing query attempts are skipped by default."""
+    from traceproof.batch_scan import scan_import
+
+    perform(
+        lambda: scan_import(
+            ctx.obj, import_id, queries, offset, limit, rescan, extraction_timeout, query_timeout
+        )
+    )
+
+
 @app.command("source-evidence")
 def evidence(
     ctx: typer.Context, run_id: str, path: str, line: int, end_line: int, sha256: str | None = None
