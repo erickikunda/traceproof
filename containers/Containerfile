@@ -42,9 +42,10 @@ COPY --from=codeql /opt/codeql-bundle /opt/codeql-bundle
 COPY containers/java-profile.json /opt/traceproof/dependencies/java-profile.json
 COPY work/container-inputs/java-repository /opt/traceproof/dependencies/java-repository
 COPY containers/runtime_probe.py /opt/traceproof/runtime_probe.py
-COPY scripts/validate_java.py scripts/validate_spring.py scripts/validate_csharp.py scripts/validate_csharp_classic.py scripts/validate_csharp_core.py scripts/pin_csharp_dependencies.py /opt/traceproof/scripts/
+COPY scripts/validate_java.py scripts/validate_spring.py scripts/validate_csharp.py scripts/validate_csharp_classic.py scripts/validate_csharp_core.py scripts/validate_csharp_minimal.py scripts/pin_csharp_dependencies.py /opt/traceproof/scripts/
 COPY tests/fixtures/csharp /opt/traceproof/tests/fixtures/csharp
 COPY tests/fixtures/csharp-classic /opt/traceproof/tests/fixtures/csharp-classic
+COPY tests/fixtures/csharp-minimal /opt/traceproof/tests/fixtures/csharp-minimal
 COPY tests/fixtures/csharp-core /opt/traceproof/tests/fixtures/csharp-core
 COPY containers/prepare_core_profile.py /opt/traceproof/prepare_core_profile.py
 COPY containers/net48-inventory.json /opt/traceproof/net48-inventory.json

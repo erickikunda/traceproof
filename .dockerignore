@@ -40,3 +40,7 @@
 !scripts/validate_csharp_core.py
 !tests/fixtures/csharp-core/
 !tests/fixtures/csharp-core/**
+
+!scripts/validate_csharp_minimal.py
+!tests/fixtures/csharp-minimal/
+!tests/fixtures/csharp-minimal/**

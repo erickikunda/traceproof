@@ -19,7 +19,15 @@ def main():
     parser.add_argument("--image", default="traceproof:linux-poc")
     parser.add_argument(
         "--suite",
-        choices=["python", "java", "spring", "csharp", "csharp-classic", "csharp-core"],
+        choices=[
+            "python",
+            "java",
+            "spring",
+            "csharp",
+            "csharp-classic",
+            "csharp-core",
+            "csharp-minimal",
+        ],
         default="python",
     )
     parser.add_argument("--project-layout", choices=["flat", "maven", "gradle"], default="flat")
@@ -35,7 +43,11 @@ def main():
             "/opt/codeql-bundle/codeql/qlpacks/codeql/csharp-queries/1.9.3/"
             "Security Features/CWE-089/SqlInjection.ql"
         )
-        profile = "core-profile.json" if args.suite == "csharp-core" else "profile.json"
+        profile = (
+            "core-profile.json"
+            if args.suite in ("csharp-core", "csharp-minimal")
+            else "profile.json"
+        )
         scan = (
             f"/opt/traceproof-venv/bin/python /opt/traceproof/scripts/validate_{script}.py "
             f"'{query}' /work/acceptance --csharp-dependency-profile "

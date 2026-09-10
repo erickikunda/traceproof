@@ -196,3 +196,7 @@ qualify ASP.NET Core, broad classic MVC/Web API coverage, C# LLM evidence or OCP
 Slice 52 qualifies the ASP.NET Core MVC FromQuery/DbCommand SQL fixture pair in
 restricted Linux containers with a separate pinned Core reference profile. Minimal
 APIs, broad classic MVC/Web API and C# LLM evidence remain open.
+
+Slice 53 adds a distinct Core minimal API MapGet/FromQuery SQL pair under restricted
+Linux execution. The vulnerable/fixed pair passes with 1/0 candidates. This advances
+L2 fixture coverage; it does not complete C# evidence or broad framework qualification.

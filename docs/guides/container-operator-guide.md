@@ -34,7 +34,8 @@ Linux JDK, including jmods. Slice 49 identified missing inferred Spring artifact
 six-JAR local Maven repository alongside the full JDK; the JDK alone is insufficient.
 Slice 51 adds Linux .NET SDK 10.0.100 and pinned net48 reference assemblies for
 basic C# and classic ASP.NET fixtures. Slice 52 adds a separate ASP.NET Core MVC
-fixture pair. Minimal APIs and broad classic MVC/Web API coverage remain unqualified. No Maven/Gradle build execution is qualified.
+fixture pair. Slice 53 adds a minimal API MapGet fixture pair. Broad classic MVC/Web API
+coverage remains unqualified. No Maven/Gradle build execution is qualified.
 
 ## Run acceptance
 
@@ -44,6 +45,7 @@ uv run python scripts/validate_container.py work/container-java-001 --suite java
 uv run python scripts/validate_container.py work/container-csharp-001 --suite csharp
 uv run python scripts/validate_container.py work/container-classic-001 --suite csharp-classic
 uv run python scripts/validate_container.py work/container-core-001 --suite csharp-core
+uv run python scripts/validate_container.py work/container-minimal-001 --suite csharp-minimal
 # Spring suites automatically select the pinned fixture dependency profile.
 uv run python scripts/validate_container.py work/container-spring-001 --suite spring
 uv run python scripts/validate_container.py work/container-spring-maven-001 --suite spring --project-layout maven
@@ -184,3 +186,15 @@ unsupported C# LLM evidence. This fixture does not establish minimal API, Razor,
 Entity Framework, full project build or broad ASP.NET coverage. Container restrictions
 and the distinction between external network denial and app attestation remain the
 same as the other C# suites.
+
+### ASP.NET Core minimal APIs (Slice 53)
+
+`--suite csharp-minimal` uses the same `core-profile.json` as the MVC suite. It
+exercises a MapGet lambda with an explicit FromQuery string and a FromServices
+DbConnection. The pair compares SQL concatenation with a bound parameter. These
+fixtures are scanned as source only; the application is never started.
+
+This is a separate fixture qualification, not coverage of every minimal API binding,
+HTTP verb, route group, filter, authorization policy or asynchronous handler. C# LLM
+evidence remains unsupported and report readiness remains incomplete. The runner's
+network denial is external; the application does not claim to attest it.
