@@ -1,6 +1,6 @@
 # TraceProof CLI user and operator guide
 
-**Scope:** laptop POC through Slice 39, SQLite schema 0009. Commands are run from the repository checkout on Linux/macOS using Python 3.12+. This guide describes implemented behavior. Git/GCS acquisition, HTTP API hosting, distributed workers, authenticated reviewers and OpenShift deployment are future work.
+**Scope:** laptop POC through Slice 40, SQLite schema 0009. Commands are run from the repository checkout on Linux/macOS using Python 3.12+. This guide describes implemented behavior. Git/GCS acquisition, HTTP API hosting, distributed workers, authenticated reviewers and OpenShift deployment are future work.
 
 ## Evidence gate version 3
 
@@ -556,3 +556,12 @@ A Spring namespace hint is not proof of runtime binding or an externally reachab
 endpoint. Wildcard imports remain unresolved. No Java LLM policy or build-profile
 support is enabled by these observations. Reusing an old report returns its original
 contents; a new scan uses the versioned parser and retains fresh observations.
+
+### Source-only Spring acceptance (Slice 40)
+
+Run `uv run python scripts/validate_spring.py QUERY_PATH NEW_OUTPUT_DIRECTORY` with
+an installed Java `SqlTainted.ql`. The suite checks vulnerable/fixed/foreign-annotation
+controllers and malformed source. Outputs include validation.json, exact JSON/HTML
+reports and a source-containing vulnerable evidence bundle. No model calls or Spring
+builds run. A retained modeled path is not proof of deployed reachability. Java
+readiness remains incomplete; Maven/Gradle and Java LLM policies are still pending.

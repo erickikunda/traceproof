@@ -1,4 +1,4 @@
-# Implementation progress after Slice 39
+# Implementation progress after Slice 40
 
 ## Priority reset — 10 September 2026
 
@@ -18,6 +18,10 @@ Java semantic resolution, evidence policies and Spring remain unqualified.
 
 Slice 39 adds snapshot-bound Spring annotation syntax observations; runtime binding,
 Java LLM evidence and framework extraction qualification remain open.
+
+Slice 40 adds real source-only Spring-style SQL path acceptance with vulnerable,
+fixed, foreign-annotation and malformed-source cases. Built Spring and Java LLM
+evidence qualification remain open; L1 is still partial.
 
 ## Historical delivery assessment
 

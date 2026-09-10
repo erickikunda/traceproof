@@ -58,3 +58,5 @@ The design and plan are proposals; the slice status and README describe what act
 - [Slice 38](development/slice-38.md): bounded Java syntax indexing and parse coverage.
 
 - [Slice 39](development/slice-39.md): Spring annotation syntax evidence inventory.
+
+- [Slice 40](development/slice-40.md): source-only Spring-style SQL path acceptance.

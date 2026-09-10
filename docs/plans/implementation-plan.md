@@ -65,7 +65,8 @@ slices. Do not schedule a new convenience command merely to produce another numb
 real dependency-free Java extraction-to-candidate/report fixture. L0 and L1 remain partial.
 Slices 38–39 add bounded Java syntax indexing and Spring annotation observations;
 semantic resolution and runtime bindings remain unqualified.
-**Next implementation slice:** Java evidence qualification and Spring request bindings, followed
+Slice 40 adds a real source-only Spring-style SQL path fixture matrix.
+**Next implementation slice:** Java SQL evidence-policy qualification, followed
 by real Spring fixtures and separately qualified Maven/Gradle profiles in L1.
 Keep existing operator entry points and add options only where language selection or
 safe build-profile selection requires them.

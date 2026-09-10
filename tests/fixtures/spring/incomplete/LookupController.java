@@ -1,0 +1,1 @@
+class LookupController { void broken( }
