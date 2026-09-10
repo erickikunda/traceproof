@@ -14,6 +14,7 @@ from sqlalchemy.exc import IntegrityError
 
 from traceproof.artifacts import ArtifactStore, open_scoped_source
 from traceproof.domain import IntakeSpec, ItemState, RunState, TraceProofError
+from traceproof.import_controls import current_control
 from traceproof.persistence import ImportBatch, ImportItem, Repository, Run, Snapshot, Store
 
 MAX_CSV_BYTES = 1024 * 1024
@@ -161,6 +162,7 @@ def import_status(store: Store, import_id: str) -> dict:
             "schema_version": "1",
             "import_id": import_id,
             "created_at": batch.created_at,
+            "dispatch_control": current_control(session, import_id),
             "items": [
                 {
                     "item_id": item.id,
@@ -221,6 +223,8 @@ def process(store: Store, artifacts: ArtifactStore, import_id: str, max_items: i
         if batch is None:
             raise TraceProofError("Import not found")
         root = Path(batch.input_root)
+        if current_control(session, import_id)["state"] == "paused":
+            return import_status(store, import_id)
         interrupted = session.scalars(
             select(ImportItem).where(
                 ImportItem.import_id == import_id, ImportItem.state == ItemState.PROCESSING
@@ -238,6 +242,8 @@ def process(store: Store, artifacts: ArtifactStore, import_id: str, max_items: i
 
     for _ in range(max_items):
         with store.transaction() as session:
+            if current_control(session, import_id)["state"] == "paused":
+                break
             item = session.scalar(
                 select(ImportItem)
                 .where(ImportItem.import_id == import_id, ImportItem.state == ItemState.READY)

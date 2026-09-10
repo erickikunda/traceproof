@@ -93,10 +93,11 @@ def test_migration_from_six_preserves_existing_reports(store, evaluation):
     # Recreate the prior schema boundary in this isolated test database.
     with store.engine.begin() as conn:
         conn.exec_driver_sql("DROP TABLE benchmark_scorecards")
+        conn.exec_driver_sql("DROP TABLE import_controls")
         conn.exec_driver_sql("ALTER TABLE triage_budgets DROP COLUMN max_requests")
         conn.exec_driver_sql("UPDATE alembic_version SET version_num='0006'")
     store.initialize()
     store.initialize()
     assert evaluation[3]() == report
     result = CliRunner().invoke(app, ["--state-dir", str(store.root), "init"])
-    assert json.loads(result.output)["schema"] == "0008"
+    assert json.loads(result.output)["schema"] == "0009"

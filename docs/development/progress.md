@@ -1,4 +1,7 @@
-# Implementation progress after Slice 30
+# Implementation progress after Slice 31
+
+Slice 31 adds durable import dispatch pause/resume and audit history. M1.6 is now partial:
+running processes are not interrupted, and cancellation/distributed controls remain open.
 
 Slice 30 adds bounded exact-attempt triage orchestration using existing model/evidence
 and budget gates. No new detection-quality or milestone credit is claimed.
@@ -43,9 +46,8 @@ Slice 19 adds durable scorecard publication/history/retrieval. Persisted proxy r
 exist; full adjudicated quality measures and benchmark qualification still remain open.
 No additional work-package credit is claimed.
 
-**Planning estimate: approximately 25–30% of the full implementation plan and 60–65%
-of M0–M2.** The rounded conversational estimates are about one quarter overall and
-about three fifths of the laptop milestone scope. These are feature-delivery estimates,
+**Planning estimate: approximately 31% of the full implementation plan and 64%
+of M0–M2.** These are feature-delivery estimates,
 not percentages of elapsed effort, calendar duration, production readiness or quality.
 
 The plan contains 64 work packages. The simple rubric below assigns implemented work
@@ -56,16 +58,16 @@ rough progress indicator, not an earned-value forecast or release acceptance dec
 | Milestone | Packages | Implemented | Partial | Unimplemented | Credit |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | M0: contracts and prerequisites | 8 | 2 | 6 | 0 | 5 / 8 |
-| M1: intake and durable execution | 7 | 3 | 1 | 3 | 3.5 / 7 |
+| M1: intake and durable execution | 7 | 3 | 2 | 2 | 4 / 7 |
 | M2: scan-to-report POC | 10 | 4 | 6 | 0 | 7 / 10 |
 | M3: quality and reuse | 9 | 0 | 3 | 6 | 1.5 / 9 |
 | M4: benchmark reporting | 8 | 0 | 5 | 3 | 2.5 / 8 |
 | M5: multiworker and portfolio exports | 8 | 0 | 0 | 8 | 0 / 8 |
 | M6: OpenShift pilot | 7 | 0 | 0 | 7 | 0 / 7 |
 | M7: production qualification | 7 | 0 | 0 | 7 | 0 / 7 |
-| **Total** | **64** | **9** | **21** | **34** | **19.5 / 64 ≈ 30%** |
+| **Total** | **64** | **9** | **22** | **33** | **20 / 64 ≈ 31%** |
 
-M0–M2 receive 15.5 / 25 points, or 62%. The source-only CLI path is usable, but the full
+M0–M2 receive 16 / 25 points, or 64%. The source-only CLI path is usable, but the full
 milestones include work beyond that narrow demonstration. No entire milestone is
 declared accepted merely because its central demonstration works.
 
@@ -78,7 +80,8 @@ declared accepted merely because its central demonstration works.
 | M0.7 | Implemented initial local scope: separate manifest/label schemas, strict validation, pinned identities and optional stored-metadata alignment; no dataset registration or evaluation |
 | M1.1, M1.2, M1.5 | Implemented local scope: CSV admission, safe archive snapshots, SQLite single-worker persistence/checkpoints/recovery |
 | M1.4 | Partial: immutable artifacts exist; automated orphan cleanup does not |
-| M1.3, M1.6, M1.7 | Unimplemented: Git acquisition, explicit pause/cancel controls, PostgreSQL contract qualification |
+| M1.6 | Partial: durable import dispatch pause/resume with audit history; run cancellation and distributed execution controls remain |
+| M1.3, M1.7 | Unimplemented: Git acquisition and PostgreSQL contract qualification |
 | M2.1, M2.2 | Implemented local Python scope: inventory/conservative resolution, CodeQL extraction/query execution and candidate ingestion |
 | M2.3, M2.4 | Partial: index gates/bundles exist; full coverage obligations and security-map semantics remain |
 | M2.5 | Partial: replay and opt-in OpenAI/Anthropic transports exist; live gateway compatibility has not been validated |

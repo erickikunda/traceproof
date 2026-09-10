@@ -42,3 +42,4 @@ The design and plan are proposals; the slice status and README describe what act
 - [Twenty-eighth-slice status](development/slice-28.md): explicit, recorded CodeQL thread and RAM settings.
 - [Twenty-ninth-slice status](development/slice-29.md): self-contained HTML benchmark scorecards for sharing.
 - [Thirtieth-slice status](development/slice-30.md): bounded sequential candidate triage with stable keys and stop rules.
+- [Thirty-first-slice status](development/slice-31.md): durable import dispatch pause/resume with audit history.

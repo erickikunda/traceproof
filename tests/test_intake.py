@@ -27,6 +27,7 @@ def test_migration_repeatable(store):
         "snapshots",
         "runs",
         "import_items",
+        "import_controls",
         "alembic_version",
         "source_indexes",
         "indexed_files",

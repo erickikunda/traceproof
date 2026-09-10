@@ -34,6 +34,17 @@ class ImportBatch(Base):
     created_at: Mapped[str] = mapped_column(String(40))
 
 
+class ImportControl(Base):
+    __tablename__ = "import_controls"
+    __table_args__ = (UniqueConstraint("import_id", "request_key"),)
+    import_id: Mapped[str] = mapped_column(ForeignKey("imports.id"), primary_key=True)
+    revision: Mapped[int] = mapped_column(primary_key=True)
+    state: Mapped[str] = mapped_column(String(20))
+    request_key: Mapped[str] = mapped_column(String(200))
+    reason: Mapped[str] = mapped_column(String(1000))
+    created_at: Mapped[str] = mapped_column(String(40))
+
+
 class Snapshot(Base):
     __tablename__ = "snapshots"
     id: Mapped[str] = mapped_column(String(64), primary_key=True)

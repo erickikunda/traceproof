@@ -52,7 +52,7 @@ def init(ctx: typer.Context):
 
     def operation():
         ctx.obj.initialize()
-        return {"state_dir": str(ctx.obj.root), "schema": "0008", "status": "initialized"}
+        return {"state_dir": str(ctx.obj.root), "schema": "0009", "status": "initialized"}
 
     perform(operation)
 
@@ -626,6 +626,34 @@ def triage_status(
     from traceproof.triage import triage_report
 
     perform(lambda: triage_report(ctx.obj, run_id, offset, limit))
+
+
+@app.command("import-control")
+def import_control_command(
+    ctx: typer.Context,
+    import_id: str,
+    state: str,
+    key: str,
+    reason: str,
+    expected_revision: Annotated[int, typer.Option(min=0)],
+):
+    """Pause/resume import dispatch at row boundaries; does not interrupt running tools."""
+    from traceproof.import_controls import set_control
+
+    perform(lambda: set_control(ctx.obj, import_id, state, key, reason, expected_revision))
+
+
+@app.command("import-control-status")
+def import_control_status_command(
+    ctx: typer.Context,
+    import_id: str,
+    offset: Annotated[int, typer.Option(min=0)] = 0,
+    limit: Annotated[int, typer.Option(min=1, max=1000)] = 100,
+):
+    """Read current import dispatch state and append-only transition history."""
+    from traceproof.import_controls import control_status
+
+    perform(lambda: control_status(ctx.obj, import_id, offset, limit))
 
 
 @app.command("import-csv")

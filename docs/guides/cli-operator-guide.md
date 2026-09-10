@@ -1,6 +1,30 @@
 # TraceProof CLI user and operator guide
 
-**Scope:** laptop POC through Slice 30, SQLite schema 0008. Commands are run from the repository checkout on Linux/macOS using Python 3.12+. This guide describes implemented behavior. Git/GCS acquisition, HTTP API hosting, distributed workers, authenticated reviewers and OpenShift deployment are future work.
+**Scope:** laptop POC through Slice 31, SQLite schema 0009. Commands are run from the repository checkout on Linux/macOS using Python 3.12+. This guide describes implemented behavior. Git/GCS acquisition, HTTP API hosting, distributed workers, authenticated reviewers and OpenShift deployment are future work.
+
+## Pause and resume import dispatch
+
+With writers quiesced, apply migration 0009 using `traceproof init`. Existing imports
+remain active at revision 0. Then use the revision returned by status:
+
+```bash
+uv run traceproof import-control-status IMPORT_ID
+uv run traceproof import-control IMPORT_ID paused pause-1 "Maintenance" --expected-revision 0
+uv run traceproof import-control IMPORT_ID active resume-1 "Ready" --expected-revision 1
+uv run traceproof worker IMPORT_ID
+```
+
+A pause takes effect at the next intake or batch-scan row boundary. Work already admitted
+at a boundary may finish; no tool process is killed. `status IMPORT_ID` shows dispatch
+state separately from row states. `scan-import` returns `dispatch_status: paused` and
+`next_offset` for the next row. After resuming, invoke the worker or scan command again;
+resume does not launch work. Existing snapshots/reports stay available.
+
+Repeat an identical request key to recover from an uncertain response. A stale revision
+or changed request with the same key is rejected; inspect current status before retrying.
+History records reasons and revisions, with `--offset`/`--limit` pagination. This is a local
+operator control, not authenticated approval. Explicit single-run commands and triage are
+not blocked by import pause. See [Slice 31](../development/slice-31.md) for the full scope.
 
 ## Triage a candidate page
 

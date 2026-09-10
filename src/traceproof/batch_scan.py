@@ -5,6 +5,7 @@ from collections import Counter
 from traceproof.codeql_resources import resource_settings
 from traceproof.domain import TraceProofError
 from traceproof.history import validate_page
+from traceproof.import_controls import control_status
 from traceproof.intake import import_status
 from traceproof.pipeline import scan_run
 from traceproof.scanning import query_entry
@@ -31,7 +32,11 @@ def scan_import(
     admitted = import_status(store, import_id)["items"]
     selected = admitted[offset : offset + limit]
     results = []
+    paused = False
     for item in selected:
+        if control_status(store, import_id, limit=1)["state"] == "paused":
+            paused = True
+            break
         row = {
             "item_id": item["item_id"],
             "row_number": item["row_number"],
@@ -62,7 +67,8 @@ def scan_import(
         "limit": limit,
         "total_rows": len(admitted),
         "selected_rows": len(selected),
-        "next_offset": offset + len(selected) if offset + len(selected) < len(admitted) else None,
+        "next_offset": offset + len(results) if offset + len(results) < len(admitted) else None,
+        "dispatch_status": "paused" if paused else "page_complete",
         "rescan_requested": rescan,
         "counts": dict(Counter(row["status"] for row in results)),
         "items": results,

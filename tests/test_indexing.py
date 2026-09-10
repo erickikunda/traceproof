@@ -208,12 +208,13 @@ def test_migrate_existing_intake_database(store, archive, manifest):
     from alembic import command
     from alembic.config import Config
 
+    # Seed intake data with the current application before recreating the old schema.
+    run_id = captured(store, archive, manifest)
     config = Config()
     config.set_main_option("script_location", str(files("traceproof") / "migrations"))
     with store.engine.begin() as connection:
         config.attributes["connection"] = connection
         command.downgrade(config, "0001")
-    run_id = captured(store, archive, manifest)
     store.initialize()
     assert indexing.build_index(store, run_id)["python_index_gate"] == "ready"
 

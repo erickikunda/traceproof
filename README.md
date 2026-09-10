@@ -411,3 +411,7 @@ scorecard with explicit provisional metrics and scope gaps. See [Slice 29](docs/
 
 Use `triage-attempt REPO_ID ATTEMPT_ID CONFIG_JSON BATCH_KEY --limit 5` to triage a
 bounded candidate page under an existing run budget. See [Slice 30](docs/development/slice-30.md).
+
+Migration 0009 adds import dispatch pause/resume. Use `import-control-status` to read the
+revision and `import-control` to change it. Running rows finish; see
+[Slice 31](docs/development/slice-31.md) for boundaries and resume instructions.

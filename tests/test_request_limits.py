@@ -44,6 +44,7 @@ def test_migration_defaults_existing_budget_and_preserves_history(store, evidenc
     adapter = FakeAdapter()
     first = triage(store, bundle, policy(), adapter, "before-upgrade")
     with store.engine.begin() as connection:
+        connection.exec_driver_sql("DROP TABLE import_controls")
         connection.exec_driver_sql("ALTER TABLE triage_budgets DROP COLUMN max_requests")
         connection.exec_driver_sql("UPDATE alembic_version SET version_num='0007'")
     store.initialize()
