@@ -1,5 +1,9 @@
 # TraceProof documentation
 
+Start with the [CLI user/operator guide](guides/cli-operator-guide.md) for the laptop workflow,
+status interpretation, reports and recovery. The API companion guide will ship with the
+first hosted API, as scheduled in the implementation plan.
+
 - [System design](architecture/system-design.md): leadership use cases, swimlane,
   data-flow/sequence diagrams, evidence policy, report contracts and enterprise architecture.
 - [Implementation plan](plans/implementation-plan.md): milestones M0–M7 and acceptance gates.
@@ -18,6 +22,7 @@
 - [Twelfth-slice status](development/slice-12.md): append-only operator reviews, revision checks and report projections.
 - [Thirteenth-slice status](development/slice-13.md): opt-in Anthropic Messages adapter with shared evidence and budget controls.
 - [Fourteenth-slice status](development/slice-14.md): explicit latest-attempt/latest-completed selection with current-work disclosure.
+- [Fifteenth-slice status](development/slice-15.md): CLI operator guide and verified synthetic walkthrough; API guide delivery gate.
 - [Progress assessment](development/progress.md): work-package estimates against the full implementation plan.
 
 The design and plan are proposals; the slice status and README describe what actually runs.

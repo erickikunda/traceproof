@@ -2,9 +2,12 @@
 
 Evidence-driven, LLM-assisted vulnerability discovery.
 
+For step-by-step use, report interpretation and recovery, read the
+[CLI user/operator guide](docs/guides/cli-operator-guide.md).
+
 **Implemented slices:** local CSV/archive intake, verified source snapshots, resumable
 Python indexing, conservative call candidates, bounded evidence bundles, CodeQL security
-queries, advisory triage with replay/opt-in OpenAI adapters, source claim checks,
+queries, advisory triage with replay/opt-in OpenAI and Anthropic adapters, source claim checks,
 bounded context expansion, cost reservations, and reports.
 **Not yet implemented:** verified vulnerability adjudication, proven reachability,
 benchmark execution, Git/GCS retrieval, API hosting or OpenShift workers.
@@ -59,7 +62,7 @@ uv run traceproof query-index RUN_ID --kind symbols --limit 100
 uv run traceproof query-index RUN_ID --kind calls --path project/app.py
 uv run traceproof repo-report REPO_ID
 uv run traceproof repo-report REPO_ID --run-id RUN_ID --format markdown > coverage.md
-# Optional, requires CodeQL on PATH (verified locally with 2.26.3):
+# Optional, requires CodeQL on PATH (verified locally with 2.27.0):
 uv run traceproof codeql-extract RUN_ID --timeout 300
 uv run traceproof codeql-status ATTEMPT_ID
 ```

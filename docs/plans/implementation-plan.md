@@ -133,6 +133,24 @@ Kill the local worker after a persisted checkpoint and resume it without losing 
 
 ### Initial API/CLI surface
 
+**Operator documentation delivery:** Publish the first task-oriented CLI guide once the
+local scan-to-report flow is stable (delivered in Slice 15; see
+[CLI operator guide](../guides/cli-operator-guide.md)). Include a verified synthetic
+walkthrough, ID handoffs, status interpretation, safe retries, budgets, evidence/reviews,
+report selection/export and local recovery. Refresh it whenever a slice changes a user
+workflow, command, schema or operational limit; CLI `--help` remains the argument reference.
+
+Deliver `docs/guides/api-operator-guide.md` with the **first hosted API**, even if API
+delivery occurs before M5. OpenAPI alone is insufficient for the workflow: the companion
+guide must demonstrate authentication and repository scope, submission and idempotency,
+asynchronous status polling, partial/failed outcomes, retry rules, exact report retrieval,
+freshness disclosure, evidence access, pagination and dashboard exports. Use runnable
+synthetic request/response examples verified against that implementation, with no invented
+routes or credentials. Link to its generated OpenAPI reference and supported API version.
+No HTTP API currently exists, so this API guide is a planned deliverable, not a usable
+interface description. Expand both guides for multiworker recovery in M5 and approved
+identity, egress, retention and deployment operations in M6 before pilot acceptance.
+
 Use the report semantics in design §20. The first implementation needs import submission/status, scan status, a scan request, historical scan listing, exact report retrieval, and explicit latest-completed/latest-attempt selection. A CLI calls the same application operations; it should not implement a second workflow.
 
 Reports start with source revision, owner, completion/coverage and action priorities. Detailed source evidence is linked or expandable. Escape repository content in HTML. Default exports exclude raw secrets, prompts and internal infrastructure identifiers.
@@ -345,6 +363,9 @@ Do not rerun the full 50-repository suite for a cosmetic report change. Do rerun
 ### Definition of done for a work package
 
 The code and schemas are committed; meaningful tests pass; the associated use case is demonstrated; failure and incomplete-state behavior is documented; migrations/version compatibility are addressed; resource and token effects are recorded when material. Any unmet acceptance criterion remains an explicit open item rather than a hidden assumption.
+
+For user-visible changes, update the applicable CLI/API guide and verify affected
+walkthrough examples. OpenAPI schema generation does not replace operator documentation.
 
 ## 15. Practical first implementation backlog
 
