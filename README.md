@@ -57,7 +57,7 @@ Rejected or failed archives need a corrected input and a new submission key.
 
 ## Index and retrieve coverage
 
-Run `traceproof init` again to upgrade an existing database to schema `0006`.
+Run `traceproof init` again to upgrade an existing database to schema `0007`.
 Then use a captured run:
 
 ```bash
@@ -326,6 +326,11 @@ scorecard identity. See [Slice 17 CSV contracts](docs/development/slice-17.md).
 Evaluator version 2 adds per-CWE proxy metrics in JSON, Markdown and
 `--format weaknesses-csv`. Classes without labels remain unknown, and missing evaluations
 stay in denominators. See [Slice 18](docs/development/slice-18.md).
+
+Use `benchmark-publish MANIFEST LABELS PLAN` to persist a scorecard, `benchmark-history
+DATASET_ID` to list publications, and `benchmark-get DATASET_ID SCORECARD_ID --format
+markdown` to retrieve one without reevaluating inputs. Run `init` for migration 0007.
+See [Slice 19](docs/development/slice-19.md).
 
 ## Development
 

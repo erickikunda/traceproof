@@ -49,7 +49,7 @@ def init(ctx: typer.Context):
 
     def operation():
         ctx.obj.initialize()
-        return {"state_dir": str(ctx.obj.root), "schema": "0006", "status": "initialized"}
+        return {"state_dir": str(ctx.obj.root), "schema": "0007", "status": "initialized"}
 
     perform(operation)
 
@@ -153,6 +153,38 @@ def benchmark_check_command(
         return result
 
     perform(operation)
+
+
+@app.command("benchmark-publish")
+def benchmark_publish_command(ctx: typer.Context, manifest: Path, labels: Path, plan: Path):
+    """Evaluate pinned inputs and persist an immutable scorecard; no scans or model calls."""
+    from traceproof.scorecards import publish_scorecard
+
+    perform(lambda: publish_scorecard(ctx.obj, manifest, labels, plan))
+
+
+@app.command("benchmark-get")
+def benchmark_get_command(
+    ctx: typer.Context, dataset_id: str, scorecard_id: str, format: str = "json"
+):
+    """Retrieve an exact stored scorecard without reading labels or reevaluating."""
+    from traceproof.evaluation import render_scorecard
+    from traceproof.scorecards import get_scorecard
+
+    perform(lambda: render_scorecard(get_scorecard(ctx.obj, dataset_id, scorecard_id), format))
+
+
+@app.command("benchmark-history")
+def benchmark_history_command(
+    ctx: typer.Context,
+    dataset_id: str,
+    offset: Annotated[int, typer.Option(min=0)] = 0,
+    limit: Annotated[int, typer.Option(min=1, max=1000)] = 100,
+):
+    """List stored scorecard IDs for a dataset; does not evaluate or run scans."""
+    from traceproof.scorecards import scorecard_history
+
+    perform(lambda: scorecard_history(ctx.obj, dataset_id, offset, limit))
 
 
 @app.command("publish-report")

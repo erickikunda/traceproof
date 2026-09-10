@@ -26,6 +26,7 @@ first hosted API, as scheduled in the implementation plan.
 - [Sixteenth-slice status](development/slice-16.md): paginated repository runs and query attempts, including unpublished work.
 - [Seventeenth-slice status](development/slice-17.md): benchmark summary/repository/label/candidate CSV exports for dashboards.
 - [Eighteenth-slice status](development/slice-18.md): per-CWE benchmark proxy metrics with explicit missing-label and incomplete states.
+- [Nineteenth-slice status](development/slice-19.md): durable benchmark publication, history and exact retrieval with integrity checks.
 - [Progress assessment](development/progress.md): work-package estimates against the full implementation plan.
 
 The design and plan are proposals; the slice status and README describe what actually runs.

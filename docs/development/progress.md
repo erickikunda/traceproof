@@ -1,4 +1,4 @@
-# Implementation progress after Slice 18
+# Implementation progress after Slice 19
 
 Slices 15–16 add the verified CLI guide, an API documentation delivery gate and repository
 run/query-attempt histories. These extend existing partial packages; work-package credit
@@ -7,6 +7,10 @@ below remains unchanged.
 Slice 17 adds benchmark CSV projections at four explicit grains. M4.6 remains partial:
 persisted scorecards and full adjudicated quality measures remain open. Slice 18 adds
 per-CWE proxy metrics with explicit no-label/incomplete states; package credit remains partial.
+
+Slice 19 adds durable scorecard publication/history/retrieval. Persisted proxy reports now
+exist; full adjudicated quality measures and benchmark qualification still remain open.
+No additional work-package credit is claimed.
 
 **Planning estimate: approximately 25–30% of the full implementation plan and 60–65%
 of M0–M2.** The rounded conversational estimates are about one quarter overall and

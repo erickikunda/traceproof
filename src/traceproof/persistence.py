@@ -163,6 +163,14 @@ class OperatorReview(Base):
     content: Mapped[dict] = mapped_column(JSON)
 
 
+class BenchmarkScorecard(Base):
+    __tablename__ = "benchmark_scorecards"
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    dataset_id: Mapped[str] = mapped_column(String(100), index=True)
+    created_at: Mapped[str] = mapped_column(String(40))
+    content: Mapped[dict] = mapped_column(JSON)
+
+
 class Store:
     def __init__(self, root: Path):
         self.root = root.resolve()

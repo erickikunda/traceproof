@@ -1,6 +1,6 @@
 # TraceProof CLI user and operator guide
 
-**Scope:** laptop POC through Slice 18, SQLite schema 0006. Commands are run from the repository checkout on Linux/macOS using Python 3.12+. This guide describes implemented behavior. Git/GCS acquisition, HTTP API hosting, distributed workers, authenticated reviewers and OpenShift deployment are future work.
+**Scope:** laptop POC through Slice 19, SQLite schema 0007. Commands are run from the repository checkout on Linux/macOS using Python 3.12+. This guide describes implemented behavior. Git/GCS acquisition, HTTP API hosting, distributed workers, authenticated reviewers and OpenShift deployment are future work.
 
 ## Start here
 
@@ -210,6 +210,21 @@ ambiguous and unsupported labels. `no_labels` means no measurable recall value;
 Do not average class percentages: sum numerators and denominators for the overall proxy.
 Join using scorecard ID and CWE. Reevaluation creates new scorecard IDs; legacy results
 are unchanged. See [per-class metrics](../development/slice-18.md).
+
+To save an evaluation for later retrieval, run `init` for migration 0007, then:
+
+```bash
+uv run traceproof benchmark-publish MANIFEST LABELS PLAN
+uv run traceproof benchmark-history DATASET_ID --limit 100
+uv run traceproof benchmark-get DATASET_ID SCORECARD_ID --format markdown
+uv run traceproof benchmark-get DATASET_ID SCORECARD_ID --format weaknesses-csv
+```
+
+Publication reuses identical scorecards and stores changed evaluations as separate IDs.
+Retrieval supports JSON, Markdown and all five benchmark CSV formats without reevaluation
+or input files. History includes incomplete publications. Protect evaluator-sensitive
+records and retain approved inputs separately for reproducibility. See
+[durable scorecards](../development/slice-19.md).
 
 ## Recovery and routine operations
 
