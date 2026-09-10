@@ -171,3 +171,8 @@ benchmark evaluation
 and enterprise-compatible model integration. Update this assessment as acceptance
 evidence accumulates; do not increment the percentage simply because another slice
 has been numbered or committed.
+
+Slice 48 begins OCP-1 locally: UBI/Linux ARM64 image and restricted Docker Python
+acceptance. Actual bank OCP validation is deferred to functional POC completion by
+request, and remains required. Other language toolchains and deployment manifests
+remain unqualified in Linux.

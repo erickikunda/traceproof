@@ -1,0 +1,12 @@
+**
+!containers/
+!containers/**
+!src/
+!src/**
+!pyproject.toml
+!README.md
+!dist/
+!dist/*.whl
+!work/
+!work/container-inputs/
+!work/container-inputs/codeql-linux-arm64.tar.gz

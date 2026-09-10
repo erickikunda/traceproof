@@ -42,13 +42,19 @@ compiled-language extraction builds are separate from exploit reproduction.
 ### Hard POC acceptance requirement: OCP dev execution
 
 Added 10 September 2026: the POC must be runnable and testable in the bank's
-OpenShift Container Platform development environment. This is an early POC gate,
-not deferred entirely to M6. M6/M7 retain enterprise pilot and fleet qualification.
+OpenShift Container Platform development environment. Local Linux/OCP preparation is an immediate POC track. Per user direction, actual
+bank OCP dev execution is deferred until functional POC completion; it remains a
+required acceptance gate. M6/M7 retain enterprise pilot and fleet qualification.
 Docker-based local checks are preparation; only execution in the target OCP dev
 cluster satisfies this requirement. OpenShift Local is optional, not a prerequisite.
 
 Prioritize the following bounded delivery steps alongside language qualification,
-before more macOS-specific runtime work:
+before more macOS-specific runtime work. Execute OCP-4 at functional POC completion:
+
+Slice 48 delivers the first OCP-1 subset: digest-pinned UBI/Linux ARM64 packaging,
+checksum-pinned CodeQL 2.27.0, hashed Python dependencies and a real restricted Docker
+Python fixture suite. Native Linux Java/C# toolchains, AMD64 qualification, formal SBOM
+and bank policy validation remain open. No OCP execution is claimed.
 
 1. **OCP-1 — Linux image and local restricted-runtime smoke test.** Package the CLI
    in an approved glibc-based Linux image (UBI candidate), pin Python dependencies,

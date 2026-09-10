@@ -1,0 +1,7 @@
+{
+  "platform": "linux/arm64",
+  "codeql_version": "2.27.0",
+  "codeql_sha256": "06ce6cf3546abe5f71af83ac98eea3da23eae528b7eeb1a1e61eeed0868817e2",
+  "codeql_url": "https://github.com/github/codeql-action/releases/download/codeql-bundle-v2.27.0/codeql-bundle-linux-arm64.tar.gz",
+  "base_image": "registry.access.redhat.com/ubi9/python-312@sha256:b29b44b014b0fad4b6c047abad7cbe42b4107cfe349075318eea8ba6475cbd69"
+}

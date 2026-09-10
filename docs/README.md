@@ -78,3 +78,6 @@ the classic fixture passes with matching references. C# LLM and broad framework
 qualification remain pending. See Slice 46.
 
 - [Slice 47: local C# offline extraction](development/slice-47.md)
+
+- [Slice 48: Linux container preparation](development/slice-48.md)
+- [Local Linux container guide](guides/container-operator-guide.md)

@@ -1,0 +1,31 @@
+# Digest-pinned UBI userland; no dependency on the host RHCOS filesystem.
+FROM registry.access.redhat.com/ubi9/python-312@sha256:b29b44b014b0fad4b6c047abad7cbe42b4107cfe349075318eea8ba6475cbd69 AS python-deps
+USER 0
+COPY containers/requirements.lock /tmp/requirements.lock
+RUN python3.12 -m venv /opt/traceproof-venv && \
+    /opt/traceproof-venv/bin/pip install --no-cache-dir --require-hashes --only-binary=:all: -r /tmp/requirements.lock
+COPY dist/traceproof-0.1.0-py3-none-any.whl /tmp/traceproof-0.1.0-py3-none-any.whl
+RUN /opt/traceproof-venv/bin/pip install --no-cache-dir --no-deps /tmp/traceproof-0.1.0-py3-none-any.whl
+
+FROM registry.access.redhat.com/ubi9/python-312@sha256:b29b44b014b0fad4b6c047abad7cbe42b4107cfe349075318eea8ba6475cbd69 AS codeql
+USER 0
+ARG CODEQL_SHA256
+COPY work/container-inputs/codeql-linux-arm64.tar.gz /tmp/codeql.tar.gz
+RUN test -n "$CODEQL_SHA256" && \
+    echo "$CODEQL_SHA256  /tmp/codeql.tar.gz" | sha256sum -c - && \
+    mkdir /opt/codeql-bundle && tar -xzf /tmp/codeql.tar.gz -C /opt/codeql-bundle && \
+    chmod -R a+rX /opt/codeql-bundle && rm /tmp/codeql.tar.gz
+
+FROM registry.access.redhat.com/ubi9/python-312@sha256:b29b44b014b0fad4b6c047abad7cbe42b4107cfe349075318eea8ba6475cbd69
+USER 0
+COPY --from=python-deps /opt/traceproof-venv /opt/traceproof-venv
+COPY --from=codeql /opt/codeql-bundle /opt/codeql-bundle
+COPY containers/runtime_probe.py /opt/traceproof/runtime_probe.py
+RUN mkdir -p /work /inputs /reports && chmod 0770 /work /reports && \
+    chgrp 0 /work /reports
+ENV PATH="/opt/traceproof-venv/bin:/opt/codeql-bundle/codeql:/usr/local/bin:/usr/bin:/bin" \
+    HOME=/work TMPDIR=/tmp PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+WORKDIR /work
+USER 1001:0
+ENTRYPOINT ["traceproof"]
+CMD ["--help"]
