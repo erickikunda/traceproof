@@ -149,7 +149,8 @@ Slice 51 adds the pinned Linux ARM64 .NET SDK/net48 image profile and C#/classic
 ASP.NET offline fixture validation. Slice 52 adds a separate ASP.NET Core MVC
 FromQuery/SQL fixture pair using matching .NET 10 reference packs under network denial.
 Slice 53 adds a separate Core minimal API MapGet/SQL fixture pair using the same
-pinned Core profile. Next: classic MVC-Web API qualification and C# evidence support,
+pinned Core profile. Slice 54 adds classic Web API ApiController/FromUri SQL fixtures
+with a separately pinned assembly profile. Next: classic MVC qualification and C# evidence support,
 then L3 JavaScript/TypeScript. Windows build execution remains separate.
 Keep existing operator entry points and add options only where language selection or
 safe build-profile selection requires them.

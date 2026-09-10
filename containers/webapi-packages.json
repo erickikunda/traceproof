@@ -1,0 +1,29 @@
+[
+  {
+    "name": "microsoft.aspnet.webapi.core",
+    "version": "5.3.0",
+    "url": "https://api.nuget.org/v3-flatcontainer/microsoft.aspnet.webapi.core/5.3.0/microsoft.aspnet.webapi.core.5.3.0.nupkg",
+    "sha256": "1239b8602bc7d9f916e5376012a6274b88ea002ab9794a1bfd1d8f2efeba2900",
+    "files": {
+      "lib/net45/System.Web.Http.dll": "fb2c216b321390fe726bdb842b14343db999d372b6293568cc778966fbd8f64d"
+    }
+  },
+  {
+    "name": "microsoft.aspnet.webapi.client",
+    "version": "6.0.0",
+    "url": "https://api.nuget.org/v3-flatcontainer/microsoft.aspnet.webapi.client/6.0.0/microsoft.aspnet.webapi.client.6.0.0.nupkg",
+    "sha256": "94d2f90b85bbfe9f21a265a8a0eff764a0d94363341544c38b1270a9604f55ba",
+    "files": {
+      "lib/net45/System.Net.Http.Formatting.dll": "41f8921d556fa9e94bec74aab58c402059a0fc1a8767ed77739d190888083ec0"
+    }
+  },
+  {
+    "name": "newtonsoft.json",
+    "version": "13.0.3",
+    "url": "https://api.nuget.org/v3-flatcontainer/newtonsoft.json/13.0.3/newtonsoft.json.13.0.3.nupkg",
+    "sha256": "872fc189e638ab1056555b03aaa38f68bcb54286e221aa646eb1129babf63c77",
+    "files": {
+      "lib/net45/Newtonsoft.Json.dll": "e1e27af7b07eeedf5ce71a9255f0422816a6fc5849a483c6714e1b472044fa9d"
+    }
+  }
+]

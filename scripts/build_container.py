@@ -51,6 +51,25 @@ def main():
                 target = references / relative
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_bytes(archive.read(member))
+    packages = json.loads((ROOT / "containers/webapi-packages.json").read_text())
+    webapi = ROOT / "work/container-inputs/webapi"
+    webapi.mkdir(exist_ok=True)
+    for item in packages:
+        package = ROOT / f"work/container-inputs/{item['name']}.{item['version']}.nupkg"
+        if not package.exists():
+            temporary = package.with_suffix(".download")
+            urllib.request.urlretrieve(item["url"], temporary)
+            if hashlib.sha256(temporary.read_bytes()).hexdigest() != item["sha256"]:
+                raise RuntimeError("Web API package checksum mismatch")
+            temporary.replace(package)
+        if hashlib.sha256(package.read_bytes()).hexdigest() != item["sha256"]:
+            raise RuntimeError("Cached Web API package checksum mismatch")
+        with zipfile.ZipFile(package) as archive:
+            for member, expected in item["files"].items():
+                data = archive.read(member)
+                if hashlib.sha256(data).hexdigest() != expected:
+                    raise RuntimeError("Web API assembly checksum mismatch")
+                (webapi / Path(member).name).write_bytes(data)
     profile = json.loads((ROOT / "containers/java-profile.json").read_text())
     repository = ROOT / "work/container-inputs/java-repository"
     for relative, expected in profile["repository"]["files"].items():

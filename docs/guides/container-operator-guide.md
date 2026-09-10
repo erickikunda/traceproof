@@ -46,6 +46,7 @@ uv run python scripts/validate_container.py work/container-csharp-001 --suite cs
 uv run python scripts/validate_container.py work/container-classic-001 --suite csharp-classic
 uv run python scripts/validate_container.py work/container-core-001 --suite csharp-core
 uv run python scripts/validate_container.py work/container-minimal-001 --suite csharp-minimal
+uv run python scripts/validate_container.py work/container-webapi-001 --suite csharp-webapi
 # Spring suites automatically select the pinned fixture dependency profile.
 uv run python scripts/validate_container.py work/container-spring-001 --suite spring
 uv run python scripts/validate_container.py work/container-spring-maven-001 --suite spring --project-layout maven
@@ -198,3 +199,23 @@ This is a separate fixture qualification, not coverage of every minimal API bind
 HTTP verb, route group, filter, authorization policy or asynchronous handler. C# LLM
 evidence remains unsupported and report readiness remains incomplete. The runner's
 network denial is external; the application does not claim to attest it.
+
+### Classic ASP.NET Web API (Slice 54)
+
+`--suite csharp-webapi` selects `/opt/traceproof/csharp-dependencies/webapi-profile.json`.
+This separate profile combines net48 with selected DLLs from Web API Core 5.3.0,
+Web API Client 6.0.0 and Json.NET 13.0.3. `containers/webapi-packages.json` records the
+NuGet URLs, package SHA-256s and exact DLL SHA-256s. Build preparation fetches and
+checks packages; image construction verifies the DLL inventory before generating the
+profile. Existing runtime profile integrity checks apply. This fixture scan requires no network.
+
+These are selected metadata dependencies for the fixture, not a full NuGet restore
+or dependency closure. Additional client dependencies, hosts and proprietary project
+requirements need their own qualification. The pinned versions are fixture inputs,
+not a recommendation to update bank applications to these versions.
+
+The controller derives from System.Web.Http.ApiController and uses RoutePrefix,
+Route, HttpGet and FromUri. A DbCommand concatenation is paired with a parameterized
+fix. This does not qualify System.Web.Mvc controllers, model binders, filters, IIS,
+Windows builds or C# LLM evidence. Readiness remains incomplete. The fixture source
+is not executed; bank OCP validation remains a later acceptance gate.

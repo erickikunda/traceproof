@@ -200,3 +200,7 @@ APIs, broad classic MVC/Web API and C# LLM evidence remain open.
 Slice 53 adds a distinct Core minimal API MapGet/FromQuery SQL pair under restricted
 Linux execution. The vulnerable/fixed pair passes with 1/0 candidates. This advances
 L2 fixture coverage; it does not complete C# evidence or broad framework qualification.
+
+Slice 54 qualifies the classic Web API ApiController/FromUri SQL fixture pair with
+separate pinned net48/Web API references under Linux network denial. The pair produces
+1/0 candidates; C# evidence and classic MVC remain open. No schema migration.

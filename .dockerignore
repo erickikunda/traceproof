@@ -44,3 +44,9 @@
 !scripts/validate_csharp_minimal.py
 !tests/fixtures/csharp-minimal/
 !tests/fixtures/csharp-minimal/**
+
+!scripts/validate_csharp_webapi.py
+!tests/fixtures/csharp-webapi/
+!tests/fixtures/csharp-webapi/**
+!work/container-inputs/webapi/
+!work/container-inputs/webapi/**
