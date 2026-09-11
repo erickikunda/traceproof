@@ -166,3 +166,12 @@ response bodies. JSON and explicit plain-text output are outside this detector.
 Six bounded CWE families now have discovery profiles; this is not complete CWE
 coverage or measured recall. See [guide](../guides/express-html-discovery.md).
 Next assess Java deserialization scope with native positive/negative fixtures.
+
+## Slice 136 — Java deserialization candidates
+
+`java-spring-object-read-v1` adds CWE-502 String request input to ObjectInputStream
+readObject receiver. The initial constructor/Base64 flow remains discovery-only;
+filter adequacy and gadget availability are not inferred. Seven bounded CWE families
+now have discovery profiles; no claim of whole-CWE coverage or measured recall.
+See [guide](../guides/java-deserialization-discovery.md). Next Java XML configuration
+and external-entity candidate feasibility.

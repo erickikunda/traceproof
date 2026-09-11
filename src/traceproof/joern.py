@@ -176,6 +176,8 @@ def to_sarif(raw, source, manifest, language="java", rule=RULE):
                             if rule == "traceproof/joern-python-flask-sql-v1"
                             else "CWE-918: Flask input to requests.get URL; destination unverified."
                             if rule == "traceproof/joern-python-flask-ssrf-v1"
+                            else "CWE-502: Spring input to ObjectInputStream.readObject; candidate."
+                            if rule == "traceproof/joern-spring-get-object-read-v1"
                             else "CWE-918: Spring input to URL.openStream; destination unverified."
                             if rule == "traceproof/joern-spring-get-url-stream-v1"
                             else "CWE-22: Spring input to Files.readAllBytes; escape unverified."
@@ -254,6 +256,7 @@ def discover(
         "python-flask-sql-v1": {"python"},
         "java-spring-file-path-v1": {"java"},
         "java-spring-url-stream-v1": {"java"},
+        "java-spring-object-read-v1": {"java"},
         "express-html-send-v1": {"javascript", "typescript"},
         "express-request-exec-v1": {"javascript", "typescript"},
         "express-request-eval-v1": {"javascript", "typescript"},
@@ -292,6 +295,8 @@ def discover(
         rule = "traceproof/joern-python-flask-sql-v1"
     elif discovery_profile == "python-flask-ssrf-v1":
         rule = "traceproof/joern-python-flask-ssrf-v1"
+    elif discovery_profile == "java-spring-object-read-v1":
+        rule = "traceproof/joern-spring-get-object-read-v1"
     elif discovery_profile == "java-spring-url-stream-v1":
         rule = "traceproof/joern-spring-get-url-stream-v1"
     elif discovery_profile == "java-spring-file-path-v1":
@@ -400,6 +405,15 @@ def discover(
             ],
             "omitted_file_count": len(manifest.files) - len(prepared),
         }
+        if discovery_profile == "java-spring-object-read-v1":
+            report["cwe_scope"] = ["CWE-502"]
+            report["limitations"] = [
+                "Spring GET String RequestParam to exact ObjectInputStream.readObject receiver.",
+                "Base64 and byte-stream constructor propagation modeled; runtime unverified.",
+                "Object filters, allowlists, gadget classes and exploitability unverified.",
+                "Other sources, serializers and readUnshared omitted; advisory unsupported.",
+                "Discovery only; incomplete coverage and no clean verdict.",
+            ]
         if discovery_profile == "java-spring-url-stream-v1":
             report["cwe_scope"] = ["CWE-918"]
             report["limitations"] = [
@@ -658,6 +672,8 @@ def discover(
                     if discovery_profile == "python-flask-sql-v1"
                     else "queries/joern-python-flask-ssrf.sc"
                     if discovery_profile == "python-flask-ssrf-v1"
+                    else "queries/joern-java-deserialization.sc"
+                    if discovery_profile == "java-spring-object-read-v1"
                     else "queries/joern-java-ssrf.sc"
                     if discovery_profile == "java-spring-url-stream-v1"
                     else "queries/joern-java-path.sc"

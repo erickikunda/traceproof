@@ -45,7 +45,7 @@ framework heuristics. Reports remain per profile; errors/unsupported scope are e
 Explicit overrides are preserved. Optional LLM wrapper discovery remains later work.
 See [operator guide](../guides/automatic-scan-selection.md) for compatibility details.
 
-## Current checkpoint after Slice 135
+## Current checkpoint after Slice 136
 
 Git/PVC/GCS intake now has explicit archive handoff and durable provenance. Git private
 HTTPS and HTTP CONNECT transport have local native acceptance; GCS has a live optional SDK
@@ -1318,3 +1318,14 @@ encoding and browser execution remain unverified and advisory is unsupported.
 See [guide](../guides/express-html-discovery.md). No migration or published-image
 promotion. Next assess bounded Java deserialization candidates (CWE-502), keeping
 useful breadth ahead of local refinement.
+
+
+## Slice 136 — Java object deserialization discovery
+
+Added `java-spring-object-read-v1`: bounded Spring String RequestParam flow through
+Base64/byte-stream construction to ObjectInputStream.readObject (CWE-502). Automatic
+selection retains a separate attempt/report. This adds a seventh bounded CWE family;
+object filters and runtime exploitability remain unverified, advisory unsupported.
+See [guide](../guides/java-deserialization-discovery.md). No migration or image
+promotion. Next assess bounded Java XML external-entity discovery (CWE-611), with
+parser-configuration evidence and explicit uncertainty.

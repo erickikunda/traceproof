@@ -1162,3 +1162,14 @@ encoding and browser execution remain unverified and advisory is unsupported.
 See [guide](../guides/express-html-discovery.md). No migration or published-image
 promotion. Next assess bounded Java deserialization candidates (CWE-502), keeping
 useful breadth ahead of local refinement.
+
+
+## Slice 136 — Java object deserialization discovery
+
+Added `java-spring-object-read-v1`: bounded Spring String RequestParam flow through
+Base64/byte-stream construction to ObjectInputStream.readObject (CWE-502). Automatic
+selection retains a separate attempt/report. This adds a seventh bounded CWE family;
+object filters and runtime exploitability remain unverified, advisory unsupported.
+See [guide](../guides/java-deserialization-discovery.md). No migration or image
+promotion. Next assess bounded Java XML external-entity discovery (CWE-611), with
+parser-configuration evidence and explicit uncertainty.

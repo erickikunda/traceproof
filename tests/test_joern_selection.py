@@ -13,13 +13,14 @@ def manifest(*paths):
 def test_inventory_selects_all_profiles_and_preserves_unsupported():
     detected, plan = joern_selection.selection(manifest("app.py", "Main.java", "x.kt", "README.md"))
     assert detected == ["java", "kotlin", "python"]
-    assert len(plan) == 8
+    assert len(plan) == 9
     assert ("kotlin", None) in plan
     assert len([p for lang, p in plan if lang == "python"]) == 4
     assert joern_selection.selection(manifest("app.py", "Main.java"), "java")[1] == [
         ("java", None),
         ("java", "java-spring-file-path-v1"),
         ("java", "java-spring-url-stream-v1"),
+        ("java", "java-spring-object-read-v1"),
     ]
 
 

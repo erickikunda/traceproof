@@ -10,7 +10,7 @@ traceproof scan-import IMPORT_ID --engine joern --joern-home /opt/joern-cli --li
 ```
 
 Python selects Flask command, file-path, SSRF and SQLite query-text profiles.
-Java selects the existing Spring/JDBC SQL, Spring file-path and URL.openStream SSRF profiles.
+Java selects the existing Spring/JDBC SQL, Spring file-path, URL.openStream SSRF and ObjectInputStream.readObject profiles.
 JavaScript/TypeScript select Express eval, child_process.exec and explicit-HTML response, Go HTTP shell, Rust environment shell,
 and C/C++ argv/system. C# retains the repaired SQL profile and requires
 `--joern-repair-dir`; Rust requires `--rust-home`. These profiles retain their

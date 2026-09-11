@@ -13,7 +13,12 @@ PROFILES = {
         "python-flask-ssrf-v1",
         "python-flask-sql-v1",
     ),
-    "java": (None, "java-spring-file-path-v1", "java-spring-url-stream-v1"),
+    "java": (
+        None,
+        "java-spring-file-path-v1",
+        "java-spring-url-stream-v1",
+        "java-spring-object-read-v1",
+    ),
     "csharp": (None,),
     "javascript": ("express-request-eval-v1", "express-request-exec-v1", "express-html-send-v1"),
     "typescript": ("express-request-eval-v1", "express-request-exec-v1", "express-html-send-v1"),
