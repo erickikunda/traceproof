@@ -1,4 +1,9 @@
-# Implementation progress through Slice 124
+# Implementation progress through Slice 125
+
+## Slice 125 — General GCS image matrix
+
+Seven general-language fixture pairs join retained C#/Rust results in the 18-case local
+matrix. See [Slice 125](slice-125.md). No cloud/model calls or broader coverage claims.
 
 ## Slice 124 — Specialized GCS image acceptance
 

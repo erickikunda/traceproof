@@ -1,6 +1,6 @@
 # TraceProof intake: choose a source and retrieve its report
 
-Current checkpoint: Slice 124. All paths converge on an archive snapshot and explicit
+Current checkpoint: Slice 125. All paths converge on an archive snapshot and explicit
 scanner selection. Acquiring source, capturing source, scanning and exporting a report
 are separate outcomes. An exported report may still have incomplete security coverage.
 
@@ -55,8 +55,7 @@ source binding and needs_review candidates. Zero candidates is not a clean secur
 | containers/ocp-smoke-images.json | Prior general/C#/Rust image pairings; Git/plain-archive projection 13 acceptance |
 
 Image tags are mutable. Select the tested digest pairing in the inventories, not an assumed
-latest checkout. The GCS general scanner image packages seven language selections, but the
-new GCS handoff was exercised only with C. Separate C#/Rust GCS image tags now have projection 14 vulnerable/fixed handoff acceptance. Real cloud, bank identity and OCP acceptance remain pending.
+latest checkout. The GCS general scanner image packages seven language selections, and Slice 125 exercises vulnerable/fixed GCS handoff for all seven selections. Separate C#/Rust GCS image tags now have projection 14 vulnerable/fixed handoff acceptance. Real cloud, bank identity and OCP acceptance remain pending.
 
 ## Retrieve and share
 
@@ -77,3 +76,6 @@ Offline smoke jobs use disposable SQLite/artifact scratch and persistent report 
 Their exported reports survive, but they do not provide a persistent report-query service
 once scratch disappears. Archive those exports deliberately. Redis is not required for this
 POC; shared SQLite on PVC is not a substitute for future PostgreSQL multiworker orchestration.
+
+The complete saved local matrix is containers/gcs-acceptance-matrix.json (18 cases across
+nine languages). It records fixture acceptance only, with no real cloud/model qualification.

@@ -71,3 +71,17 @@ Specialized validation uses --language csharp or --language rust and --case vuln
 on scripts/validate_gcs_handoff.py. Build the matching Containerfile.ocp-smoke-csharp or
 Containerfile.ocp-smoke-rust with tag traceproof:ocp-smoke-gcs-csharp-linux-poc or
 traceproof:ocp-smoke-gcs-rust-linux-poc first. Use a new output directory for every case.
+
+
+## Whole-language local acceptance (Slice 125)
+
+validate_gcs_handoff.py now accepts all nine language selections and both existing fixture
+cases. For each general language (java, python, javascript, typescript, go, c, cpp), run it
+with --language LANGUAGE --case vulnerable and --case fixed using separate output folders.
+C#/Rust use their specialized tags. These are real offline scans after mocked SDK acquisition.
+
+summarize_gcs_acceptance.py accepts the 18 validation.json paths and emits a combined JSON
+matrix. Missing or duplicate pairs, wrong counts, cloud/model calls or image mismatches
+within a pair are errors. Recorded matrix: containers/gcs-acceptance-matrix.json. No real
+cloud service or model judgment is tested by this matrix; all reports retain incomplete
+coverage. Retain the referenced work artifacts separately if needed; work/ is not committed.

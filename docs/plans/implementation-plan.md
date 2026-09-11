@@ -13,7 +13,7 @@ and optional complementary backend, not a mandatory second scan of every reposit
 C and C++ are required follow-on languages after the current language work plan.
 See §18 for the superseding delivery sequence and acceptance gates.
 
-## Current checkpoint after Slice 124
+## Current checkpoint after Slice 125
 
 Git/PVC/GCS intake now has explicit archive handoff and durable provenance. Git private
 HTTPS and HTTP CONNECT transport have local native acceptance; GCS has a live optional SDK
@@ -21,7 +21,8 @@ adapter with mocked boundary acceptance and a packaged synthetic-to-real-C-scan 
 No real cloud, bank OCP, hosted API or production throughput qualification is claimed.
 
 Slice 124 refreshes C#/Rust images with projection 14 vulnerable/fixed GCS handoff acceptance.
-Next validate remaining general-language selections and consolidate the local image matrix. This supersedes
+Slice 125 completes all seven general-language fixture pairs and the nine-language saved matrix.
+Next consolidate a repeatable local acceptance entrypoint and remaining external gates. This supersedes
 older next-step notes. See [current readiness](../development/slice-123.md) and the
 [consolidated intake guide](../guides/intake-operator-guide.md).
 

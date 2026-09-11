@@ -6,6 +6,7 @@ import subprocess
 from pathlib import Path
 
 from validate_acquisition_handoff import identity, runtime
+from validate_ocp_smoke import FIXTURES
 
 FIXTURE = """
 import hashlib, io, zipfile
@@ -40,13 +41,13 @@ assert blob.download_as_bytes.call_args.kwargs["raw_download"] is True
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("output", type=Path)
-    parser.add_argument("--language", choices=["c", "csharp", "rust"], default="c")
+    parser.add_argument("--language", choices=sorted(FIXTURES), default="c")
     parser.add_argument("--case", choices=["vulnerable", "fixed"], default="vulnerable")
     args = parser.parse_args()
     fixture = (
         Path(__file__).resolve().parents[1]
         / "tests/fixtures"
-        / {"c": "joern-argv/c", "csharp": "csharp-core", "rust": "joern-rust-env"}[args.language]
+        / FIXTURES[args.language]
         / args.case
     )
     expected_count = 1 if args.case == "vulnerable" else 0
@@ -58,10 +59,9 @@ def main():
     acquire = identity("traceproof:gcs-acquisition-linux-poc")
     scanner = identity(
         {
-            "c": "traceproof:ocp-smoke-gcs-linux-poc",
             "csharp": "traceproof:ocp-smoke-gcs-csharp-linux-poc",
             "rust": "traceproof:ocp-smoke-gcs-rust-linux-poc",
-        }[args.language]
+        }.get(args.language, "traceproof:ocp-smoke-gcs-linux-poc")
     )
     for image in (acquire, scanner):
         assert image["Os"] == "linux" and image["Architecture"] == "arm64"
