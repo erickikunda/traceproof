@@ -68,7 +68,9 @@ def test_runner_blocks_invalid_java_before_extraction(
     run = captured(store, archive, manifest)
     query = tmp_path / "query.ql"
     query.write_text("// test query")
-    monkeypatch.setattr("traceproof.pipeline.extract", lambda *a, **k: pytest.fail("extracted"))
+    monkeypatch.setattr(
+        "traceproof.scanner_backends.extract", lambda *a, **k: pytest.fail("extracted")
+    )
     result = scan_run(store, run, query, language="java")
     assert result["status"] == "blocked"
     assert result["java_syntax_index"]["files"][0]["status"] == "syntax_error"

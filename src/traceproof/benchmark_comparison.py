@@ -80,7 +80,7 @@ def compare_scorecards(store, dataset_id, baseline_id, current_id):
         "confirmed_recall_delta": None,
         "limitations": [
             "Location-match changes are provisional, not confirmed discoveries or fixes.",
-            "Query and CodeQL version changes are disclosed; causation is not established.",
+            "Query and scanner version changes are disclosed; causation is not established.",
             "Cost and latency comparison are not supported by these scorecards.",
         ],
     }

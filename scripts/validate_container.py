@@ -21,6 +21,34 @@ def main():
         "--suite",
         choices=[
             "python",
+            "joern",
+            "joern-csharp",
+            "joern-csharp-advisory",
+            "joern-python",
+            "joern-pipeline",
+            "joern-flask",
+            "joern-flask-advisory",
+            "joern-go-http",
+            "joern-go-advisory",
+            "joern-spring-evidence",
+            "joern-spring-advisory",
+            "joern-workflow-advisory",
+            "joern-argv-c",
+            "joern-argv-advisory-c",
+            "joern-argv-advisory-cpp",
+            "joern-argv-cpp",
+            "joern-express-javascript",
+            "joern-express-advisory-javascript",
+            "joern-express-advisory-typescript",
+            "joern-express-typescript",
+            "joern-go",
+            "joern-rust",
+            "joern-rust-env",
+            "joern-rust-advisory",
+            "joern-c",
+            "joern-cpp",
+            "joern-javascript",
+            "joern-typescript",
             "java",
             "spring",
             "csharp",
@@ -29,6 +57,8 @@ def main():
             "csharp-minimal",
             "csharp-webapi",
             "csharp-mvc",
+            "javascript",
+            "typescript",
         ],
         default="python",
     )
@@ -36,9 +66,126 @@ def main():
     args = parser.parse_args()
     if args.suite not in ("java", "spring") and args.project_layout != "flat":
         parser.error("Project layouts apply only to Java/Spring")
-    if args.suite == "python":
+    if args.suite in {"joern-javascript", "joern-typescript"}:
+        language = args.suite.removeprefix("joern-")
+        scan = (
+            "/opt/traceproof-venv/bin/python "
+            "/opt/traceproof/scripts/validate_joern_javascript_discovery.py "
+            f"--language {language} --joern-home /opt/joern-cli --output /work/acceptance"
+        )
+        results_file = "case-results.json"
+    elif args.suite in {"joern-c", "joern-cpp"}:
+        language = args.suite.removeprefix("joern-")
+        scan = (
+            "/opt/traceproof-venv/bin/python "
+            "/opt/traceproof/scripts/validate_joern_c_family_discovery.py "
+            f"--language {language} --joern-home /opt/joern-cli --output /work/acceptance"
+        )
+        results_file = "case-results.json"
+    elif args.suite in {
+        "joern-express-javascript",
+        "joern-express-typescript",
+    }:
+        language = args.suite.removeprefix("joern-express-")
+        scan = (
+            "/opt/traceproof-venv/bin/python /opt/traceproof/scripts/validate_joern_express.py "
+            f"--language {language} --joern-home /opt/joern-cli --output /work/acceptance"
+        )
+        results_file = "case-results.json"
+    elif args.suite in {"joern-express-advisory-javascript", "joern-express-advisory-typescript"}:
+        language = args.suite.removeprefix("joern-express-advisory-")
+        scan = (
+            "/opt/traceproof-venv/bin/python "
+            "/opt/traceproof/scripts/validate_joern_express_advisory.py "
+            f"--language {language} --joern-home /opt/joern-cli --output /work/acceptance"
+        )
+        results_file = "case-results.json"
+    elif args.suite in {"joern-argv-advisory-c", "joern-argv-advisory-cpp"}:
+        language = args.suite.removeprefix("joern-argv-advisory-")
+        scan = (
+            "/opt/traceproof-venv/bin/python "
+            "/opt/traceproof/scripts/validate_joern_argv_advisory.py "
+            f"--language {language} --joern-home /opt/joern-cli --output /work/acceptance"
+        )
+        results_file = "case-results.json"
+    elif args.suite in {"joern-argv-c", "joern-argv-cpp"}:
+        language = args.suite.removeprefix("joern-argv-")
+        scan = (
+            "/opt/traceproof-venv/bin/python /opt/traceproof/scripts/validate_joern_argv.py "
+            f"--language {language} --joern-home /opt/joern-cli --output /work/acceptance"
+        )
+        results_file = "case-results.json"
+    elif args.suite in {
+        "joern-pipeline",
+        "joern-flask",
+        "joern-flask-advisory",
+        "joern-go-http",
+        "joern-go-advisory",
+        "joern-spring-evidence",
+        "joern-spring-advisory",
+        "joern-workflow-advisory",
+    }:
+        profile = args.suite.removeprefix("joern-").replace("-", "_")
+        scan = (
+            f"/opt/traceproof-venv/bin/python /opt/traceproof/scripts/validate_joern_{profile}.py "
+            "--joern-home /opt/joern-cli --output /work/acceptance"
+        )
+        results_file = "case-results.json"
+    elif args.suite == "joern-csharp-advisory":
+        scan = (
+            "/opt/traceproof-venv/bin/python "
+            "/opt/traceproof/scripts/validate_joern_csharp_advisory.py "
+            "--joern-home /opt/joern-cli --repair-dir /opt/traceproof/csharp-repair "
+            "--output /work/acceptance"
+        )
+        results_file = "case-results.json"
+    elif args.suite == "joern-rust-advisory":
+        scan = (
+            "/opt/traceproof-venv/bin/python "
+            "/opt/traceproof/scripts/validate_joern_rust_advisory.py "
+            "--joern-home /opt/joern-cli --rust-home /opt/rust --output /work/acceptance"
+        )
+        results_file = "case-results.json"
+    elif args.suite == "joern-rust-env":
+        scan = (
+            "/opt/traceproof-venv/bin/python /opt/traceproof/scripts/validate_joern_rust_env.py "
+            "--joern-home /opt/joern-cli --rust-home /opt/rust --output /work/acceptance"
+        )
+        results_file = "case-results.json"
+    elif args.suite == "joern-rust":
+        scan = (
+            "/opt/traceproof-venv/bin/python "
+            "/opt/traceproof/scripts/validate_joern_rust_discovery.py "
+            "--joern-home /opt/joern-cli --rust-home /opt/rust --output /work/acceptance"
+        )
+        results_file = "case-results.json"
+    elif args.suite in {"joern-python", "joern-go"}:
+        language = args.suite.removeprefix("joern-")
+        scan = (
+            "/opt/traceproof-venv/bin/python "
+            f"/opt/traceproof/scripts/validate_joern_{language}_discovery.py "
+            "--joern-home /opt/joern-cli --output /work/acceptance"
+        )
+        results_file = "case-results.json"
+    elif args.suite == "joern-csharp":
+        scan = "/opt/traceproof-venv/bin/python /opt/traceproof/joern_csharp_acceptance.py"
+        results_file = "joern-csharp-results.json"
+    elif args.suite == "joern":
+        scan = "/opt/traceproof-venv/bin/python /opt/traceproof/joern_acceptance.py"
+        results_file = "joern-results.json"  # Joern writes case-results directly to /reports.
+    elif args.suite == "python":
         scan = f"traceproof acceptance-run /work/acceptance {QUERY} --timeout 300"
         results_file = "acceptance.json"
+    elif args.suite in ("javascript", "typescript"):
+        query = (
+            "/opt/codeql-bundle/codeql/qlpacks/codeql/javascript-queries/2.4.5/"
+            "Security/CWE-094/CodeInjection.ql"
+        )
+        scan = (
+            f"/opt/traceproof-venv/bin/python /opt/traceproof/scripts/validate_{args.suite}.py "
+            f"{query} /work/acceptance"
+        )
+        results_file = "validation.json"
     elif args.suite.startswith("csharp"):
         script = args.suite.replace("-", "_")
         query = (
@@ -149,7 +296,55 @@ def main():
             passed = (
                 cases["passed"]
                 if args.suite == "python"
-                else len(cases) == (4 if args.suite == "spring" else 2)
+                else len(cases)
+                == (
+                    10
+                    if args.suite == "joern-csharp-advisory"
+                    else 7
+                    if args.suite
+                    in {"joern-spring-evidence", "joern-spring-advisory", "joern-workflow-advisory"}
+                    else 9
+                    if args.suite
+                    in {
+                        "joern-go-http",
+                        "joern-go-advisory",
+                        "joern-rust-env",
+                        "joern-rust-advisory",
+                    }
+                    else 8
+                    if args.suite
+                    in {
+                        "joern-flask",
+                        "joern-flask-advisory",
+                        "joern-express-javascript",
+                        "joern-express-advisory-javascript",
+                        "joern-express-advisory-typescript",
+                        "joern-express-typescript",
+                        "joern-argv-c",
+                        "joern-argv-advisory-c",
+                        "joern-argv-advisory-cpp",
+                        "joern-argv-cpp",
+                    }
+                    else 5
+                    if args.suite
+                    in {
+                        "joern-c",
+                        "joern-cpp",
+                        "joern-python",
+                        "joern-pipeline",
+                        "joern-go",
+                        "joern-rust",
+                        "joern-javascript",
+                        "joern-typescript",
+                    }
+                    else 22
+                    if args.suite == "joern-csharp"
+                    else 9
+                    if args.suite == "joern"
+                    else 4
+                    if args.suite == "spring"
+                    else 2
+                )
                 and all(case["passed"] for case in cases)
             )
         summary = dict(

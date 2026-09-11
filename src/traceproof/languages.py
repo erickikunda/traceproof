@@ -17,6 +17,12 @@ class LanguageAdapter:
 
 
 ADAPTERS = {
+    "javascript": LanguageAdapter(
+        "javascript", "javascript", "javascript-source-only-v1", "not_qualified", "unsupported"
+    ),
+    "typescript": LanguageAdapter(
+        "typescript", "javascript", "typescript-source-only-v1", "not_qualified", "unsupported"
+    ),
     "csharp": LanguageAdapter(
         "csharp", "csharp", "csharp-source-only-v1", "not_qualified", "aspnet_sql_review_v2"
     ),
@@ -51,7 +57,9 @@ EXTENSIONS = {
 
 def adapter_for(language):
     if language not in ADAPTERS:
-        raise TraceProofError("Implemented extraction languages are python, java and csharp")
+        raise TraceProofError(
+            "Implemented extraction languages are python, java, csharp, javascript and typescript"
+        )
     return ADAPTERS[language]
 
 
@@ -115,6 +123,21 @@ def validate_extraction_scope(manifest, language, java_profile="dependency-free"
     scope = language_scope(manifest, language)
     if not scope["selected_file_count"]:
         raise TraceProofError("Snapshot contains no files for the selected language")
+    if language in {"javascript", "typescript"}:
+        scope.update(
+            dependency_resolution="not_qualified",
+            generated_code="not_qualified",
+            build_execution="not_requested",
+            framework_coverage="not_qualified",
+            package_installation="not_requested",
+            module_resolution="not_qualified",
+            typescript_type_checking="not_qualified",
+            source_maps="omitted",
+            browser_sources="not_qualified",
+            configuration_files="omitted",
+            omitted_file_count=len(manifest.files) - scope["selected_file_count"],
+            extraction_input=f"verified_{language}_only_copy",
+        )
     if language == "csharp":
         scope.update(
             dependency_resolution="not_qualified",

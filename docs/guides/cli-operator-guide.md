@@ -727,3 +727,855 @@ unknown guards remain explicit and negative advice cannot pass. No request is co
 or finding suppressed automatically. Existing reports/bundles remain immutable, and
 new triage requests use gate 7. The capability label is aspnet_sql_review_v2; report
 comparison flags a change from the earlier Core-only policy. No migration.
+
+### JavaScript and TypeScript source-only scans (Slice 58)
+
+Use `--language javascript` or `--language typescript` on `codeql-extract`, `scan-run`
+and `scan-import`. Both use CodeQL's JavaScript extractor, but keep separate selection,
+coverage and report identities. Python remains the default. `--language auto` selects
+one detected supported language; mixed JS/TS repositories require explicit selection
+and report the other language as unselected. Consolidated mixed-language scans remain
+future work.
+
+```bash
+uv run traceproof scan-run RUN_ID /absolute/approved-CodeInjection.ql --language javascript
+uv run traceproof scan-run RUN_ID /absolute/approved-CodeInjection.ql --language typescript
+```
+
+The fixture-qualified query is javascript-queries 2.4.5's
+Security/CWE-094/CodeInjection.ql (`js/code-injection`). Approved compatible `.qls`
+suites can be supplied in the same position, with the limits described earlier.
+
+JavaScript extraction copies .js/.jsx/.mjs/.cjs files; TypeScript copies
+.ts/.tsx/.mts/.cts files. Copies are verified against the captured snapshot before
+and after extraction. Package manifests, tsconfig, source maps, HTML and files from
+the other language are omitted. No npm install, package hooks or application build is
+requested. This intentionally limits module resolution, especially for mixed projects.
+
+The initial fixtures cover an Express request query reaching eval and a fixed JSON
+serialization counterpart. TypeScript uses explicit type annotations, but this does
+not establish type-checking or dependency resolution. Browser frameworks, asynchronous
+flows, JSX/TSX framework coverage and generated/source-map attribution are unqualified.
+Reports remain incomplete, with semantic indexing and LLM evidence unsupported for
+JS/TS. Other static candidates remain available for manual review; the configurable
+exploratory triage mode is still planned, not enabled by this language addition.
+
+### Scanner provenance in static-attempt JSON
+
+New `scan-report` JSON includes `scanner`, `prepared_input`, and `rule_entry` metadata.
+CodeQL and bounded Joern profiles are available through scan-run/scan-import. The entry hash does not cover imported
+queries or packs; capability flags do not guarantee that a finding includes a complete
+flow. Historical reports retain their original fields. `scan-import` skipping is a retry
+safeguard, not proof of unchanged tools/rules; use `--rescan` when those change.
+
+### Experimental Joern Java discovery
+
+After normal CSV/archive intake creates a source run, use the explicitly experimental
+bounded-query path (Joern 4.0.625 operator installation required):
+
+```sh
+uv run traceproof joern-java-discover RUN_ID /absolute/path/to/joern-cli --timeout 180
+uv run traceproof scan-report REPO_ID --attempt-id ATTEMPT_ID
+uv run traceproof publish-report REPO_ID --run-id RUN_ID --attempt-id ATTEMPT_ID
+uv run traceproof get-report REPO_ID --format html
+```
+
+This selects only Java source and follows String parameters annotated with the fully
+qualified Spring `RequestParam` on public `GetMapping` methods into the graph signature
+`java.sql.Statement.executeQuery:java.sql.ResultSet(java.lang.String)`. Method and parameter
+names are unrestricted. Graphs, logs, original JSON, normalized SARIF and candidates are
+stored under the attempt. This is a bounded discovery model, not a general Spring scanner:
+other routes, parameter types, JDBC APIs, reflection and application bean wiring are not
+qualified. Fully qualified graph names are static observations, not proof of runtime type
+identity or library authenticity. Results remain partial/discovery-only and cannot use
+qualified CodeQL triage. Other languages, builds and dependencies are omitted. Query customization
+and automatic backend selection are not exposed yet.
+
+Timeout applies independently to preparation and analysis; failure details identify the
+stage and its local log. Requested JVM heap is 2 GiB, not a total memory limit. Network
+isolation is not enforced; use synthetic/local POC inputs. The installation version layout
+is checked, but installation contents are not cryptographically pinned by the command.
+The earlier release download checksum validation is documented in Slice 63.
+
+`scan-report` and published report JSON include scanner identity and limitations. Shared
+HTML/Markdown reports retain that metadata. Historical reports remain immutable. No
+migration or model key is required. Standard `scan-run` remains CodeQL-only.
+
+Joern `discovery_coverage` now distinguishes modeled flows, absent modeled sources,
+absent modeled sinks, and endpoints with no recorded flow. It also lists selected Java
+files absent from the graph inventory. A represented file is not proof that every
+construct parsed correctly. Parser diagnostic counts remain unknown (`null`) until their
+reporting is qualified. `process_stages_completed: true` means both tools exited zero;
+`execution_complete` remains false and successful discovery remains partial. Published
+JSON/HTML/Markdown reports retain this coverage block.
+
+`joern_diagnostics` adds bounded observations of Joern 4.0.625 preparation/analysis logs:
+recognized warning/error event counts, known parser-problem files, unmapped parser events,
+and unavailable/truncated log states. Repeated warnings count as events but affected files
+are deduplicated. No source excerpts or raw diagnostic messages enter the summary.
+An empty log does not prove complete parsing; authoritative diagnostic counts stay null.
+A scan may retain valid candidates while also reporting files that failed parsing.
+
+### Experimental repaired Joern C# discovery
+
+After intake captures an immutable snapshot, run the opt-in profile:
+
+```sh
+uv run traceproof joern-csharp-discover RUN_ID \
+  /absolute/path/to/joern-cli /absolute/path/to/csharp-repair-build --timeout 180
+uv run traceproof publish-report REPO_ID --run-id RUN_ID --attempt-id ATTEMPT_ID
+uv run traceproof get-report REPO_ID --report-id REPORT_ID --format html > report.html
+```
+
+The repair build is produced by scripts/build_joern_csharp_repair.py, as documented in
+scripts/joern/csharp-repair/README.md. Supply trusted operator tools, never a repair build
+or classpath from a scanned repository. The command reconstructs the classpath from the
+build receipt and rechecks its recorded jars/classes/source before and after scanning;
+these hashes detect changes but do not authenticate who supplied the tools. This initial
+implementation rehashes dependencies per scan, so it is not a throughput optimization.
+
+Coverage is intentionally limited to the named Lookup parameter name flowing to a
+CommandText assignment RHS. It is not general ASP.NET discovery. Only .cs source is copied;
+no project build or dependency restore runs. Complete paths need uniquely validated
+source spans before publication. Unsupported paths are retained in flows.json and
+source-mapping.json, with counts exposed in the scan and published JSON report.
+
+Every successful attempt remains partial and non-adjudicated, including zero candidates.
+The fixed packaged rule has its own identity and cannot inherit CodeQL triage qualification.
+Framework syntax facts remain audit observations. This command does not enforce OS network
+isolation; use the restricted container deployment pattern. Automatic pipeline selection,
+broader C# rules and production qualification are not enabled by this opt-in command.
+
+## Experimental Python discovery with Joern
+
+After archive intake, run:
+
+```sh
+traceproof joern-python-discover RUN_ID /trusted/joern-cli --timeout 180
+```
+
+This opt-in profile selects the `input` parameter of methods named `lookup` and the first
+argument of calls named `system`. It is a bounded integration profile, not a general
+Python web-framework scanner; matching a call name does not authenticate `os.system`.
+Only `.py` source is copied. No repository scripts or dependency installation are run.
+Use normal scan/report retrieval and publication commands for its durable results.
+Reports remain partial/non-adjudicated even when there are no candidates; Joern evidence
+does not inherit qualified CodeQL triage policies. Trusted pinned Joern 4.0.625 tooling
+is required. The CLI itself does not enforce OS network isolation.
+
+## Experimental JavaScript and TypeScript discovery with Joern
+
+```sh
+traceproof joern-javascript-discover RUN_ID /trusted/joern-cli --timeout 180
+traceproof joern-typescript-discover RUN_ID /trusted/joern-cli --timeout 180
+```
+
+Each explicit command uses its own rule identity and copies only `.js` or `.ts` files,
+respectively. Mixed-language flows, JSX/TSX, framework models and project configuration
+are outside this initial profile. Sources are parameters named `input` in methods named
+`lookup`; sinks are the first arguments of calls named `eval`. These names do not prove
+HTTP input or builtin eval identity. Reports use the normal durable retrieval/publication
+workflow, remain incomplete, and carry no qualified triage eligibility. No package
+installation, application build or repository script execution is requested. Trusted
+Joern 4.0.625 is required; network isolation must be supplied by the runtime.
+
+## Experimental Go discovery with Joern
+
+```sh
+traceproof joern-go-discover RUN_ID /trusted/joern-cli --timeout 180
+```
+
+The bounded profile selects `lookup(input)` parameters and argument 3 of calls named
+`Command`, matching the assessed shell-command fixture. It does not authenticate
+`os/exec.Command`, prove shell execution, or cover all command argument positions.
+Only `.go` sources and `go.mod` metadata are copied; graph coverage counts source files
+separately from metadata. Source and metadata hashes are checked before and after scanning.
+Go proxy/checksum downloads are disabled and automatic toolchain fetching is disabled.
+The CLI itself does not provide OS network isolation. Frameworks, dependencies, cgo,
+build tags and advanced semantics remain unqualified. Use normal durable report retrieval
+and publication; results remain incomplete and qualified Joern triage stays unsupported.
+
+## Experimental Rust discovery with Joern
+
+```sh
+traceproof joern-rust-discover RUN_ID /trusted/joern-cli /trusted/rust --timeout 180
+```
+
+Supply a standalone Rust toolchain containing `bin/rustc`, `bin/cargo` and matching
+`rust-src`. The Linux acceptance image pins Rust 1.98.1; the local command checks layout,
+not tool publisher authenticity. Tooling must be operator-controlled.
+
+The initial profile accepts a root `Cargo.toml` with only `[package]` and one explicit
+`[[bin]]`. Package fields are name/version/edition and optional `build=false`; the binary
+has name and a source-relative `.rs` path. Dependencies, workspaces, custom build hooks
+and other manifest settings are rejected before creating a scan. This is deliberately
+limited preparation support, not support for arbitrary Cargo projects.
+
+TraceProof copies `.rs` files and generates restricted Cargo metadata with build scripts
+and automatic target discovery disabled. Repository Cargo configuration/toolchain files
+are not copied. Cargo runs offline with a per-attempt home. OS network isolation still
+requires the restricted runtime. Generated metadata has its own digest in the scan report;
+it does not replace the original archived source manifest.
+
+The query selects `lookup(input)` parameters and argument 1 of calls named `arg`. It does
+not authenticate `std::process::Command`, prove shell execution, or detect all Rust memory
+safety issues. Reports remain partial/non-adjudicated and qualified triage is unsupported.
+Use the normal durable scan/report retrieval and publication commands.
+
+## Experimental C/C++ discovery with Joern
+
+```sh
+traceproof joern-c-discover RUN_ID /trusted/joern-cli --timeout 180
+traceproof joern-cpp-discover RUN_ID /trusted/joern-cli --timeout 180
+```
+
+C selects `.c` and `.h`; C++ selects `.cpp`, `.h` and `.hpp`. Other extensions and
+mixed C/C++ flows are outside these initial profiles. Included headers are source files
+for inventory purposes. No compilation database, application build or dependency
+installation is requested. Build configuration and preprocessor coverage remain unqualified.
+
+Both profiles select `lookup(input)` parameters and argument 1 of calls named `system`.
+Call names do not authenticate the library function or prove runtime reachability.
+C++ acceptance covers the common C/C++ subset, not classes, templates or virtual dispatch.
+These queries do not constitute memory-safety detection coverage. Normal durable scan
+retrieval and HTML/JSON publication apply; reports remain incomplete and qualified triage
+unsupported. Trusted pinned Joern tooling and external runtime isolation are required.
+
+## Joern through the main scan workflow
+
+```sh
+traceproof scan-run RUN_ID --engine joern --joern-home /trusted/joern-cli --language auto
+traceproof scan-import IMPORT_ID --engine joern --joern-home /trusted/joern-cli \
+  --language auto --limit 10
+```
+
+Omit the positional CodeQL query argument for Joern: only packaged profiles are accepted.
+CodeQL remains the default engine and still requires its query argument. `--language auto`
+selects one detected supported source language; mixed-language snapshots require an
+explicit language and retain partial coverage. Supported Joern profiles are Python,
+Java, C#, JavaScript, TypeScript, Go, Rust, C and C++. Their existing scope restrictions
+still apply. Headers alone do not select C versus C++ automatically.
+
+For C# also supply `--joern-repair-dir /trusted/csharp-repair`; for Rust supply
+`--rust-home /trusted/rust`. Both paths may be provided for a mixed-language import;
+only the applicable one is passed to each scan. Each individual snapshot still requires
+one auto-detected language or an explicit selection. Missing required tools become
+explicit row errors in batch scans. CodeQL preparation/dependency flags cannot be used
+with the Joern engine. Keep `--threads 2 --ram-mb 2048` at their current defaults; Joern
+requests a 2 GiB JVM heap, while CPU/memory isolation is the runtime's responsibility.
+`--extraction-timeout` and `--query-timeout` apply to their separate Joern stages.
+
+The workflow publishes the exact new attempt, including a failed scan's incomplete
+report. It makes no LLM calls and never promotes Joern evidence to qualified triage.
+Batch scanning retains pause/cancel and pagination behavior. By default it skips an
+existing Joern attempt for the same run and language, including failed attempts. This
+only suppresses retries; it does not validate unchanged tooling or reuse findings as a
+new result. Use `--rescan` after a failure or tool/profile change. CodeQL attempts do not
+suppress Joern scans. A direct scan-run always requests a new attempt.
+
+This slice connects the local CLI/main orchestration workflow. It does not register
+Joern with the lower-level CodeQL prepared-database API or add an API scan-launch route.
+Existing report retrieval APIs continue to serve published results.
+
+## Joern benchmark coverage audits
+
+The existing schema-1 evaluation plan remains the qualified Python CodeQL location-proxy
+contract. For Joern, use a schema-2 plan with these fields:
+
+```json
+{
+  "schema_version": "2",
+  "mode": "discovery_coverage_audit",
+  "engine": "joern",
+  "manifest_sha256": "<benchmark manifest SHA-256>",
+  "query_sha256": "<published report query SHA-256>",
+  "scanner_version": "4.0.625",
+  "profile": "standard",
+  "rule_ids": ["traceproof/joern-rust-lookup-arg-v1"],
+  "reports": [{"repo_id": "example", "report_id": "<published report ID>"}]
+}
+```
+
+Use real 64-character digests in place of placeholders. One packaged Joern rule per plan
+is supported; evaluate different profiles separately. All nine current profile identities
+are recognized. CWE associations describe query intent and do not qualify detection.
+The existing benchmark manifest/label contracts and snapshot/file integrity checks apply.
+
+```sh
+traceproof benchmark-evaluate manifest.json labels.json plan.json --format html
+traceproof benchmark-publish manifest.json labels.json plan.json
+```
+
+These evaluator-only operations do not scan or call models. Audit output uses evaluator
+version 3, retains all labels in the denominator, and explicitly marks them not_evaluable
+for currently unqualified Joern discovery profiles. Recall values, confirmed recall and
+precision remain null; no zero-recall or false-positive conclusion is justified.
+Candidates remain unjudged. Scanner/version/query/language mismatches are disclosed;
+missing reports remain visible. Comparison rejects incomplete audits rather than showing
+an improvement delta. Existing immutable CodeQL scorecards remain readable and unchanged.
+
+Use JSON or repositories-csv for scanner identity, source language, graph inventory and
+scanner limitations alongside scope_gaps. HTML/Markdown and summary/label/weakness CSV
+formats remain available. JSON nulls export as blank numeric CSV cells. The audit is a
+coverage-readiness report, not a measurement of discovery quality; broader models and
+adjudicated evaluation remain necessary before reporting bank-portfolio precision/recall.
+
+## Flask request-to-shell discovery profile
+
+```sh
+traceproof scan-run RUN_ID --engine joern --joern-home /trusted/joern-cli \
+  --language python --joern-profile python-flask-system-v1
+```
+
+The same option works on scan-import. The standalone joern-python-discover command uses
+`--discovery-profile python-flask-system-v1`. Omitting it retains the earlier fixture
+profile. Batch retry skipping distinguishes the selected profile; a previous default
+Python scan does not suppress this Flask scan. Use --rescan for changes within a profile.
+
+Sources are single-line `request.args.get("key")` or `request.form.get("key")` calls;
+sinks are single-argument `os.system(value)` calls. A bounded isolated AST parser requires
+single top-level imports from Flask and os (aliases supported) and rejects obvious
+rebinding, conflicting/wildcard imports and local flask/os module shadows. Endpoints are
+joined to unique same-name Joern calls at their source file/line; ambiguous joins are
+withheld. Function names and parameter names are unrestricted.
+
+This is syntax-informed discovery, not proof of module identity, HTTP reachability or
+absence of dynamic monkeypatching. Multiline accesses, get defaults/dynamic keys,
+subprocess APIs, other Flask inputs and frameworks remain outside this profile.
+Raw graphs may contain synthetic intermediate nodes. Endpoint locations are checked in
+fixtures; synthetic nodes are not claimed as exact source snippets. Reports remain
+partial and qualified triage remains unsupported. Published JSON includes discovery_profile
+and endpoint_audit file-status counts/digest; full endpoints.json is retained with the scan.
+The new rule is accepted by the benchmark coverage-audit mode without qualifying recall.
+
+## Express request-to-eval discovery profile
+
+```sh
+traceproof scan-run RUN_ID --engine joern --joern-home /trusted/joern-cli \
+  --language javascript --joern-profile express-request-eval-v1
+```
+
+Use `--language typescript` for TypeScript or `auto` for a repository containing a
+single supported source language. `scan-import` accepts the same profile. Standalone
+`joern-javascript-discover` and `joern-typescript-discover` use
+`--discovery-profile express-request-eval-v1`. Default profiles remain unchanged.
+
+The profile selects inline callbacks passed as the second argument of Express get/post
+registrations recognized by Joern. Sources are field reads of the first callback
+parameter: `req.query.code`, `req.body.expression`, or `req.params.expression`, with
+arbitrary parameter and field names. Sinks require Joern's builtin `eval` signature.
+The graph supplies the intervening flow, including supported ES-module cross-file calls.
+No repository packages are installed and no application code is executed.
+
+This is bounded discovery, not authenticated Express/builtin identity or demonstrated
+HTTP exploitability. Import aliases for the Express factory are not qualified (the
+initial alias fixture was missed). Routers, middleware chains, named callbacks,
+destructuring, computed/deeper property accesses, JSX/TSX, mixed JS/TS repositories,
+project configuration and dependency resolution are outside acceptance. Dynamic
+rebinding/mutation and sanitization semantics are not qualified. Only `.js` or `.ts`
+sources for the selected language are copied.
+
+Published reports remain partial, with the selected discovery_profile and limitations.
+Zero candidates cannot establish a clean result. These rules are accepted by benchmark
+coverage audits, with recall/precision unknown and qualified triage unsupported. Batch
+retry skipping distinguishes profiles; use `--rescan` after changes within a profile.
+
+## Go HTTP form-to-shell discovery profile
+
+```sh
+traceproof scan-run RUN_ID --engine joern --joern-home /trusted/joern-cli \
+  --language go --joern-profile go-http-shell-v1
+```
+
+The same profile works with `scan-import` and `--language auto` for a single-language
+repository. The standalone `joern-go-discover` command accepts
+`--discovery-profile go-http-shell-v1`. Omitting the profile retains the default.
+
+Sources require Joern's `net/http.Request.FormValue` or `PostFormValue` graph signature.
+Sinks require `os/exec.Command` with exactly three arguments: a literal `sh`, `bash`,
+`/bin/sh` or `/bin/bash`; literal `-c`; then the command text. Joern must record a flow
+from the request input to that third argument. Ordinary process arguments such as
+`exec.Command("printf", "%s", value)` are outside this rule, not declared safe by it.
+Direct and supported cross-package flows do not depend on fixture function names.
+
+Command construction is sufficient for a candidate: the profile does not prove that
+Run/Start/Output is called or that a route is registered and reachable. Import aliases
+and PostFormValue have bounded fixture acceptance. Dependency/module identity, dynamic
+behavior and sanitizer semantics are not qualified. URL.Query, headers, JSON bodies,
+CommandContext, other shells/flags, raw-string shell literals, concatenated or variable
+shell names and additional arguments are outside acceptance. Only `.go` sources and
+go.mod are copied; dependencies and builds are not executed.
+
+Reports retain partial/discovery-only status, rule/profile/query identity and limitations.
+Qualified triage is unsupported. Benchmark coverage audits accept the rule as a CWE-78
+candidate scope, with recall/precision unknown. Zero candidates cannot establish a clean
+result. Batch retry skipping distinguishes profiles; use `--rescan` for changed inputs
+or models within a profile. No database migration or LLM key is needed for discovery.
+
+## C/C++ command-line-to-system discovery profile
+
+```sh
+traceproof scan-run RUN_ID --engine joern --joern-home /trusted/joern-cli \
+  --language c --joern-profile c-family-argv-system-v1
+```
+
+Use `--language cpp` for the supported C-style C++ subset, or `auto` for a single-language
+repository. `scan-import` accepts the same profile. Standalone `joern-c-discover` and
+`joern-cpp-discover` accept `--discovery-profile c-family-argv-system-v1`. Default profiles
+remain unchanged.
+
+The source is an indexed read of global main's second parameter, declared as char**
+or char*[] and a positive decimal literal index, for example `arguments[1]`. Parameter
+names are unrestricted. Joern must link the indexed identifier to that parameter and
+record a flow to argument one of the unqualified system graph signature. A repository
+definition named system causes all sinks to be withheld conservatively.
+
+C++ uses Joern's unresolved-namespace system signature; C uses its unqualified system
+signature. This profile does not authenticate libc identity or runtime exploitability.
+Argument zero, variable/hexadecimal indices, pointer aliases/arithmetic, wide-character
+entry points, qualified std::system calls, build macros/configuration and sanitizer
+semantics remain outside acceptance. C++ classes/templates/virtual dispatch and
+memory-safety vulnerabilities are not covered. Only `.c/.h` or `.cpp/.h/.hpp` files are
+selected; `.cc/.cxx` and mixed C/C++ flows remain outside this bounded profile.
+
+Published reports remain partial/discovery-only and include profile/query identity and
+limitations. Zero candidates cannot establish a clean result. Qualified triage is
+unsupported; benchmark coverage audits accept the new CWE-78 rule scopes with unknown
+recall/precision. Batch retry skipping distinguishes profiles; use `--rescan` for changes
+within a profile. No migration, source build or LLM key is required for discovery.
+
+## Rust environment-to-shell discovery profile
+
+```sh
+traceproof scan-run RUN_ID --engine joern --joern-home /trusted/joern-cli \
+  --rust-home /trusted/rust --language rust --joern-profile rust-env-shell-v1
+```
+
+`scan-import` accepts the same options, including `--language auto` for a single-language
+repository. Standalone `joern-rust-discover` accepts
+`--discovery-profile rust-env-shell-v1`. The trusted Rust toolchain and existing strict,
+dependency-free, single-binary Cargo contract are still required. Defaults remain unchanged.
+
+Sources require the std::env::var graph signature and a literal key. Sinks require the
+standard-library Command::arg graph signature in a chain constructed as
+`Command::new("sh").arg("-c").arg(value)`. Literal bash, /bin/sh and /bin/bash are also
+modeled. Up to four address/dereference graph wrappers per receiver are stripped to
+identify the chain; the graph must supply the flow from the environment value to the
+command-text argument. No synthetic dataflow edges are added.
+
+Command construction does not prove execution, and an environment value is not necessarily
+attacker-controlled. Graph identities and sanitization semantics remain unqualified.
+Command-line args, var_os, dynamic environment keys, split builder variables, args arrays,
+other shells/flags and advanced Rust/Cargo/framework features are outside acceptance.
+Ordinary non-shell arguments are outside this rule, not declared safe by it.
+
+Reports remain partial/discovery-only and preserve profile/query identity and limitations.
+Qualified triage remains unsupported; coverage audits recognize the CWE-78 candidate
+scope with precision/recall unknown. Zero candidates cannot establish a clean result.
+Batch retry skipping distinguishes profiles; use `--rescan` for changes within a profile.
+No migration or LLM key is needed. Generated Cargo metadata continues to disable build
+hooks and automatic targets; source dependencies are not installed.
+
+## Explicit Joern Spring evidence review
+
+Fresh Java/Spring Joern scans now pin the native flows.json digest. Building a bundle
+adds a joern_native_audit that checks the pinned scanner/query, native-to-SARIF consistency,
+unique path selection and exact native code on snapshot-bound source lines. Older scans
+without the native digest remain readable but need a new scan to qualify for this audit.
+
+```sh
+traceproof build-bundle ATTEMPT_ID CANDIDATE_FINGERPRINT
+traceproof check-evidence BUNDLE_ID decision.json \
+  --review-policy joern-spring-review-v1
+```
+
+The decision uses the existing strict claim schema: needs_review with quoted source, sink,
+flow and guard claims; unknown guard effectiveness is permitted. A passing result means
+supported_for_review, not confirmed vulnerability, framework identity or exploitability.
+Full consistent source context is required for all retained path files. The native gate
+accepts one unambiguous path of two to seven single-line source-matching nodes; truncation,
+synthetic/multiline code, changed provenance and missing context withhold review eligibility.
+Java negative verdicts remain unsupported. Existing bundle size/context limits still apply.
+
+This command invokes no provider, spends no model tokens, and does not persist a triage
+verdict or suppress findings. Without the explicit policy option, Joern remains unsupported
+by check-evidence's default gate. The main Joern scan pipeline and automatic triage registry
+also remain discovery-only; this policy is not an automatic promotion or a benchmark change.
+Bundle schema version remains 1 with builder version 7 and additive native audit metadata;
+historical immutable bundles remain readable. No database migration is required.
+
+## Opt-in budgeted Joern Spring advisory
+
+After scanning and building a fresh audited Spring bundle, use the existing run budget
+and model configuration with an explicit review policy:
+
+```sh
+traceproof triage-budget RUN_ID 100000 --max-requests 10
+traceproof triage BUNDLE_ID model.json advisory-key \
+  --review-policy joern-spring-review-v1 --replay response.json
+```
+
+Use a replay-provider model configuration and a response matching the existing Reply /
+Decision schema for offline testing. A replay response tests orchestration; it does not
+measure model detection quality. Configured token rates exercise the ledger even for replay,
+so accounted amounts in these tests are simulated, not external charges.
+
+`triage-attempt REPO_ID ATTEMPT_ID model.json BATCH_KEY` accepts the same explicit policy
+and replay options, with existing offset/limit controls. Each candidate gets its own
+preflight and budget reservation. Batch keys distinguish default and explicit policies;
+single-item reuse of a key with changed policy/request/preflight raises a conflict.
+Retries return the existing ledger entry without another invocation. Budget/request limits
+and uncertain-call reservation retention remain in force. Blocked rows count toward the
+request limit but reserve/charge zero when blocked by evidence or cost preflight.
+
+Before invoking a provider, TraceProof requires the native audit, complete source context,
+ordered flow and modeled Spring/SQL endpoint syntax. Rejected preflight records
+incomplete_evidence and makes no provider call. Returned needs_review claims must still
+pass the explicit policy; fabricated or negative claims abstain. A passing advisory is
+unverified and cannot suppress a finding. The report remains partial/incomplete.
+
+The existing OpenAI, Anthropic and local Ollama adapter paths also accept the explicit
+policy, subject to their existing classification, endpoint, pricing, key and source-
+transmission controls. Their prompt shapes are tested offline; no live model quality is
+claimed by this slice. Omit --replay for a configured non-replay provider.
+
+Use triage-report to retrieve the ledger, then publish a fresh repository report to include
+the new advisory history. JSON history includes review_policy, engine_id, model/provider,
+request identity, costs and simulated status; HTML remains shareable. Older published
+snapshots are immutable. Report projection version is now 12; no database migration.
+
+Without --review-policy, Joern triage remains unsupported. scan-run/scan-import remain
+separate discovery steps with zero automatic model calls. This opt-in is exposed through
+CLI/Python triage operations; HTTP API launch schemas have not been expanded in this slice.
+
+## Scan and publish with an explicit advisory page
+
+Configure the existing per-run budget first. For the default Java/Spring Joern profile:
+
+```sh
+traceproof triage-budget RUN_ID 100000 --max-requests 10
+traceproof scan-run RUN_ID --engine joern --language java \
+  --joern-home /trusted/joern-cli \
+  --advisory-config model.json --review-policy joern-spring-review-v1 \
+  --advisory-key scan-advice --advisory-limit 1 --replay response.json
+```
+
+The replay response must match the candidate's evidence IDs and quotes; acceptance fixtures
+provide deterministic examples. Use the existing non-replay provider configuration and
+omit --replay for explicit live advisory, subject to the existing transmission controls.
+This slice validates replay orchestration, not live model quality.
+
+`scan-import IMPORT_ID` accepts the same advisory options. Every admitted run selected for
+advisory scanning needs its own preconfigured triage budget. Missing budgets fail before
+new extraction. Eligible pairs are default Joern Java with joern-spring-review-v1,
+python-flask-system-v1 with joern-flask-review-v1, and express-request-eval-v1 with its
+language-specific JavaScript/TypeScript policy, and default repaired C# with
+joern-csharp-review-v1, go-http-shell-v1 with joern-go-http-review-v1, and
+rust-env-shell-v1 with joern-rust-env-review-v1 (see below). Other engine/profile/policy
+combinations reject these pipeline advisory options.
+
+The pipeline publishes the discovery attempt first, processes one bounded candidate page,
+then publishes a report for the same exact attempt including advisory history. Inspect
+`advisory.status`, item states and `advisory.next_offset`; page_complete does not imply
+all candidates or security analysis are complete. The overall status remains incomplete.
+Failed scans skip advisory and still publish their scan report. Evidence/budget failures
+and uncertain calls retain the existing ledger and abstention behavior.
+
+`--advisory-offset` defaults to zero; `--advisory-limit` defaults to one and is capped at
+100. These are candidate bounds per repository, separate from scan-import's repository
+row offset/limit. Import pause/cancel is checked between repository rows; an already
+started bounded advisory page is not interrupted by those dispatch controls.
+
+Existing-attempt skips also skip advisory, even if the earlier scan had no advice. Continue
+with `triage-attempt REPO_ID ATTEMPT_ID model.json scan-advice --review-policy
+joern-spring-review-v1 --offset NEXT --limit N` and the appropriate replay/provider options,
+then publish a new report. Use the same key to retain per-candidate idempotency. Do not
+rescan solely to continue the next advisory page: an explicit rescan creates a new attempt
+and can incur new charges under the same run budget.
+
+`model_calls` counts adapter invocations in this operation, including replay; cached ledger
+returns and blocked candidates count zero. `live_model_calls` excludes replay. Per-row
+advisory metadata identifies provider and simulated status, and scan-import aggregates the
+counts. No advisory options means unchanged discovery-only execution. HTTP API launch
+schemas remain unchanged; the pipeline opt-in is currently exposed through CLI/Python.
+
+### Joern Python/Flask advisory (Slice 99)
+
+Use `joern-flask-review-v1` with the explicit `python-flask-system-v1` discovery profile:
+
+```sh
+traceproof triage-budget RUN_ID 100000 --max-requests 10
+traceproof scan-run RUN_ID --engine joern --language auto \
+  --joern-home /trusted/joern-cli --joern-profile python-flask-system-v1 \
+  --advisory-config model.json --review-policy joern-flask-review-v1 \
+  --advisory-key flask-advice --advisory-limit 1 --replay response.json
+```
+
+The same flags work on scan-import; each admitted run needs its own budget. For an existing
+attempt, use triage-attempt with `--review-policy joern-flask-review-v1`, then publish its
+report. check-evidence and single-bundle triage also accept this policy. Existing-attempt
+skips do not add advice; use triage-attempt for continuation rather than rescanning merely
+to obtain another candidate page. Replay responses must match the current evidence IDs and
+quotes. Live use omits --replay and follows the existing model/transmission configuration.
+
+This policy covers bounded Flask args/form.get with one literal key flowing to os.system,
+including accepted explicit aliases. It requires fresh native provenance, retained complete
+source context and matching parsed endpoints. Other Python profiles/frameworks are not
+eligible. Missing context/provenance produces incomplete_evidence without a model call;
+inspect the review_preflight status and bundle gaps. A fresh scan may be necessary for
+legacy attempts lacking native provenance, but cannot resolve every coverage limitation.
+
+A needs_review response must quote the source call and the full os.system call, and include
+recorded-flow evidence plus an unknown guard assessment. Quoting the sink argument alone
+is insufficient. Generated intermediate expressions are tool observations, not literal
+source or proof of reachability. False-positive dismissal and present-guard claims are
+unsupported. Reports remain incomplete and unverified; replay advice is marked simulated.
+Report IDs, JSON/HTML export, invocation counts and pagination follow the workflow above.
+
+### Joern Express advisory for JavaScript/TypeScript (Slice 100)
+
+Use a language-specific policy with the existing Express discovery profile:
+
+| Detected/selected language | Discovery profile | Explicit advisory policy |
+|---|---|---|
+| javascript | express-request-eval-v1 | joern-javascript-express-review-v1 |
+| typescript | express-request-eval-v1 | joern-typescript-express-review-v1 |
+
+```sh
+traceproof triage-budget RUN_ID 100000 --max-requests 10
+traceproof scan-run RUN_ID --engine joern --language auto \
+  --joern-home /trusted/joern-cli --joern-profile express-request-eval-v1 \
+  --advisory-config model.json --review-policy joern-javascript-express-review-v1 \
+  --advisory-key express-advice --advisory-limit 1 --replay response.json
+```
+
+For TypeScript, replace the policy with joern-typescript-express-review-v1. Auto detection
+still requires the selected policy to match the detected language. A mixed-language source
+requires explicit language selection under the existing scan behavior; it does not produce
+a combined JS/TS assessment. The same options work with scan-import, with per-run budgets.
+For existing attempts use triage-attempt with the matching policy, then publish its report.
+Existing-attempt skips also skip advice. Replay replies must match current evidence; live
+use omits --replay and follows the existing provider and source-transmission controls.
+
+The bounded gate recognizes a default Express import, const application factory, inline
+get/post handler, static request.query/body/params field read and direct eval argument.
+It requires complete retained context and literal native path nodes. Ambiguous endpoints,
+obvious rebinding/shadowing, optional/computed request access, member eval and unsupported
+framework patterns do not qualify. Quoting only the eval argument does not satisfy the
+sink claim: quote the complete eval call. Guards must remain unknown; false-positive
+dismissal and present-guard claims are unsupported. Passing advice is needs_review, with
+incomplete/unverified scan status. Replay advice remains visibly simulated.
+
+HTTP launch schemas are unchanged. Existing exact-report retrieval and JSON/HTML export
+include the advisory history and policy identity for dashboard integration.
+
+### Repaired Joern C#/ASP.NET advisory (Slice 101)
+
+Use the default C# discovery profile and a trusted repair directory:
+
+```sh
+traceproof triage-budget RUN_ID 100000 --max-requests 10
+traceproof scan-run RUN_ID --engine joern --language csharp \
+  --joern-home /trusted/joern-cli --joern-repair-dir /trusted/csharp-repair \
+  --advisory-config model.json --review-policy joern-csharp-review-v1 \
+  --advisory-key csharp-advice --advisory-limit 1 --replay response.json
+```
+
+Auto language detection is also supported. scan-import accepts the same options; each run
+needs its own budget. For existing attempts use triage-attempt with
+`--review-policy joern-csharp-review-v1`, then publish the report. check-evidence and
+single-bundle triage accept the same policy. Existing-attempt skips also skip advice.
+Live use omits --replay and retains the existing provider/transmission controls; replay
+responses must match the retained evidence IDs and quotes.
+
+This does not expand discovery beyond Lookup(name) flowing to a CommandText assignment.
+Advisory requires recognized Core FromQuery or classic HttpGet source syntax, mapped native
+spans, repair provenance and complete retained context. Quote the full source/assignment
+line, not just the CommandText RHS. The sink is a syntax observation, not authenticated API
+identity. Guards remain unknown; false-positive dismissal is unsupported.
+
+Inspect incomplete_evidence and review_preflight, then the bundle's joern_native_audit for
+details. native_mapping_limit means the native result exceeded 32 paths or 128 nodes for
+bounded advisory reconstruction. Changing --advisory-limit does not bypass this per-result
+bound. Candidates and their discovery reports remain available when advisory is withheld.
+Legacy attempts lacking provenance may need a fresh scan, which may incur new costs.
+Successful advice remains needs_review with an incomplete/unverified report. Existing
+report retrieval and JSON/HTML export include the policy and advisory history; API launch
+schemas are unchanged.
+
+### Joern Go HTTP-to-shell advisory (Slice 102)
+
+Use the explicit Go discovery and advisory policy pair:
+
+```sh
+traceproof triage-budget RUN_ID 100000 --max-requests 10
+traceproof scan-run RUN_ID --engine joern --language auto \
+  --joern-home /trusted/joern-cli --joern-profile go-http-shell-v1 \
+  --advisory-config model.json --review-policy joern-go-http-review-v1 \
+  --advisory-key go-advice --advisory-limit 1 --replay response.json
+```
+
+scan-import accepts the same options and requires a budget per run. For existing attempts,
+use triage-attempt with `--review-policy joern-go-http-review-v1`, then publish the report.
+Single-bundle triage and check-evidence also accept this policy. Existing-attempt skips skip
+advice too; use triage-attempt for continuation rather than rescanning solely to get another
+page. Live use omits --replay and follows the existing provider/source-transmission controls.
+Replay responses must match the current evidence IDs and quotes.
+
+The gate recognizes literal-key FormValue/PostFormValue on a *http.Request function
+parameter and exec.Command with a literal shell, -c, and command text. Simple import aliases
+are supported; obvious shadows, unsupported imports, dynamic command shapes and ambiguous
+endpoint lines are withheld. Quote the entire exec.Command call, not just its command-text
+argument. Complete context and literal native path evidence are required. Inspect
+review_preflight and the bundle's joern_native_audit when a call is blocked.
+
+A recorded Command construction does not prove it executes or that its source handler is
+reachable. Guard claims remain unknown; negative dismissal is unsupported. Advice remains
+needs_review/abstain in an incomplete, unverified report, with replay visibly simulated.
+Existing report retrieval and JSON/HTML exports include advisory history and policy identity;
+HTTP launch schemas remain unchanged.
+
+### Joern Rust environment-to-shell advisory (Slice 103)
+
+```sh
+traceproof triage-budget RUN_ID 100000 --max-requests 10
+traceproof scan-run RUN_ID --engine joern --language auto \
+  --joern-home /trusted/joern-cli --rust-home /trusted/rust \
+  --joern-profile rust-env-shell-v1 --advisory-config model.json \
+  --review-policy joern-rust-env-review-v1 --advisory-key rust-advice \
+  --advisory-limit 1 --replay response.json
+```
+
+The trusted Rust toolchain and existing dependency-free single-binary Cargo restrictions
+still apply. scan-import accepts the same options with budgets per run. Existing-attempt
+skips also skip advice; use triage-attempt with --review-policy joern-rust-env-review-v1
+for continuation, then publish the report. check-evidence and single-bundle triage accept
+the same policy. Replay replies must match current evidence; live use omits --replay and
+follows the existing provider and source-transmission controls.
+
+The bounded policy recognizes literal-key std::env::var (or a supported simple import
+alias) and a direct Command::new(shell).arg("-c").arg(command) chain. Quote the whole chain
+through its final arg call; quoting only the command text is insufficient. Unknown guards
+and needs_review/abstain are supported; negative dismissal is not. Macros, attributes,
+ambiguous imports, unsupported endpoint shapes and incomplete source context do not qualify.
+The Rust environment profile retains up to eight native path nodes plus its primary
+location, within existing byte limits; exceeding those bounds does not silently drop nodes.
+
+Environment input need not be attacker-controlled, and command construction need not execute.
+Reports remain incomplete/unverified and replay advice visibly simulated. Existing exact
+report retrieval and JSON/HTML exports include the advisory history and policy identity.
+HTTP launch schemas are unchanged.
+
+
+## C/C++ argv-to-system advisory (Slice 104)
+
+Use `--engine joern --joern-profile c-family-argv-system-v1` with `--language c` or
+`--language cpp`. Explicit advisory policies are `joern-c-argv-review-v1` and
+`joern-cpp-argv-review-v1`, respectively. The usual advisory config, key, page limits and
+preconfigured run budget are required. For example, after importing a C repository:
+
+```sh
+traceproof triage-budget RUN_ID 100000 --max-requests 10
+traceproof scan-run RUN_ID --engine joern --language c \
+  --joern-home /path/to/joern-cli --joern-profile c-family-argv-system-v1 \
+  --advisory-config /path/to/provider.json --advisory-key c-review-1 \
+  --review-policy joern-c-argv-review-v1
+```
+
+For C++ substitute `cpp` and `joern-cpp-argv-review-v1`. Use `--replay` with the established
+replay file format for deterministic local tests. Report retrieval/export follows the shared
+report commands/API. Repeated existing attempts are skipped; use triage-attempt to continue
+advice on an existing attempt, or an explicit rescan for a new attempt and possible new cost.
+
+Only bounded global-main literal argv indexing and direct system syntax qualify. Passing
+advice stays needs_review/incomplete; unsupported evidence blocks model calls. Headers are
+not preprocessed, libc identity is unproven, and C++ namespace/class/template/lambda context
+is unsupported. This does not certify runtime reachability or general C++ coverage.
+
+## Public Git URL acquisition (Slice 109)
+
+`acquire-git` prepares one source archive and CSV; it does not initialize a scan database,
+scan source or invoke a model. Git must be installed. Only credential-free HTTPS on explicitly
+allowed hosts is accepted. Use an immutable 40-character commit when available; full branch
+or tag refs are resolved once and the resulting commit is recorded.
+
+```sh
+traceproof acquire-git https://github.com/octocat/Hello-World.git refs/heads/master \
+  /absolute/work/acquired-repo hello-world poc public --allowed-host github.com
+```
+
+The output directory must not exist. Parameters after the revision are output directory,
+repository ID, owner and classification. Repeat --allowed-host for an operator-approved host
+list; --timeout defaults to 300 seconds (maximum 900). URL usernames/passwords, query tokens,
+SSH/file URLs and redirects are unsupported. Personal Git configuration, credential helpers,
+proxy and custom CA environment are not inherited. Private/corporate configuration is not
+implemented yet; do not work around this by embedding credentials in the URL.
+
+After successful completion, inspect acquisition.json and require state=acquired. Keep its
+resolved_commit, archive_sha256 and per-file hashes with the exported source. The generated
+input.csv points to the absolute source.zip path and declares its hash. Submit that CSV with
+the existing import-csv command, using the acquisition directory as input-root, then follow
+the normal worker and scan workflow. The initial CSV source_type is still pvc;
+putting a Git URL directly in ordinary import-csv is not supported.
+
+When moving the output to a PVC/container, update only the CSV archive path to its absolute
+mounted location (for example /input/source.zip); preserve the SHA-256 value. The smoke Job
+still consumes exactly one archive row. Do not run networked acquisition inside the offline
+scanner Job or add credentials to its manifest. Projection 13 embeds a compact provenance summary for explicitly receipt-bound intake
+(Slice 112); see the persistence section below for image compatibility and binding limits.
+
+Export reads raw blobs, preserving files marked export-ignore and bypassing checkout filters.
+Symlinks, submodules and LFS pointers are rejected, as are file/path/size limits. Limits are
+2,000 files, 5 MiB/file, 100 MiB source and a monitored 256 MiB temporary Git workspace.
+Workspace monitoring can overshoot and is not an OS quota. Failure yields no usable CSV;
+inspect acquisition.json and retry into a fresh directory after resolving the cause. Forced
+termination can leave an incomplete directory; never consume it without a successful receipt.
+
+## PVC archive batch convention
+
+Use **archives.csv** for operator-staged local TAR/TAR.GZ/ZIP paths and reserve
+**repositories.csv** for future Git-URL batches. Both CSV and archives live under the
+mounted input root; source_uri is the absolute container-visible archive path. The existing
+import-csv/worker workflow supports these archive batches today. See the
+[PVC archive intake guide](pvc-archive-intake.md) and
+[sample CSV](../examples/intake/archives.csv). Filenames do not trigger automatic dispatch.
+The one-row OCP smoke demonstration accepts archives.csv or legacy input.csv as of
+Slice 110, rejecting both together. Separate bounded mounted-batch execution is available through --batch-max-rows (Slice 111).
+
+## Persisting Git acquisition provenance (Slice 112)
+
+New acquire-git output includes acquisition_receipt and acquisition_sha256 in input.csv,
+alongside the archive sha256. Admission validates and copies the receipt into durable state;
+worker compares its file inventory against the captured snapshot. Keep the source archive
+available until snapshotting; the receipt file is no longer needed after successful admission.
+
+If moving to a PVC, update source_uri and acquisition_receipt to container-visible absolute
+paths beneath input-root. Preserve both digest values. Archive-only archives.csv batches
+need neither receipt column. Receipts are explicitly opted in, never discovered by filename.
+
+A successful source snapshot adds acquisition_provenance.state=snapshot_bound to newly
+published report projection 13, with resolved_commit and archive/receipt digests. This is
+operator-supplied content binding; remote_history_authenticated remains false. Earlier
+published reports stay immutable. HTML/Markdown display the commit and CSV exports add
+Git commit/archive digest/binding-state columns. Existing dashboard consumers should allow
+those additional columns.
+
+An existing idempotency key returns its original admitted receipt even if the external file
+has since changed. To admit a replacement, supply its updated SHA-256 and a new request key.
+Digest/repository/archive mismatches reject admission; file inventory mismatch fails capture.
+A failed or absent snapshot is never labeled snapshot_bound.
+
+Slice 113 refreshes all three OCP smoke variants with this intake/report contract. Use the
+recorded refreshed image digests; older immutable images still predate the receipt columns.
+Do not strip receipt hashes to pretend provenance survived an older image.
+
+
+## Git-URL CSV batches (Slice 114)
+
+Use acquire-git-csv with repositories.csv and a fresh output directory. The five columns are
+repo_id,url,revision,owner,classification. Supply --allowed-host explicitly; --max-rows is
+1–10 and --timeout is a bounded batch acquisition deadline. Successful rows produce a
+receipt-pinned archives.csv; acquisition-batch.json retains all row outcomes. Partial success
+exits nonzero and never starts scans. See [Git batch guide](git-batch-intake.md) and
+[sample repositories.csv](../examples/intake/repositories.csv) for staging and offline handoff.
+This supersedes earlier notes that Git-URL CSV dispatch was only reserved/planned.

@@ -42,7 +42,7 @@ COPY --from=codeql /opt/codeql-bundle /opt/codeql-bundle
 COPY containers/java-profile.json /opt/traceproof/dependencies/java-profile.json
 COPY work/container-inputs/java-repository /opt/traceproof/dependencies/java-repository
 COPY containers/runtime_probe.py /opt/traceproof/runtime_probe.py
-COPY scripts/validate_java.py scripts/validate_spring.py scripts/validate_csharp.py scripts/validate_csharp_classic.py scripts/validate_csharp_core.py scripts/validate_csharp_minimal.py scripts/validate_csharp_webapi.py scripts/validate_csharp_mvc.py scripts/pin_csharp_dependencies.py /opt/traceproof/scripts/
+COPY scripts/validate_java.py scripts/validate_spring.py scripts/validate_csharp.py scripts/validate_csharp_classic.py scripts/validate_csharp_core.py scripts/validate_csharp_minimal.py scripts/validate_csharp_webapi.py scripts/validate_csharp_mvc.py scripts/validate_javascript.py scripts/validate_typescript.py scripts/pin_csharp_dependencies.py /opt/traceproof/scripts/
 COPY tests/fixtures/csharp /opt/traceproof/tests/fixtures/csharp
 COPY tests/fixtures/csharp-classic /opt/traceproof/tests/fixtures/csharp-classic
 COPY tests/fixtures/csharp-minimal /opt/traceproof/tests/fixtures/csharp-minimal
@@ -61,6 +61,8 @@ RUN /opt/traceproof-venv/bin/python /opt/traceproof/scripts/pin_csharp_dependenc
 RUN /opt/traceproof-venv/bin/python /opt/traceproof/prepare_core_profile.py
 RUN /opt/traceproof-venv/bin/python /opt/traceproof/prepare_classic_profile.py webapi
 RUN /opt/traceproof-venv/bin/python /opt/traceproof/prepare_classic_profile.py mvc
+COPY tests/fixtures/javascript /opt/traceproof/tests/fixtures/javascript
+COPY tests/fixtures/typescript /opt/traceproof/tests/fixtures/typescript
 COPY tests/fixtures/java /opt/traceproof/tests/fixtures/java
 COPY tests/fixtures/spring /opt/traceproof/tests/fixtures/spring
 RUN mkdir -p /work /inputs /reports && chmod 0770 /work /reports && \

@@ -9,6 +9,7 @@ from collections import Counter
 
 from sqlalchemy import func, select
 
+from traceproof.acquisition_provenance import summary as acquisition_summary
 from traceproof.bundles import canonical
 from traceproof.domain import TraceProofError
 from traceproof.intake import now
@@ -120,6 +121,8 @@ def projection(session, repo_id, run_id, attempt_id):
             "usage": result.get("usage"),
             "accounted_micro_usd": call.charged_micro_usd,
         }
+        if result.get("review_policy") is not None:
+            entry.update(review_policy=result["review_policy"], engine_id=result.get("engine_id"))
         history.setdefault(bundle_candidates[call.bundle_id], []).append(entry)
     review_records = (
         bounded(
@@ -185,13 +188,23 @@ def projection(session, repo_id, run_id, attempt_id):
         raise TraceProofError("Stored candidate count does not reconcile; report not published")
     return {
         "schema_version": "1",
-        "projection_version": "6",
+        "projection_version": "14",
         "report_kind": "repository_summary",
         "repo_id": repo_id,
         "run_id": run.id,
         "snapshot_id": run.snapshot_id,
         "profile": run.profile,
+        "acquisition_provenance": acquisition_summary(
+            admitted.spec if admitted else None, bool(run.snapshot_id)
+        ),
         "language": scan.get("language", "python"),
+        "scanner": scan.get("scanner"),
+        "discovery_coverage": scan.get("discovery_coverage"),
+        "joern_diagnostics": scan.get("joern_diagnostics"),
+        "source_mapping": scan.get("source_mapping"),
+        "discovery_profile": scan.get("discovery_profile"),
+        "endpoint_audit": scan.get("endpoint_audit"),
+        "scanner_limitations": scan.get("limitations", []),
         "language_scope": scan.get("language_scope"),
         "owner": (admitted.spec or {}).get("owner") if admitted else None,
         "classification": snapshot.manifest.get("classification") if snapshot else None,
@@ -449,6 +462,12 @@ def render_report(report, format="json"):
                 "coverage_verified",
             )
         }
+        provenance = report.get("acquisition_provenance") or {}
+        for key in ("kind", "bucket", "object", "generation"):
+            common["acquisition_" + key] = provenance.get(key)
+        common["git_commit"] = provenance.get("resolved_commit")
+        common["acquisition_archive_sha256"] = provenance.get("archive_sha256")
+        common["acquisition_binding_state"] = provenance.get("state")
         common["static_review_readiness"] = report.get("static_review_readiness", {}).get(
             "state", "unknown"
         )
@@ -518,6 +537,18 @@ def render_report(report, format="json"):
         f"Owner: {report['owner']} | Classification: {report['classification']} | "
         f"Version: {report['report_version']}"
     )
+    provenance = report.get("acquisition_provenance")
+    if provenance:
+        source_label = (
+            f"GCS: {provenance['bucket']}/{provenance['object']} "
+            f"generation {provenance['generation']}"
+            if provenance.get("kind") == "gcs"
+            else f"Git commit: {provenance['resolved_commit']}"
+        )
+        metadata += (
+            f" | {source_label}"
+            f" | Source binding: {provenance['state']} (remote history unauthenticated)"
+        )
     if format == "markdown":
         safe = html.escape(pretty).replace("`", "&#96;")
         table = (

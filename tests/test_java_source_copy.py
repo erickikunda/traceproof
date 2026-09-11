@@ -1,6 +1,7 @@
 import zipfile
 from pathlib import Path
 
+import pytest
 from test_indexing import captured
 
 from traceproof.codeql import extract
@@ -59,3 +60,22 @@ def test_csharp_requires_explicit_download_opt_in(store, archive, manifest):
     ):
         extract(store, run, language="auto")
     assert not (store.root / "codeql").exists()
+
+
+@pytest.mark.parametrize("language,extension", [("javascript", "js"), ("typescript", "ts")])
+def test_js_ts_source_copy_omits_configuration_and_other_language(
+    store, archive, manifest, monkeypatch, language, extension
+):
+    with zipfile.ZipFile(archive, "w") as out:
+        out.writestr("app.js", "const x = 1;")
+        out.writestr("app.ts", "const x: number = 1;")
+        out.writestr("package.json", '{"scripts":{"prepare":"untrusted"}}')
+        out.writestr("tsconfig.json", '{"extends":"untrusted"}')
+        out.writestr("index.html", "<script>unqualified</script>")
+    run = captured(store, archive, manifest)
+    monkeypatch.setattr("traceproof.codeql.shutil.which", lambda _: None)
+    with exclusive_worker(store.root):
+        result = extract(store, run, language=language)
+    root = Path(result["database_path"]).parent / "source"
+    assert [p.name for p in root.iterdir()] == [f"app.{extension}"]
+    assert result["language_scope"]["omitted_file_count"] == 4

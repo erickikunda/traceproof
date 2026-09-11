@@ -10,11 +10,12 @@ from sqlalchemy import select
 
 from traceproof.domain import TraceProofError
 from traceproof.indexing import verified_source
+from traceproof.joern_claims import RULE_POLICIES, native_audit
 from traceproof.persistence import Candidate, EvidenceBundle, ScanAttempt, exclusive_worker
 from traceproof.python_parser import MAX_BYTES
 from traceproof.sarif import MAX_SARIF_BYTES, bind_location, fingerprint, indexed
 
-BUILDER_VERSION = "5"
+BUILDER_VERSION = "13"
 MAX_LOCATIONS = 8
 MAX_BUNDLE_BYTES = 32 * 1024
 MAX_SOURCE_BYTES = 16 * 1024
@@ -99,9 +100,13 @@ def _build_bundle(store, attempt_id, candidate_fingerprint):
                 )
         for location in result.get("relatedLocations", []):
             locations.append(("related", location.get("physicalLocation", {}), {}))
+        location_limit = MAX_LOCATIONS + int(
+            candidate.evidence["rule_id"] == "traceproof/joern-rust-env-shell-v1"
+            and attempt.report.get("scanner", {}).get("engine_id") == "joern"
+        )
         references = [
             (role, bind_location(location, sarif_run, manifest, tree), metadata)
-            for role, location, metadata in locations[:MAX_LOCATIONS]
+            for role, location, metadata in locations[:location_limit]
         ]
     except (KeyError, TypeError, ValueError, IndexError, AttributeError, RecursionError):
         raise TraceProofError("Cannot interpret candidate SARIF evidence") from None
@@ -110,7 +115,7 @@ def _build_bundle(store, attempt_id, candidate_fingerprint):
         gaps.append("primary_location_missing")
     if not references:
         gaps.append("no_locations")
-    if len(locations) > MAX_LOCATIONS:
+    if len(locations) > location_limit:
         gaps.append("location_limit")
     for position, (role, reference, metadata) in enumerate(references):
         if reference is None:
@@ -132,7 +137,16 @@ def _build_bundle(store, attempt_id, candidate_fingerprint):
             start, end = max(1, start - 3), min(len(lines), end + 3)
             # Small Java/C# files retain imports and declaration context for syntax gates.
             # Existing cumulative source/envelope limits still apply.
-            if record.path.endswith((".java", ".cs")) and len(lines) <= 40:
+            if len(lines) <= 40 and (
+                record.path.endswith((".java", ".cs"))
+                or (
+                    record.path.endswith(
+                        (".py", ".js", ".ts", ".go", ".rs", ".c", ".h", ".cpp", ".hpp")
+                    )
+                    and candidate.evidence["rule_id"] in RULE_POLICIES
+                    and attempt.report.get("scanner", {}).get("engine_id") == "joern"
+                )
+            ):
                 start, end = 1, len(lines)
             text = "".join(lines[start - 1 : end])
             size = len(text.encode())
@@ -164,6 +178,13 @@ def _build_bundle(store, attempt_id, candidate_fingerprint):
     content = {
         "schema_version": "1",
         "builder_version": BUILDER_VERSION,
+        "engine_id": (
+            attempt.report["scanner"].get("engine_id", "unknown")
+            if isinstance(attempt.report.get("scanner"), dict)
+            else "codeql"
+            if "scanner" not in attempt.report
+            else "unknown"
+        ),
         "expansion_depth": 0,
         "run_id": run.id,
         "repo_id": run.repo_id,
@@ -183,6 +204,16 @@ def _build_bundle(store, attempt_id, candidate_fingerprint):
         "trust": "untrusted_source_and_tool_output",
         "reachability_proven": False,
     }
+    if content["engine_id"] == "joern" and content["rule_id"] in RULE_POLICIES:
+        content["joern_native_audit"] = native_audit(
+            store.root / "scans" / attempt.id,
+            attempt.report,
+            manifest,
+            tree,
+            raw,
+            result,
+            policy=RULE_POLICIES[content["rule_id"]],
+        )
     if len(canonical(content)) > MAX_BUNDLE_BYTES:
         raise TraceProofError("Evidence bundle exceeds the 32 KiB envelope limit")
     verified_source(store, run.id)

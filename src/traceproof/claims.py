@@ -7,7 +7,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-GATE_VERSION = "7"
+GATE_VERSION = "8"
 POLICIES = {
     "cs/sql-injection": {
         "class": "sql_injection",
@@ -42,11 +42,21 @@ class EvidenceClaim(BaseModel):
     explanation: str = Field(min_length=1, max_length=1000)
 
 
-def requirements(rule_id):
+def bundle_engine(bundle):
+    # Missing identity is legacy only for the pre-engine bundle schema.
+    if "engine_id" in bundle:
+        return bundle["engine_id"]
+    if bundle.get("builder_version", "1") in {"1", "2", "3", "4", "5"}:
+        return "codeql"
+    return "unknown"
+
+
+def requirements(rule_id, engine="codeql"):
     return {
         "gate_version": GATE_VERSION,
-        "supported": rule_id in POLICIES,
-        "policy": POLICIES.get(rule_id),
+        "engine_id": engine,
+        "supported": engine == "codeql" and rule_id in POLICIES,
+        "policy": POLICIES.get(rule_id) if engine == "codeql" else None,
         "required": ["source", "sink", "flow", "guard"],
         "negative_requires": "Java/C# negative suggestions unsupported"
         if rule_id in ("java/sql-injection", "cs/sql-injection")
@@ -243,6 +253,17 @@ def flask_mapping(bundle, source):
 
 
 def assess_evidence(bundle, decision):
+    if decision.verdict == "abstain":
+        return _assess_supported(bundle, decision, None)
+    if bundle["status"] != "ready":
+        return _assess_supported(bundle, decision, None)
+    if bundle_engine(bundle) != "codeql":
+        return {**_assess_supported(bundle, decision, None), "status": "unsupported_engine"}
+    return _assess_supported(bundle, decision, POLICIES.get(bundle["rule_id"]))
+
+
+def _assess_supported(bundle, decision, policy):
+    """Shared quote/syntax/path checks; callers must gate engine and provenance first."""
     report = {
         "gate_version": GATE_VERSION,
         "rule_id": bundle["rule_id"],
@@ -259,7 +280,6 @@ def assess_evidence(bundle, decision):
         return {**report, "status": "abstained"}
     if bundle["status"] != "ready":
         return {**report, "status": "incomplete_bundle"}
-    policy = POLICIES.get(bundle["rule_id"])
     if policy is None:
         return {**report, "status": "unsupported_rule"}
     snippets = {item["id"]: item for item in bundle["snippets"]}
@@ -314,6 +334,30 @@ def assess_evidence(bundle, decision):
                     from traceproof.java_claims import anchors as java_anchors
 
                     located = java_anchors(bundle, snippet, claim)
+                elif policy.get("language") == "joern_c_family":
+                    from traceproof.joern_c_family_claims import anchors as c_family_anchors
+
+                    located = c_family_anchors(bundle, snippet, claim)
+                elif policy.get("language") == "joern_rust":
+                    from traceproof.joern_rust_claims import anchors as rust_anchors
+
+                    located = rust_anchors(bundle, snippet, claim)
+                elif policy.get("language") == "joern_go":
+                    from traceproof.joern_go_claims import anchors as go_anchors
+
+                    located = go_anchors(bundle, snippet, claim)
+                elif policy.get("language") == "joern_csharp":
+                    from traceproof.joern_csharp_claims import anchors as joern_csharp_anchors
+
+                    located = joern_csharp_anchors(bundle, snippet, claim)
+                elif policy.get("language") == "joern_express":
+                    from traceproof.joern_express_claims import anchors as express_anchors
+
+                    located = express_anchors(bundle, snippet, claim)
+                elif policy.get("language") == "joern_flask":
+                    from traceproof.joern_flask_claims import anchors as flask_anchors
+
+                    located = flask_anchors(bundle, snippet, claim)
                 elif policy.get("language") == "csharp":
                     from traceproof.csharp_claims import anchors as csharp_anchors
 

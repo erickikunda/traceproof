@@ -418,7 +418,7 @@ def extraction_history_command(
 def scan_run_command(
     ctx: typer.Context,
     run_id: str,
-    queries: Path,
+    queries: Annotated[Path | None, typer.Argument()] = None,
     extraction_timeout: Annotated[int, typer.Option(min=1, max=3600)] = 300,
     query_timeout: Annotated[int, typer.Option(min=1, max=3600)] = 600,
     threads: Annotated[int, typer.Option(min=1, max=64)] = 2,
@@ -429,9 +429,21 @@ def scan_run_command(
     allow_csharp_downloads: bool = False,
     csharp_dependency_profile: Path | None = None,
     csharp_offline: bool = False,
+    engine: str = "codeql",
+    joern_home: Path | None = None,
+    joern_repair_dir: Path | None = None,
+    rust_home: Path | None = None,
+    joern_profile: str | None = None,
+    advisory_config: Path | None = None,
+    review_policy: str | None = None,
+    advisory_key: str | None = None,
+    replay: Path | None = None,
+    advisory_offset: Annotated[int, typer.Option(min=0)] = 0,
+    advisory_limit: Annotated[int, typer.Option(min=1, max=100)] = 1,
 ):
-    """Index, gate, extract, query and publish one captured run; no model calls."""
+    """Scan and publish; Joern advisory requires explicit options and an existing budget."""
     from traceproof.pipeline import scan_run
+    from traceproof.scan_advisory import load_advisory
 
     perform(
         lambda: scan_run(
@@ -448,6 +460,19 @@ def scan_run_command(
             allow_csharp_downloads=allow_csharp_downloads,
             csharp_dependency_profile=csharp_dependency_profile,
             csharp_offline=csharp_offline,
+            engine=engine,
+            joern_home=joern_home,
+            joern_repair_dir=joern_repair_dir,
+            rust_home=rust_home,
+            joern_profile=joern_profile,
+            advisory=load_advisory(
+                advisory_config,
+                review_policy,
+                advisory_key,
+                replay,
+                advisory_offset,
+                advisory_limit,
+            ),
         )
     )
 
@@ -456,7 +481,7 @@ def scan_run_command(
 def scan_import_command(
     ctx: typer.Context,
     import_id: str,
-    queries: Path,
+    queries: Annotated[Path | None, typer.Argument()] = None,
     offset: Annotated[int, typer.Option(min=0)] = 0,
     limit: Annotated[int, typer.Option(min=1, max=1000)] = 1,
     rescan: bool = False,
@@ -470,9 +495,21 @@ def scan_import_command(
     allow_csharp_downloads: bool = False,
     csharp_dependency_profile: Path | None = None,
     csharp_offline: bool = False,
+    engine: str = "codeql",
+    joern_home: Path | None = None,
+    joern_repair_dir: Path | None = None,
+    rust_home: Path | None = None,
+    joern_profile: str | None = None,
+    advisory_config: Path | None = None,
+    review_policy: str | None = None,
+    advisory_key: str | None = None,
+    replay: Path | None = None,
+    advisory_offset: Annotated[int, typer.Option(min=0)] = 0,
+    advisory_limit: Annotated[int, typer.Option(min=1, max=100)] = 1,
 ):
     """Sequentially scan selected import rows; existing query attempts are skipped by default."""
     from traceproof.batch_scan import scan_import
+    from traceproof.scan_advisory import load_advisory
 
     perform(
         lambda: scan_import(
@@ -492,6 +529,19 @@ def scan_import_command(
             allow_csharp_downloads=allow_csharp_downloads,
             csharp_dependency_profile=csharp_dependency_profile,
             csharp_offline=csharp_offline,
+            engine=engine,
+            joern_home=joern_home,
+            joern_repair_dir=joern_repair_dir,
+            rust_home=rust_home,
+            joern_profile=joern_profile,
+            advisory=load_advisory(
+                advisory_config,
+                review_policy,
+                advisory_key,
+                replay,
+                advisory_offset,
+                advisory_limit,
+            ),
         )
     )
 
@@ -596,7 +646,9 @@ def evidence_policy(ctx: typer.Context, rule_id: str):
 
 
 @app.command("check-evidence")
-def evidence_check(ctx: typer.Context, bundle_id: str, decision: Path):
+def evidence_check(
+    ctx: typer.Context, bundle_id: str, decision: Path, review_policy: str | None = None
+):
     """Validate a decision's claims against a materialized bundle; no provider invocation."""
     from pydantic import ValidationError
 
@@ -613,7 +665,13 @@ def evidence_check(ctx: typer.Context, bundle_id: str, decision: Path):
             parsed = Decision.model_validate_json(raw)
         except ValidationError:
             raise TraceProofError("Decision does not match the supported claim schema") from None
-        return assess_evidence(get_bundle(ctx.obj, bundle_id), parsed)
+        bundle = get_bundle(ctx.obj, bundle_id)
+        if review_policy is not None:
+            from traceproof.joern_claims import assess_review_evidence, require_policy
+
+            require_policy(review_policy)
+            return assess_review_evidence(bundle, parsed, review_policy)
+        return assess_evidence(bundle, parsed)
 
     perform(operation)
 
@@ -633,7 +691,12 @@ def budget_set(
 
 @app.command("triage")
 def triage_command(
-    ctx: typer.Context, bundle_id: str, config: Path, key: str, replay: Path | None = None
+    ctx: typer.Context,
+    bundle_id: str,
+    config: Path,
+    key: str,
+    replay: Path | None = None,
+    review_policy: str | None = None,
 ):
     """Triage one bundle; replay is offline and live providers require explicit opt-in."""
     from traceproof.models import ReplayAdapter, live_adapter, read_config
@@ -649,7 +712,7 @@ def triage_command(
             if replay is not None:
                 raise TraceProofError("A live policy cannot use a replay fixture")
             adapter = live_adapter(policy)
-        return triage(ctx.obj, bundle_id, policy, adapter, key)
+        return triage(ctx.obj, bundle_id, policy, adapter, key, review_policy=review_policy)
 
     perform(operation)
 
@@ -662,6 +725,7 @@ def triage_attempt_command(
     config: Path,
     key: str,
     replay: Path | None = None,
+    review_policy: str | None = None,
     offset: Annotated[int, typer.Option(min=0)] = 0,
     limit: Annotated[int, typer.Option(min=1, max=100)] = 1,
 ):
@@ -679,7 +743,17 @@ def triage_attempt_command(
             if replay is not None:
                 raise TraceProofError("A live policy cannot use a replay fixture")
             adapter = live_adapter(policy)
-        return triage_attempt(ctx.obj, repo_id, attempt_id, policy, adapter, key, offset, limit)
+        return triage_attempt(
+            ctx.obj,
+            repo_id,
+            attempt_id,
+            policy,
+            adapter,
+            key,
+            offset,
+            limit,
+            review_policy=review_policy,
+        )
 
     perform(operation)
 
@@ -815,5 +889,287 @@ def verify(ctx: typer.Context, snapshot_id: str):
         ctx.obj.require_initialized()
         manifest = ArtifactStore(ctx.obj.root).verify(snapshot_id)
         return {"snapshot_id": manifest.snapshot_id, "files": len(manifest.files), "valid": True}
+
+    perform(operation)
+
+
+@app.command("joern-java-discover")
+def joern_java_discover_command(
+    ctx: typer.Context, run_id: str, joern_home: Path, timeout: int = 180
+):
+    """Experimental bounded Spring/JDBC discovery; no qualified triage."""
+    from traceproof.joern import discover
+
+    perform(lambda: discover(ctx.obj, run_id, joern_home, timeout))
+
+
+@app.command("joern-csharp-discover")
+def joern_csharp_discover_command(
+    ctx: typer.Context, run_id: str, joern_home: Path, repair_dir: Path, timeout: int = 180
+):
+    """Experimental Lookup(name)/CommandText discovery using a trusted repair build."""
+    from traceproof.joern import discover
+
+    perform(lambda: discover(ctx.obj, run_id, joern_home, timeout, repair_dir=repair_dir))
+
+
+@app.command("joern-python-discover")
+def joern_python_discover_command(
+    ctx: typer.Context,
+    run_id: str,
+    joern_home: Path,
+    timeout: int = 180,
+    discovery_profile: str | None = None,
+):
+    """Experimental lookup(input)/system discovery; no qualified triage."""
+    from traceproof.joern import discover
+
+    perform(
+        lambda: discover(
+            ctx.obj,
+            run_id,
+            joern_home,
+            timeout,
+            language="python",
+            discovery_profile=discovery_profile,
+        )
+    )
+
+
+@app.command("joern-javascript-discover")
+def joern_javascript_discover_command(
+    ctx: typer.Context,
+    run_id: str,
+    joern_home: Path,
+    timeout: int = 180,
+    discovery_profile: str | None = None,
+):
+    """Experimental javascript lookup(input)/eval discovery; no qualified triage."""
+    from traceproof.joern import discover
+
+    perform(
+        lambda: discover(
+            ctx.obj,
+            run_id,
+            joern_home,
+            timeout,
+            language="javascript",
+            discovery_profile=discovery_profile,
+        )
+    )
+
+
+@app.command("joern-typescript-discover")
+def joern_typescript_discover_command(
+    ctx: typer.Context,
+    run_id: str,
+    joern_home: Path,
+    timeout: int = 180,
+    discovery_profile: str | None = None,
+):
+    """Experimental typescript lookup(input)/eval discovery; no qualified triage."""
+    from traceproof.joern import discover
+
+    perform(
+        lambda: discover(
+            ctx.obj,
+            run_id,
+            joern_home,
+            timeout,
+            language="typescript",
+            discovery_profile=discovery_profile,
+        )
+    )
+
+
+@app.command("joern-go-discover")
+def joern_go_discover_command(
+    ctx: typer.Context,
+    run_id: str,
+    joern_home: Path,
+    timeout: int = 180,
+    discovery_profile: str | None = None,
+):
+    """Experimental Go discovery with optional HTTP profile; no qualified triage."""
+    from traceproof.joern import discover
+
+    perform(
+        lambda: discover(
+            ctx.obj, run_id, joern_home, timeout, language="go", discovery_profile=discovery_profile
+        )
+    )
+
+
+@app.command("joern-rust-discover")
+def joern_rust_discover_command(
+    ctx: typer.Context,
+    run_id: str,
+    joern_home: Path,
+    rust_home: Path,
+    timeout: int = 180,
+    discovery_profile: str | None = None,
+):
+    """Experimental dependency-free Cargo discovery with optional environment profile."""
+    from traceproof.joern import discover
+
+    perform(
+        lambda: discover(
+            ctx.obj,
+            run_id,
+            joern_home,
+            timeout,
+            language="rust",
+            rust_home=rust_home,
+            discovery_profile=discovery_profile,
+        )
+    )
+
+
+@app.command("joern-c-discover")
+def joern_c_discover_command(
+    ctx: typer.Context,
+    run_id: str,
+    joern_home: Path,
+    timeout: int = 180,
+    discovery_profile: str | None = None,
+):
+    """Experimental c discovery with optional argv profile; no qualified triage."""
+    from traceproof.joern import discover
+
+    perform(
+        lambda: discover(
+            ctx.obj, run_id, joern_home, timeout, language="c", discovery_profile=discovery_profile
+        )
+    )
+
+
+@app.command("joern-cpp-discover")
+def joern_cpp_discover_command(
+    ctx: typer.Context,
+    run_id: str,
+    joern_home: Path,
+    timeout: int = 180,
+    discovery_profile: str | None = None,
+):
+    """Experimental cpp discovery with optional argv profile; no qualified triage."""
+    from traceproof.joern import discover
+
+    perform(
+        lambda: discover(
+            ctx.obj,
+            run_id,
+            joern_home,
+            timeout,
+            language="cpp",
+            discovery_profile=discovery_profile,
+        )
+    )
+
+
+@app.command("acquire-git")
+def acquire_git_command(
+    url: str,
+    revision: str,
+    output: Path,
+    repo_id: str,
+    owner: str,
+    classification: str,
+    allowed_host: Annotated[list[str], typer.Option(help="Explicit HTTPS host allowlist")],
+    timeout: Annotated[int, typer.Option(min=1, max=900)] = 300,
+    ca_bundle: Path | None = None,
+    proxy: str | None = None,
+    credential_file: Path | None = None,
+):
+    """Acquire one HTTPS Git revision as a local archive/CSV; does not scan."""
+    from traceproof.git_acquisition import acquire
+
+    perform(
+        lambda: acquire(
+            url,
+            revision,
+            allowed_host,
+            output,
+            repo_id,
+            owner,
+            classification,
+            timeout,
+            ca_bundle=ca_bundle,
+            proxy=proxy,
+            credential_file=credential_file,
+        )
+    )
+
+
+@app.command("acquire-git-csv")
+def acquire_git_csv_command(
+    manifest: Path,
+    output: Path,
+    allowed_host: Annotated[list[str], typer.Option(help="Operator-supplied HTTPS host allowlist")],
+    max_rows: Annotated[int, typer.Option(min=1, max=10)] = 10,
+    timeout: Annotated[int, typer.Option(min=1, max=3600)] = 900,
+    ca_bundle: Path | None = None,
+    proxy: str | None = None,
+    credential_file: Path | None = None,
+):
+    """Acquire a bounded repositories.csv batch; export archives.csv without scanning."""
+    from traceproof.git_batch import acquire_csv
+
+    def operation():
+        result = acquire_csv(
+            manifest,
+            output,
+            allowed_host,
+            max_rows,
+            timeout,
+            ca_bundle=ca_bundle,
+            proxy=proxy,
+            credential_file=credential_file,
+        )
+        if result["state"] != "acquired":
+            typer.echo(render_json(result))
+            raise typer.Exit(1)
+        return result
+
+    perform(operation)
+
+
+@app.command("acquire-gcs")
+def acquire_gcs_command(
+    bucket: str,
+    object_name: str,
+    generation: str,
+    sha256: str,
+    output: Path,
+    repo_id: str,
+    owner: str,
+    classification: str,
+    allowed_bucket: Annotated[list[str], typer.Option(help="Operator-approved bucket allowlist")],
+    use_adc: bool = False,
+    max_bytes: Annotated[int, typer.Option(min=1, max=1073741824)] = 104857600,
+    timeout: Annotated[int, typer.Option(min=1, max=900)] = 300,
+):
+    """Download one pinned GCS archive; emits archives.csv without scanning."""
+    from traceproof.gcs_acquisition import acquire_archive
+    from traceproof.gcs_reader import GCSReader
+
+    def operation():
+        reader = GCSReader(use_adc=use_adc, timeout=timeout)
+        try:
+            return acquire_archive(
+                reader,
+                bucket=bucket,
+                name=object_name,
+                generation=generation,
+                expected_sha256=sha256,
+                allowed_buckets=allowed_bucket,
+                output=output,
+                repo_id=repo_id,
+                owner=owner,
+                classification=classification,
+                max_bytes=max_bytes,
+                timeout=timeout,
+            )
+        finally:
+            reader.close()
 
     perform(operation)

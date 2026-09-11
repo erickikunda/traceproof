@@ -1,11 +1,106 @@
 # LLM-assisted vulnerability discovery platform
 
-**System design, version 0.2 — 9 September 2026**
-**Status:** Proposed architecture for a personal laptop POC and subsequent enterprise implementation on OpenShift. This is not an approved Wells Fargo architecture or a claim about its internal policies.
+**System design, version 0.3 — 11 September 2026**
+**Implementation checkpoint:** through Slice 120. This document separates the implemented laptop POC from the proposed enterprise architecture. It is not an approved Wells Fargo architecture.
 
-**Revision 0.2:** Adds the confirmed 50-repository ground-truth benchmark, repository report retrieval, dashboard-friendly exports, and a leadership walkthrough with use cases and diagrams. The companion [implementation plan](../plans/implementation-plan.md) describes delivery milestones. No benchmark execution is requested or performed at this stage.
+**Revision 0.3:** Records the Joern-first scanner strategy, bounded nine-language profiles, optional advisory policies, Ollama, separate Git acquisition and offline archive scanning, durable provenance, and local OpenShift preparation. PostgreSQL orchestration, Redis coordination, GCS, hosted API, bank OCP execution and fleet qualification remain future work. The [implementation plan](../plans/implementation-plan.md) governs delivery order; [progress](../development/progress.md) and slice records retain acceptance evidence. Section 0 is the current checkpoint; production mechanisms in later sections are design requirements unless explicitly marked implemented.
 
 ## 0. Leadership walkthrough
+
+### Current architecture and delivery status
+
+TraceProof is a Python CLI application with SQLite and local artifacts, bounded scanner execution, evidence gates, budgeted optional model advice, and immutable reports. **Redis is not a POC dependency.** The enterprise target remains PostgreSQL with isolated OpenShift jobs; local database locking does not implement distributed leases or fleet scheduling.
+
+| Area | Implemented and locally tested | Remaining acceptance |
+|---|---|---|
+| Scanner strategy | Explicit Joern route in scan-run/scan-import; CodeQL retained as POC/reference route | Broader rules, representative quality, tool approval; no automatic backend equivalence |
+| Languages | Bounded profiles for Python, Java, JavaScript, TypeScript, C#, Go, Rust, C and C++ | Complete language/framework coverage is not claimed; mixed repositories need explicit supported selections |
+| Intake | Local/PVC TAR/ZIP manifests; bounded public HTTPS Git acquisition; receipt-bound snapshots | Corporate transport qualification; GCS acquisition |
+| Evidence and AI | Deterministic provenance/context gates; explicit budgeted advisory policies; OpenAI, Anthropic and local Ollama options | Live bank gateway/model qualification and measured precision/recall; independent exploration/reproduction at target scope |
+| Reporting | Immutable exact report retrieval, history/comparison, HTML/Markdown/JSON/CSV and retained SARIF export | Hosted API, authenticated audience projections and enterprise dashboard integration |
+| Evaluation | Offline benchmark/scorecard machinery tested on fixtures | Authorized execution and adjudication of the supplied 50 repositories |
+| OpenShift preparation | Pinned Linux ARM64 images, restricted Docker tests, offline Job/ServiceAccount/NetworkPolicy manifests | Actual bank OCP dev execution, cluster architecture, SCC/storage/network/registry acceptance |
+| Scale | Bounded sequential local batches and local controls | PostgreSQL multiworker correctness, fleet recovery and measured 1,000 repositories/day |
+
+The existing CLI may retain CodeQL defaults for compatibility: select Joern explicitly. Scanner-neutral identity and result contracts are in place, but CodeQL prepared databases and Joern source/CPG execution still have distinct paths. Opengrep is an assessed potential supplement, not an integrated replacement or a required second scan. The bounded C# comparison missed cross-file positives; the accepted path uses the experimental repaired Joern frontend. This is a scope decision, not a general rating of either tool.
+
+### Current language and evidence scope
+
+Each row has bounded discovery and explicit advisory acceptance. “Accepted” means the tested profile works with retained evidence and conservative review outcomes; it does not mean a language is comprehensively scanned. See the [language assessment register](../plans/scanner-language-assessment.md) for fixtures and limitations.
+
+| Language | Selected Joern profile / weakness example | Principal limitation |
+|---|---|---|
+| Java / Spring | Default bounded GET/String-to-JDBC, CWE-89 | Limited framework sources, dependency semantics and runtime reachability |
+| Python / Flask | python-flask-system-v1, request args/form.get to system, CWE-78 | Limited aliases/API identity and guard semantics |
+| JavaScript / TypeScript / Express | express-request-eval-v1, request to eval, CWE-94 | Limited imports, module variants and framework binding |
+| C# / ASP.NET | Repaired default Lookup-to-CommandText, CWE-89 | Experimental frontend; bounded source mappings do not generalize to all HTTP inputs |
+| Go | go-http-shell-v1, HTTP form to shell, CWE-78 | Constructing a command does not prove execution or exposed routing |
+| Rust | rust-env-shell-v1, environment to shell, CWE-78 | Environment attacker control and broader Cargo/macros remain unproven |
+| C / C++ | c-family-argv-system-v1, argv to system, CWE-78 | API identity and broader C++ semantics; no broad memory-safety coverage |
+
+Language inventory can identify likely languages; it is not automatic comprehensive dispatch over every module. The mounted batch runner applies one explicit language/profile to its batch. Default Joern scanning is discovery-only with zero model calls. Explicit advisory policies validate native/query/SARIF/source provenance, source coordinates, endpoint syntax and retained context before budgeted advice. They support **needs_review** with unresolved claims, not automatic false-positive dismissal, confirmed exploitability or negative safety verdicts. Unsupported candidates remain visible. Supplying more CodeQL .ql/.qls queries expands candidate discovery, not the qualified evidence/triage scope; new policies require reviewed fixtures and gates.
+
+### Implemented swimlane and handoff
+
+```mermaid
+flowchart LR
+    subgraph Operator[Operator-controlled inputs]
+        G[repositories.csv: HTTPS URLs]
+        P[archives.csv and TAR/ZIP on PVC]
+    end
+    subgraph Acquisition[Separate networked acquisition container]
+        F[Allowlisted Git fetch and raw blob export]
+        H[Terminal batch summary and receipt-pinned archives.csv]
+    end
+    subgraph Offline[Offline scanner container]
+        I[Validate archive and receipt; capture snapshot]
+        S[Explicit Joern profile and evidence gates]
+        R[Materialize exact report]
+        D[(Disposable SQLite and artifacts)]
+    end
+    subgraph Results[Operator-owned report volume]
+        O[Per-row HTML/JSON and batch status]
+    end
+    G --> F --> H
+    H -->|Read-only handoff mount| I
+    P --> I --> S --> R --> O
+    I --> D
+    S --> D
+```
+
+The acquisition image has Git and CA certificates; the offline scanner images carry their pinned language toolchains. A real public Git acquisition-to-offline-C-scan handoff passed locally in Slice 115 with zero model calls. No-alert output still has incomplete coverage. The scanner smoke path has networking denied and receives no Git credentials or model keys. Model-enabled CLI workflows are separate from this offline smoke path; a production broker/gateway boundary remains to be implemented.
+
+### Sequence: public Git batch to exact report
+
+```mermaid
+sequenceDiagram
+    actor O as Operator
+    participant A as Acquisition CLI/container
+    participant G as Allowlisted Git server
+    participant H as Handoff PVC
+    participant S as Offline scanner
+    participant R as Report PVC
+    O->>A: repositories.csv, approved hosts, limits
+    loop Each bounded row
+        A->>G: HTTPS fetch requested ref/commit
+        G-->>A: Git objects
+        A->>A: Resolve commit; validate and export raw blobs
+        A->>H: ZIP, file inventory and hashed receipt
+    end
+    A->>H: Terminal acquisition-batch.json and successful archives.csv
+    A-->>O: Complete or incomplete acquisition status
+    O->>S: Start only after terminal handoff; mount input read-only
+    S->>H: Read CSV, archive and pinned receipt
+    S->>S: Admit provenance and verify captured file hashes
+    loop Each admitted row
+        S->>S: Run selected profile; retain failures and coverage gaps
+        S->>R: Exact report HTML/JSON and row status
+    end
+    S-->>O: Exported or incomplete batch result
+    O->>R: Read/share retained reports without rescanning
+```
+
+Acquisition and scan completion are different outcomes. archives.csv contains successful acquisitions only; retain acquisition-batch.json so rejected or unstarted rows cannot disappear from portfolio accounting. Checkpoints use atomic file replacement, not a multi-file transaction or an automatic restart guarantee. A killed job can leave a running summary. Local batches are capped at ten rows and execute sequentially; this is not the production fleet scheduler.
 
 ### Business outcome and reading guide
 
@@ -13,7 +108,7 @@ The service turns a portfolio of source-code repositories into prioritized, evid
 
 The main business decisions are how deeply to scan, how much to spend, and which findings need action. Security engineers own the evidence policy; application owners receive readable reports; platform teams operate a bounded, auditable service. An AI claim cannot publish itself as a confirmed vulnerability.
 
-For a leadership review, read this walkthrough, the recommendation in §1, the capacity assumptions in §12, and the rollout decisions in §18. Engineering details follow those concepts. Report contracts are in §20; milestone sequencing is in the companion implementation plan. Diagrams below describe the proposed system, not components already implemented.
+For a leadership review, read this walkthrough, the recommendation in §1, the capacity assumptions in §12, and the rollout decisions in §18. Engineering details follow those concepts. Report contracts are in §20; milestone sequencing is in the companion implementation plan. The diagrams following the use-case table describe the enterprise target; the current POC handoff is shown above. API authorization, controller services and reproduction lanes in those target diagrams are not deployed components.
 
 ### Main use cases
 
@@ -28,7 +123,7 @@ For a leadership review, read this walkthrough, the recommendation in §1, the c
 | UC-07 | **Benchmark detection quality** — evaluation owner | Later, run frozen configurations against the provided 50-repository benchmark and compare to known vulnerabilities | Measured detection quality, regressions, misses and cost before wider rollout |
 | UC-08 | **Control and recover scans** — operator or platform team | Pause, cancel, resume, adjust authorized budgets, inspect blockers and recover failed work | Predictable resource use and no silent loss of work |
 
-UC-01 through UC-04 form the first usable product. UC-05 and UC-08 have minimal support from the start and deepen during implementation. UC-06 begins with exports rather than a custom dashboard. UC-07 is a planned implementation milestone; the benchmark repositories and labels do not need to be supplied now.
+UC-01 through UC-04 form the first usable product. UC-05 and UC-08 have minimal support from the start and deepen during implementation. UC-06 begins with exports rather than a custom dashboard. UC-07 has local evaluation/reporting machinery; execution against the actual 50-repository benchmark remains pending.
 
 ### Architecture swimlane: who does what
 
@@ -51,7 +146,7 @@ flowchart LR
     subgraph L3[Isolated analysis]
         direction TB
         D[Capture source snapshot]
-        E[Parse code and run CodeQL]
+        E[Parse code and run selected scanner]
         V[Optional isolated reproduction]
     end
     subgraph L4[AI investigation through approved gateway]
@@ -279,7 +374,7 @@ Show portfolio scan freshness, supported coverage, confirmed findings by severit
 
 ## 1. Recommendation
 
-Build a **Python modular application with a durable PostgreSQL workflow, isolated analysis jobs, CodeQL for semantic analysis, and narrowly scoped LLM investigations**. Use Redis for expendable coordination accelerators, not as the authoritative work queue. Store large immutable artifacts in an approved artifact store backed initially by a filesystem/PVC, with GCS as an optional adapter. Keep SQLite for single-machine development and exercise PostgreSQL concurrency early.
+Evolve the implemented **Python modular application toward a durable PostgreSQL workflow, isolated analysis jobs, interchangeable scanner contracts with Joern as the primary implementation direction, and narrowly scoped LLM investigations**. CodeQL remains a permitted POC/reference backend; production delivery must not depend on obtaining its license. Use Redis optionally for expendable coordination accelerators, not as the authoritative work queue. Store large immutable artifacts in an approved artifact store backed initially by a filesystem/PVC, with GCS as an optional adapter. Keep SQLite for single-machine development and exercise PostgreSQL concurrency early.
 
 Preserve Foundry’s distinct detection, triage, validation, coverage, and reporting responsibilities. Implement those responsibilities as explicit stages and typed contracts; they do not require eight permanent conversational agents for every repository.
 
@@ -287,7 +382,7 @@ The key improvement is a reusable **evidence graph**: symbols, entry points, dat
 
 The 1,000-repositories-per-day target should mean **1,000 successful evaluations of a declared scan profile per rolling day**, with distinct reporting for full scans, incremental scans, unchanged snapshots reused, partial scans, and deep investigations. It cannot credibly mean exhaustive vulnerability discovery or live reproduction for 1,000 arbitrarily large applications each day.
 
-The recommended operating model is:
+The target enterprise operating model is (not the current default discovery-only POC):
 
 1. A daily standard profile with broad deterministic analysis, attack-surface inventory, targeted LLM triage, and bounded independent exploration.
 2. Incremental analysis backed by conservative invalidation and scheduled full refreshes.
@@ -339,9 +434,9 @@ This is a Foundry-derived architecture, **not a declaration of unmodified confor
 | Language | Python preferred for orchestration and application logic |
 | Production | OpenShift; PostgreSQL and Redis available |
 | Development | SQLite; personal laptop first |
-| Analysis | CodeQL CLI available |
+| Analysis | Joern-first implementation; CodeQL available for POC/research pending production entitlement; Opengrep optional supplement |
 | Models | Bank-approved OpenAI and Anthropic cybersecurity-capable models |
-| Intake | CSV repository links and metadata; local TAR/ZIP on mounted PVC; archives in GCS |
+| Intake | repositories.csv with Git URLs; archives.csv with mounted TAR/ZIP paths and metadata; GCS archives remain required future input |
 | Goals | Improve recall, reachability analysis and true positives; reduce false positives, latency, tokens and cost |
 | Scale | Approximately 1,000 repositories daily |
 | Benchmark | A provided set of 50 repositories with known vulnerabilities; integrate benchmark reporting during implementation |
@@ -349,7 +444,7 @@ This is a Foundry-derived architecture, **not a declaration of unmodified confor
 
 ### Working assumptions
 
-Source-only evaluation is the default. Testbeds exist only when explicitly provisioned. Initial language targets are **Python, Java/Spring, and JavaScript/TypeScript**, subject to the actual portfolio; Python implementation does not imply Python-only scanning. The first laptop vertical slice supports Python, followed by Java to test the harder enterprise framework and build cases.
+Source-only evaluation is the default. Testbeds exist only when explicitly provisioned. Required languages are **Python, Java/Spring, C#/ASP.NET, JavaScript, TypeScript, Go, Rust, C and C++**. Current accepted profiles and limits are listed in §0; language breadth took priority over additional CLI refinement.
 
 Assume restricted outbound access, internal package mirrors, enterprise identity, audited service accounts, software approval, source-code classification, and change control. These are design accommodations, not assertions of specific Wells Fargo rules.
 
@@ -357,13 +452,15 @@ An approved artifact storage capability is necessary in addition to the named da
 
 ### Scope
 
-Detect source-level vulnerabilities, configuration weaknesses visible in supplied source, exposed secrets, and dependency risk. Prioritize injection, authorization/tenant isolation, SSRF, path traversal, deserialization, sensitive-data exposure, and security-relevant cryptography. Add memory-safety analysis when supported languages and resources justify it.
+The target scope includes source-level vulnerabilities, configuration weaknesses visible in supplied source, exposed secrets, and dependency risk. Current implemented detection is bounded by the selected scanner profiles; dependency and secret-scanning adapters are not implied by this target. Prioritize injection, authorization/tenant isolation, SSRF, path traversal, deserialization, sensitive-data exposure, and security-relevant cryptography. Add memory-safety analysis when supported languages and resources justify it.
 
 Keep dependency presence, dependency vulnerability matching, and application exploitability distinct. CodeQL alone is not a complete software-composition or secret-scanning product. Add approved deterministic adapters and a mirrored advisory dataset. Unavailable feeds or scanners create explicit coverage gaps.
 
 Exclude production exploitation, autonomous patch deployment, internet reconnaissance, and compliance certification. Source-based deployment reasoning uses supplied manifests and attested metadata; it is not a live infrastructure assessment.
 
 ## 4. Architecture
+
+**Enterprise target.** This diagram includes services not implemented in the local POC; see §0 for the running architecture.
 
 ```mermaid
 flowchart TD
@@ -375,7 +472,7 @@ flowchart TD
     C --> I[Isolated intake and archive inspection]
     SRC[Git / mounted PVC / GCS] --> I
     I --> A[Immutable artifact store]
-    C --> S[Parser and CodeQL jobs]
+    C --> S[Parser and selected scanner jobs]
     A --> S
     S --> E[Evidence index and coverage records]
     E --> DB
@@ -398,15 +495,15 @@ Arrows describe data flow, not unrestricted network access. Source-executing job
 
 | Component | Responsibility | Implementation choice |
 |---|---|---|
-| API/CLI | Admission, imports, status, operator controls, access enforcement | FastAPI, Pydantic, Typer; framework choices are replaceable |
+| API/CLI | Admission, imports, status, operator controls, access enforcement | Typer/Pydantic CLI implemented; FastAPI is a proposed hosted interface |
 | Controller | Durable state machine, leases, scheduling, budgets, job reconciliation | Python service; lifecycle independent of model calls |
 | Intake workers | Fetch, validate, unpack and fingerprint source | Isolated jobs, source-specific adapters |
-| Static workers | Parse, extract, run approved queries, emit evidence | Python wrappers around CodeQL and language tooling |
+| Static workers | Parse, extract, run approved queries, emit evidence | Python wrappers around Joern, CodeQL and language tooling |
 | Investigation workers | Context assembly, bounded detection/triage sessions | Small explicit tool loop and schema validation |
 | Evidence gate | Validate references and required claims; authorize verdict transition | Deterministic policy code plus recorded independent assessment |
 | Validation plane | Execute authorized reproductions in disposable environments | Separate jobs/testbeds and network boundary |
 | Reporter | Render evidence-backed reports and reconcile publication | Templates first; optional wording assistance |
-| Persistence | Runs, tasks, findings, budgets, provenance, coverage | SQLAlchemy/Alembic; PostgreSQL production, SQLite local |
+| Persistence | Runs, tasks, findings, budgets, provenance, coverage | SQLAlchemy with repository migrations; SQLite local, PostgreSQL production target |
 
 Keep a single repository and shared versioned package, with separate executable processes/images for trust boundaries and resource needs. Avoid adopting a distributed agent framework, graph database, vector database or extra message broker before measurements justify it. Redis is already enough for optional signals; PostgreSQL owns correctness.
 
@@ -416,26 +513,28 @@ A conversational operator interface can be added later as a read-oriented featur
 
 ### Manifest contract
 
-Each CSV row becomes a validated import item. Suggested columns:
+The implemented convention is **repositories.csv** for networked Git acquisition and **archives.csv** for archive intake. Names do not trigger work: explicit commands select the operation. Mounted smoke runners also accept legacy input.csv, but reject ambiguous names or a Git manifest in the offline input folder.
+
+Git acquisition requires exactly these columns:
 
 ```csv
-repo_id,source_type,source_uri,revision,sha256,owner,application_id,classification,criticality,exposure,scan_profile,credential_ref,metadata_ref
-sample-api,git,https://git.example.invalid/team/sample-api.git,refs/heads/main,,team-a,app-001,synthetic,high,unknown,standard,git-reader,
-sample-batch,pvc,/imports/sample-batch.tar.gz,,EXPECTED_SHA256,team-b,app-002,synthetic,medium,internal,standard,,
-sample-web,gcs,gs://approved-input/sample-web.zip#GENERATION,,EXPECTED_SHA256,team-c,app-003,synthetic,high,unknown,standard,gcs-reader,
+repo_id,url,revision,owner,classification
+sample-api,https://git.example.invalid/team/sample-api.git,refs/heads/main,team-a,internal
 ```
 
-These are illustrative values, not usable credentials or real systems. `metadata_ref` points to a schema-validated sidecar for complex fields: languages, module roots, approved build profile, source scope, testbed reference, dependency manifests, goals, and deployment context. Repository-provided metadata is untrusted and cannot grant additional permissions.
+Use `acquire-git` for one source or `acquire-git-csv` for a bounded batch. Hosts are allowlisted by the operator, never by repository metadata. The current path supports credential-free HTTPS, full branch/tag references or 40-character commit IDs, with redirects, inherited credentials/configuration and interactive prompting disabled. Slice 116 adds explicit operator --ca-bundle and credential-free --proxy options; Slice 117 adds exact-repository Basic/token credentials via an operator-mounted file; Slice 118 validates the packaged smart-HTTP and HTTP CONNECT paths locally. End-to-end corporate transport qualification remains pending.
 
-Admission resolves branch/tag references to commit IDs and records both requested and resolved revision. For GCS, normalize bucket, object, and generation into separate fields; `#GENERATION` is only the manifest representation. For archives, calculate the cryptographic digest, verify a provided expected digest, and create an immutable internal snapshot ID. Without upstream commit provenance, do not invent a Git identity.
+Archive CSV uses the existing intake fields, including repo_id, source_type=pvc, source_uri, owner, classification and optional expected sha256. Operator-staged TAR/ZIP needs no Git access. See the [PVC intake guide](../guides/pvc-archive-intake.md), [Git batch guide](../guides/git-batch-intake.md) and [acquisition container guide](../guides/acquisition-container-guide.md) for executable commands and complete examples.
 
-Require stable `repo_id`, ownership and classification before production scheduling. Reject embedded passwords/tokens in URLs. Resolve credential references through a server-side allowlist scoped to the importer; a CSV cannot choose arbitrary secrets or privileged build commands.
+Generated Git handoffs add acquisition_receipt and acquisition_sha256 alongside the archive digest. Intake validates the pinned receipt, persists its content in existing import-item JSON, and compares its file inventory with the captured snapshot. Reports expose admitted versus snapshot_bound provenance, requested ref, resolved commit and archive identity. This establishes content consistency; an operator-supplied receipt is **not independent authentication of remote Git history**. Plain archives have no invented commit identity.
 
-Imports are asynchronous and return row-level accepted/rejected results. Repeated submission of the same idempotency key returns the same import. Multiple sources can represent one repository only after explicit identity reconciliation.
+Git acquisition exports raw tree blobs without checkout/build/filter execution. Submodules, symlinks and LFS pointers cause rejection rather than silent omission. Per-repository limits include 2,000 files, 5 MiB per file and 100 MiB total source; temporary workspace monitoring is a soft limit and requires container/storage quotas for hard isolation. Inputs with unsupported content produce an explicit failure.
+
+The later enterprise manifest may add application ownership, exposure, build profiles, GCS generation and approved credential references. These are schema evolution proposals, not accepted columns in repositories.csv today. Metadata must never grant permissions or choose executable commands. Slice 119 adds an internal generation/digest-checked GCS archive handoff contract tested with a local reader; Slice 120 adds an optional Google SDK reader and acquire-gcs CLI with explicit ADC opt-in and mocked boundary tests. Durable cloud provenance, image packaging and real cloud acceptance remain pending. Local intake has durable idempotency and row status; production asynchronous admission and authorization remain future work.
 
 ### Intake defenses and reproducibility
 
-Allowlist Git hosts, protocols, GCS buckets and PVC roots. Prevent SSRF and redirects to unapproved destinations, including link-local metadata endpoints. Pin Git transport behavior; disable hooks, recursive submodule retrieval, LFS downloads and external filters unless separately configured. Submodule/LFS omissions become provenance and coverage gaps.
+Allowlist Git hosts, protocols, GCS buckets and PVC roots. Prevent SSRF and redirects to unapproved destinations, including link-local metadata endpoints. Pin Git transport behavior; disable hooks, recursive submodule retrieval, LFS downloads and external filters unless separately configured. Any future opt-in submodule/LFS support must retain provenance and coverage gaps; the current Git adapter rejects these inputs.
 
 Unpack archives in a fresh directory with limits on compressed bytes, expanded bytes, file count, nesting, path length and compression ratio. Reject traversal, absolute paths, device files, escaping symlinks/hardlinks, duplicate normalized paths, and ambiguous root layouts. Handle case and Unicode collisions explicitly. Fail encrypted or unsupported archives with an actionable reason. Prefer one source root per archive; bundles need an explicit root manifest.
 
@@ -488,11 +587,11 @@ Track four independent reachability questions: is a package present, is the affe
 
 ### Deterministic structure
 
-Use parsers for complete file/function inventory and language-aware tools for binding resolution. Tree-sitter-style syntax alone cannot reliably resolve overloaded methods, virtual dispatch or imports. Use CodeQL databases and reviewed queries for semantic flow where supported. Import manageable paths and summaries rather than copying every internal CodeQL relation into PostgreSQL.
+Use parsers for complete file/function inventory and language-aware tools for binding resolution. Tree-sitter-style syntax alone cannot reliably resolve overloaded methods, virtual dispatch or imports. Use retained Joern CPG/query results or CodeQL database paths where the selected profile is supported. Import bounded paths and summaries rather than copying an entire scanner graph into PostgreSQL. A syntactically valid path alone does not prove runtime identity or attacker reachability.
 
 Maintain direct-call adjacency and reverse adjacency in an indexed representation. For very large graphs, use immutable per-module graph artifacts loaded by graph-query workers; PostgreSQL stores manifests, joins, entry points and finding-relevant subgraphs. Do not require loading a million-node graph into an API process or recursively joining it without bounds.
 
-Graph queries have explicit node, depth and wall-time budgets and return a `truncated` flag. Global CodeQL paths can guide a narrow slice without imposing the same short depth on the underlying analysis. Truncation triggers a larger-budget task or an uncertainty marker.
+Graph queries have explicit node, depth and wall-time budgets and return a `truncated` flag. Retained scanner paths can guide a narrow slice without imposing the same short depth on the underlying analysis. Truncation triggers a larger-budget task or an uncertainty marker.
 
 ### Enterprise framework models are a high-value investment
 
@@ -506,10 +605,10 @@ An LLM may propose a missing model. It cannot promote a sanitizer/barrier into t
 
 | Lane | Finds | Recall protection |
 |---|---|---|
-| CodeQL and structural rules | Modeled data-flow and API misuse classes | Broad default checks; targeted broader suites; diagnostics retained |
+| Selected scanner and structural rules | Modeled data-flow and API misuse classes | Broad default checks; targeted broader suites; diagnostics retained |
 | Dependency and secret adapters | Known component risk and exposed material | Scan manifests/lockfiles and source; classify uncertainty |
 | Targeted LLM rules | Cases difficult to express mechanically | Rule applicability and executed/omitted coverage recorded |
-| Independent exploration | Authorization flaws, multi-step business logic, novel misuse | Receives goals and graph context even when CodeQL reports nothing |
+| Independent exploration | Authorization flaws, multi-step business logic, novel misuse | Receives goals and graph context even when the selected scanner reports nothing |
 | Variant search | Repeated instances of confirmed patterns | Structural search first; evidence gate for every occurrence |
 
 Start with a **15% reservation of the investigation token budget for exploration**, adjustable only through versioned profile policy. Sample lower-ranked surfaces as well as high-risk ones; record sampling probabilities so evaluation can estimate selection bias. This percentage is a proposed experiment, not an established optimum.
@@ -545,7 +644,7 @@ Presence-based rules use class-specific gates. A likely token pattern is a secre
 ### Triage procedure
 
 1. Deduplicate without discarding distinct occurrences and bind evidence to the source snapshot.
-2. Assemble the relevant source, callers, callees, guards, policy facts and CodeQL trace in the first request.
+2. Assemble the relevant source, callers, callees, guards, policy facts and scanner trace in the first request.
 3. Investigate the claim and explicitly search for a disqualifying control or alternative explanation.
 4. Fetch missing context through bounded read tools; missing information remains unknown.
 5. Run structural and class-specific gate checks.
@@ -566,7 +665,17 @@ Publish confirmed findings to developer-facing outputs. Keep a separate access-c
 
 Suppressions require owner, reason, scope, expiry, source/context validity and review history. A risk acceptance does not mean false positive. Reopen on material code, dependency, control or environment changes.
 
-## 9. CodeQL integration and build isolation
+## 9. Scanner integration and build isolation
+
+### Joern-first execution and qualification
+
+The main pipeline explicitly routes Joern source snapshots through pinned frontend/query tooling into durable attempts, normalized candidates, evidence bundles and reports. Scanner identity, query/profile versions and source identity participate in provenance and reuse. Do not reuse or compare results as equivalent merely because two engines emit SARIF or share a CWE. The CodeQL prepared-input registry remains separate; its database preparation interface is not a universal Joern frontend.
+
+Joern C# uses a bounded repaired frontend with source-location and binding acceptance fixtures. Rust uses a pinned Cargo-based toolchain and a separate Linux image. General, C# and Rust offline smoke images have distinct supported profile inventories. C/C++ profiles cover argv-to-system discovery, not broad memory-safety analysis. Changes to frontend, query, parser or evidence policy require scoped requalification and retained version identity. The [assessment register](../plans/scanner-language-assessment.md) is the current evidence record.
+
+No backend is automatically promoted to replace another's reachability or triage evidence. Opengrep may later contribute complementary candidates with its own provenance and coverage; it is not wired into the production path. License and dependency approval for all shipped artifacts remains an enterprise gate; this architecture does not claim a license-risk-free toolchain.
+
+### Retained CodeQL reference path
 
 The CodeQL database is a separate analysis artifact; it is not the application PostgreSQL database. Pin CLI/extractor versions, query packs, model packs, build image, build profile, dependency resolution and query configuration. Record them in each result manifest.
 
@@ -584,7 +693,7 @@ Confirm the bank’s license permits its private-repository and archive workflow
 
 ## 10. Incremental analysis and cache correctness
 
-Cache at several layers: fetched source, parsed files, dependency graph, CodeQL database/results, context bundles, investigation results, and rendered reports. Keep shared-library caches inside the same approved security domain; no cross-domain source deduplication or model-answer reuse by default.
+Cache at several layers: fetched source, parsed files, dependency graph, scanner-specific graph/database/results, context bundles, investigation results, and rendered reports. Keep shared-library caches inside the same approved security domain; no cross-domain source deduplication or model-answer reuse by default.
 
 A result key includes all material inputs:
 
@@ -612,11 +721,9 @@ The model registry contains approved endpoint, immutable model revision where av
 
 Use configurable roles such as `investigation_primary`, `exploration_primary`, and `independent_reviewer`. Do not deploy with a moving `latest` alias. If the strongest permitted model is unaffordable for a task, defer the task or use an evaluated alternative with a visible quality profile.
 
-As of this document’s research date, OpenAI’s official cyber guidance describes Daybreak Blue for general defensive work and separately approved Daybreak Red specialist access. These are access offerings, not an assurance of API availability in the bank. Resolve provisioned model IDs and product surfaces with the enterprise gateway. [OpenAI Models and Trusted Access](https://learn.chatgpt.com/docs/cyber-safety).
+Implemented provider options include OpenAI, Anthropic and **Ollama for local POC testing**, plus replay-based validation. Local-model support does not qualify model accuracy or authorize bank source on a personal laptop. Select approved explicit endpoint/model configurations; provisioned cybersecurity model IDs, access, retention and quotas must be established with the bank gateway team. No particular “latest” model is assumed available, and no live bank-provider qualification has been performed.
 
-For Anthropic, do not assume the most capable cyber model inherits an existing zero-retention agreement. Current covered-model guidance describes 30-day retention for designated models and exceptions for some notified eligible organizations. Confirm the exact model, platform and contract. [Anthropic covered-model data retention](https://privacy.claude.com/en/articles/15425996-data-retention-practices-for-covered-models).
-
-OpenAI likewise documents endpoint/model-specific retention controls and approval requirements. `store=false` alone is not a universal zero-retention guarantee; provider caching and other features may retain application state. Enable only features allowed by the bank’s approved configuration. [OpenAI data controls](https://developers.openai.com/api/docs/guides/your-data).
+Do not silently fall back between providers or models. Validate usage accounting and structured responses per adapter. Keep secrets out of artifacts and command examples. Endpoint availability and contractual data handling are deployment decisions, not properties inferred from provider names. Offline container smoke runs intentionally make zero model calls.
 
 ### Request efficiency
 
@@ -684,13 +791,13 @@ For an illustrative blended input price `Pi` and output price `Po` per million t
 
 For arithmetic only, `Pi=$5`, `Po=$25` gives **$650/day or $0.65/repository**. At ten times the calls, it becomes $6,500/day. These are placeholder rates, not OpenAI or Anthropic quotes. Real cost uses each model’s contract, cache classes, reasoning accounting and retry usage.
 
-Overall daily cost also includes CodeQL entitlement, compute, storage, GCS retrieval/egress, observability and reviewer time. The product should report cost per scan **and per human-confirmed useful finding**.
+Overall daily cost also includes scanner licensing where applicable, compute, storage, GCS retrieval/egress, observability and reviewer time. The product should report cost per scan **and per human-confirmed useful finding**.
 
 ### Storage, ingress and validation
 
 At an assumed 500 MB compressed input per repository, fresh intake is 500 GB/day. Over 20 hours that is about 6.9 MB/s on average before bursts, protocol overhead and retries. Archive retrieval and network bandwidth require separate validation.
 
-At an assumed 2 GB of retained analysis artifacts per fresh scan, seven days creates roughly 14 TB before replication. This is why artifact retention and reuse matter. Keep compact findings and provenance longer than rebuildable CodeQL databases, subject to approved retention; preserve source/evidence needed for active findings or legal holds.
+At an assumed 2 GB of retained analysis artifacts per fresh scan, seven days creates roughly 14 TB before replication. This is why artifact retention and reuse matter. Keep compact findings and provenance longer than rebuildable scanner graphs/databases, subject to approved retention; preserve source/evidence needed for active findings or legal holds.
 
 If 100 findings/day require 10-minute validation attempts at 65% utilization over 20 hours, two testbed slots are needed for one attempt each; three attempts each need four slots. Add provisioning/reset time and target dependencies. Runtime testing must not block the standard scan pool.
 
@@ -701,6 +808,8 @@ Use weighted fair queues by security domain, owner, priority and size class. Res
 Backpressure should limit admission when artifact storage, database latency or downstream triage capacity is exhausted. Candidate explosions are retained and marked as backlog; they are not silently truncated to meet throughput. Display the resulting partial status and requested extra budget.
 
 ## 13. Durable state, scheduling and failure recovery
+
+**Production target below.** The POC uses SQLite, local worker exclusion, bounded sequential execution and durable artifacts. PostgreSQL leases/fencing, distributed reservations, Redis coordination and outbox recovery at fleet scale are not qualified implementations.
 
 ### Data model
 
@@ -769,7 +878,17 @@ Separate transient provider outages from failed investigation attempts so a long
 
 ### Deployment shape
 
-Use Deployments for the API, controller, investigation workers and publisher; Jobs for intake, CodeQL/build and validation isolation. A startup configuration selects local process/container runners for development and OpenShift runners for production. Use the same task and artifact contracts.
+**Current preparation:** Docker Desktop is sufficient for laptop validation; installing OpenShift locally is optional. OCP dev execution is a hard POC acceptance gate, deferred by user decision until functional POC completion. It has not occurred. RHCOS is the node OS; application images use pinned compatible Linux userland/toolchains, not a requirement to build an RHCOS application image.
+
+The current offline bundle emits a Job, ServiceAccount and NetworkPolicy, with no service-account token automount, read-only root, dropped capabilities, no privilege escalation, seccomp RuntimeDefault, read-only input PVC, writable report PVC and bounded scratch/resource settings. UID/fsGroup are left to the cluster SCC. Restricted Docker validation uses an arbitrary non-root UID and denied networking. Manifest generation and Docker checks do not prove SCC admission or cluster NetworkPolicy enforcement; policies are additive.
+
+Three pinned Linux ARM64 offline image variants cover general, C# and Rust profiles. A separate Git/CA acquisition image performs networked acquisition and hands immutable inputs to the scanner through a shared mount path. Operator-supplied archives can bypass acquisition. Image digests and inventories live in containers/ocp-smoke-images.json and containers/git-acquisition-image.json; do not assume every image includes the newest checkout. Build the application wheel before rebuilding images and requalify changed artifacts. Bank CPU architecture, approved registry/base images, SBOM, storage access modes, quotas and private network configuration remain acceptance work.
+
+The smoke runner's SQLite/artifacts are disposable scratch; exported reports survive on the report PVC. This is not the production persistent report service or restartable distributed queue. Reports can be partial while successfully exported; operational success must not become a clean security verdict.
+
+**Target service deployment:**
+
+Use Deployments for the API, controller, investigation workers and publisher; Jobs for acquisition, scanner/build and validation isolation. A startup configuration selects local process/container runners for development and OpenShift runners for production. Use the same task and artifact contracts.
 
 Use bank-approved base images, dependency lockfiles, signed immutable image digests and an internal registry. Prepackage toolchains and approved query/model packs. No runtime `pip install`, arbitrary query downloads or repository-selected container images in production.
 
@@ -839,7 +958,7 @@ Split by repository/family, not random snippets, to reduce leakage. Hold out pro
 
 Choose the development/holdout split after inspecting the 50 repositories' family relationships and language distribution. Do not invent a fixed split that leaves key categories unrepresented. Track all tuning exposure. If the corpus is too small for a stable holdout, use grouped cross-validation for development and disclose the limitation; confidence intervals should account for correlation within repositories rather than treating every finding as independent.
 
-Run ablations: CodeQL baseline; baseline plus enterprise models; plus LLM triage; plus exploration; plus independent review. Compare at both equal cost and equal coverage. Count a LLM-suppressed real CodeQL alert as a pipeline miss. Measure marginal true positives per additional token for each stage.
+Run ablations per supported engine/profile: Joern deterministic baseline; CodeQL reference where entitled; baseline plus enterprise models; plus LLM triage; plus exploration; plus independent review. Compare at both equal cost and equal coverage. Count a LLM-suppressed real scanner alert as a pipeline miss. Measure marginal true positives per additional token for each stage.
 
 ### Proposed acceptance gates
 
@@ -847,7 +966,7 @@ These are initial engineering targets to ratify after corpus construction:
 
 - Every published finding has valid snapshot-bound evidence and a complete provenance chain; every reproduced flag has independent runtime evidence.
 - Published precision has a 95% confidence lower bound of at least 90% on a representative adjudicated sample, with a 95% point-estimate aspiration. A tiny handpicked sample does not qualify.
-- End-to-end recall does not materially regress against the configured CodeQL baseline, and improves on a declared business-logic/framework test subset. Set the numerical improvement after measuring the baseline; do not promise universal recall.
+- End-to-end recall does not materially regress against the declared deterministic scanner baseline, and improves on a declared business-logic/framework test subset. Set the numerical improvement after measuring the baseline; do not promise universal recall.
 - Zero silent clean scans in fixtures with unsupported languages, parse errors, failed extraction or deliberately omitted modules.
 - Repeated unchanged scans create zero duplicate findings/issues; a changed guard invalidates prior suppressions as expected.
 - Kill, network-partition and provider-timeout tests demonstrate recovery, fencing and conservative spend accounting.
@@ -858,24 +977,9 @@ Keep a release scorecard per language, framework and weakness class. A new model
 
 ## 16. Maintainability and implementation structure
 
-Recommended package boundaries:
+The implemented package is **src/traceproof/**, a modular application rather than separate microservices. Key boundaries include intake/git_acquisition/git_batch/acquisition_provenance; pipeline/joern_pipeline/scanning/scanner; language-specific parsers and claim gates; bundles/triage/scan_advisory; persistence/artifacts; reports/comparison/evaluation; and the Typer CLI. Query assets live with the application; fixture and native validation scripts record scoped acceptance. Container runners and OpenShift manifests are separate deployment assets.
 
-```text
-src/discovery/
-  domain/          # states, evidence, finding identity, coverage and budgets
-  workflows/       # stage transitions, retry decisions and completion rules
-  ingestion/       # CSV, Git, PVC archive and GCS adapters
-  analysis/        # language adapters, CodeQL, dependencies and secrets
-  evidence/        # symbol/graph queries and context assembly
-  investigation/   # detector, triager, verifier contracts and bounded sessions
-  integrations/    # providers, artifacts, identity and report destinations
-  persistence/     # SQL models, migrations and database-specific claiming
-  runners/         # laptop containers/processes and OpenShift jobs
-  api/             # API and CLI
-rules/             # versioned rules, framework models and fixtures
-evals/             # labeled corpus manifests, ablations and scorecards
-deploy/            # deployment templates and environment overlays
-```
+Keep these boundaries explicit as the code grows. A generic backend contract must not hide scanner-specific preparation, limitations or evidence strength. Future hosted API and distributed controllers should call the same domain services rather than duplicate CLI logic. Do not present a proposed directory layout as implemented code.
 
 Domain logic depends on protocols such as `SourceProvider`, `ArtifactStore`, `AnalysisRunner`, `EvidenceReader`, `ModelClient` and `FindingPublisher`. Version evidence schemas and reject incompatible results rather than silently discarding fields. Validate adapters with shared contract tests.
 
@@ -889,52 +993,28 @@ Operational ownership should be explicit: AppSec owns evidence policy and detect
 
 The laptop phase uses public or synthetic source. This design does not assume permission to place bank code, metadata or credentials on a personal machine.
 
-### Phase 0 — Prove prerequisites
+### Delivered foundation
 
-Inventory laptop CPU architecture, RAM, disk and container runtime; verify the selected CodeQL distribution/extractor runs there. If Linux/x86 tooling requires emulation on an ARM laptop, benchmark and document the limitation rather than extrapolating its timings to OpenShift. Select two small public/synthetic fixtures with known vulnerable/fixed pairs.
+The original Python/CodeQL vertical slice has evolved into scanner-neutral durable reporting plus explicit Joern discovery/advisory routes across nine language selections. Local archive batches, public Git acquisition, receipt-bound provenance, model adapters including Ollama, operator reporting and fixture-based evaluation are implemented at bounded scope. Restricted Linux images and offline OCP smoke manifests are available. The [implementation plan](../plans/implementation-plan.md) and [Slice 115](../development/slice-115.md) are the delivery references; slice counts are not percentage completion.
 
-Deliver a pinned environment, source-only default policy, exact initial language support and model-adapter mocks. Actual model credentials/access are a separate local configuration, never committed.
+### Next functional work
 
-### Phase 1 — One complete vertical slice
+Prioritize enterprise acquisition configuration: explicit trusted corporate CA/proxy and private repository credentials, tested locally with controlled fixtures before bank integration. Keep credentials in the acquisition boundary and preserve offline scanner operation. Then complete remaining functional POC obligations in the plan, including GCS and broader detection/evaluation where supported by available inputs. Avoid more language-local refinement without an observed gap that blocks useful coverage.
 
-Implement CSV plus local archive admission, immutable snapshots, SQLite durable workflow, deterministic Python index, CodeQL execution, evidence-backed triage, Markdown/JSON/SARIF export and a coverage report. Use mock model responses for state-machine tests and a small number of approved live calls for quality evaluation.
+### Enterprise and capacity gates
 
-Exit when a seeded vulnerability is correctly reported, its safe counterpart is rejected with evidence, and a failed build/parse cannot generate a clean report. Include archive traversal rejection and unchanged-run deduplication.
+At functional POC completion, execute the required bank OCP dev acceptance: image admission, SCC-assigned identity, storage, enforced network isolation and toolchain compatibility. Validate approved model gateway behavior and private acquisition using bank-provided configurations in an authorized environment. Implement and test PostgreSQL multiworker claims, fencing, reservations and reconciliation before fleet claims; Redis remains optional ephemeral coordination, not durable truth.
 
-### Phase 2 — Quality and enterprise realism
-
-Add Java/Spring fixture support, internal-wrapper simulations, an independent exploration lane, structured counterevidence, context budgeting and precise cache invalidation. Compare against CodeQL alone. Add dependency/secret adapters with a locally mirrored test advisory feed.
-
-Exit when the POC demonstrates at least one additional validated discovery attributable to exploration or a custom framework model, and measures the precision/recall/cost tradeoff on held-out cases. A demo success is not production accuracy certification.
-
-Add the benchmark manifest/matcher/report contract at this stage. Execute the supplied 50-repository benchmark later when its source and labels are available in an authorized environment; use synthetic labels to verify the evaluator first. The companion implementation plan separates this milestone from the first vertical slice.
-
-### Phase 3 — Concurrency and failure behavior
-
-Run PostgreSQL and Redis locally with the same API/contracts. Implement heartbeat claims, fencing, controller reconciliation, budget reservations and outbox publication. Inject worker kills, provider timeouts, Redis loss and ambiguous exporter responses. Add GCS with a fake adapter first, then an explicitly configured test bucket.
-
-Exit when no durable task is stranded, stale attempts cannot overwrite current results, and reruns do not duplicate findings. SQLite remains the lightweight developer path, not the load-test database.
-
-### Phase 4 — OpenShift feasibility spike
-
-Port the already-tested runner contract to Jobs. Validate arbitrary-UID images, read-only root, PVC/storage topology, proxy/CA configuration, private dependency mirrors, service identities and network isolation. Start with a small authorized pilot and measure real job startup, builds and I/O.
-
-Exit when source-only scanning runs under the approved restrictive controls without privileged exceptions. Establish whether a separate runtime-validation environment is possible.
-
-### Phase 5 — Production sizing and quality gate
-
-Run a representative portfolio benchmark, replace the capacity assumptions, agree precision/recall and cost thresholds, then prove the seven-day throughput target. Add independently reproduced testbed findings only when isolation and access are ready. Introduce enterprise tracker publication after the pilot review policy is agreed.
-
-No fixed calendar duration is promised: framework coverage, proprietary builds and approvals may dominate implementation time. Each phase has a concrete exit artifact and avoids building an elaborate agent UI before the evidence pipeline works.
+Run the supplied 50-repository ground truth when available, distinguish known-label recall from adjudicated precision, and measure cost/runtime by engine/profile. Qualify representative sustained throughput and recovery separately from correctness fixtures. No live bank benchmark, OCP acceptance or 1,000/day demonstration has been completed. No fixed completion date or percentage is inferred from the number of delivered slices.
 
 ## 18. Decision register before enterprise rollout
 
 | Decision | Proposed default | Evidence/owner needed |
 |---|---|---|
 | What counts as 1,000/day? | Standard profile, separate execution/reuse counts | Product owner and AppSec acceptance |
-| Portfolio language/build distribution | Python, Java, JS/TS first | Repository census and build owners |
+| Portfolio language/build distribution | Nine required language selections; scoped profiles in §0 | Repository census and build owners |
 | Models and data handling | Approved pinned model profiles; no automatic fallback | Gateway team, security/data governance, provider agreements |
-| CodeQL entitlement | Required for intended private/archive usage | License/procurement owner |
+| Scanner entitlement and supply chain | Joern primary direction; CodeQL reference only where entitled; review all bundled tools/dependencies | License/procurement and platform owners |
 | Artifact persistence | PVC adapter initially; scalable approved store for production | Storage team, capacity and access-mode tests |
 | GCS meaning/connectivity | Generation-pinned input, warm cache | Bucket owner, network team, retrieval-cost policy |
 | External dependencies | Approved mirrors and advisory feed | Supply-chain tooling owner |
@@ -958,7 +1038,7 @@ The production success criterion is an explainable, measurable security service:
 
 ### Report as a first-class product artifact
 
-A report is an immutable, versioned view of one scan's findings, coverage, source identity and decision state. It is materialized from durable evidence; retrieving it requires no new CodeQL execution or LLM calls. Reviews or validation results arriving later create a new report version rather than rewriting a report someone already shared.
+A report is an immutable, versioned view of one scan's findings, coverage, source identity and decision state. It is materialized from durable evidence; retrieving it requires no new scanner execution or LLM calls. Reviews or validation results arriving later create a new report version rather than rewriting a report someone already shared.
 
 Each report has `report_id`, `report_version`, `schema_version`, `repo_id`, `run_id`, source revision/digest, profile/version, execution mode, creation time, data-as-of time, source classification and completion status. Retain separate selected-run and latest-requested-run metadata. A completed report from last week must not hide a newer failed or partial scan.
 
@@ -971,11 +1051,15 @@ Each report has `report_id`, `report_version`, `schema_version`, `repo_id`, `run
 5. **Changes since a comparable scan:** new, persisting, resolved, reopened and not-comparable findings, with the comparison basis.
 6. **Appendix:** method/profile identifiers and authorized evidence references. Sensitive internal model/provider details remain in the restricted audit record.
 
-Default to a self-contained **HTML report for reading and sharing**, with no third-party scripts/assets and proper escaping of source-derived content. Provide Markdown as a lightweight alternative and canonical JSON for machines. PDF can be a later rendering adapter if requested. These are planned application output formats, not extra dependencies required for this design document.
+Default to a self-contained **HTML report for reading and sharing**, with no third-party scripts/assets and proper escaping of source-derived content. Provide Markdown as a lightweight alternative and canonical JSON for machines. PDF can be a later rendering adapter if requested. HTML, Markdown, JSON and CSV projections are implemented; retained SARIF is available for exact attempts. Audience authorization and the HTTP interface below remain proposed.
 
 An owner-facing report shows confirmed findings and aggregate uncertainty/coverage warnings. Detailed candidates, false-positive reasoning and `needs-review` records are available through an investigator-authorized view. These audience projections derive from the same report snapshot and have explicit visibility labels.
 
-### Retrieval API proposal
+### Implemented retrieval and proposed API
+
+Today operators use `report-history`, `get-report REPO_ID --report-id REPORT_ID --format html` (or json/markdown/scan-csv/candidates-csv), `resolve-report`, `import-reports` and `compare-reports`. Exact retrieval uses saved state with no scanner/model call. Report projection 13 includes acquisition provenance when available; earlier immutable reports retain their original contract. The current local report is an investigator/operator artifact and can include review candidates; authenticated owner-only projections are future work.
+
+The table below is an **unimplemented HTTP API proposal**, not runnable endpoints. An API operator guide should accompany the first hosted API slice; the existing CLI and intake/container guides document current operation. Authentication, domain filtering, service-level latency and revocable share links are production requirements still to implement.
 
 | Operation | Proposed interface | Semantics |
 |---|---|---|
@@ -1012,7 +1096,7 @@ Exports contain no raw source, secrets, prompts or internal infrastructure names
 
 ### Benchmark report contents
 
-The planned benchmark artifact includes dataset/configuration versions, all 50 repository execution statuses, labeled vulnerabilities matched/missed, ambiguous and additional unjudged predictions, supported/unsupported scope, aggregate and per-repository metrics, comparison against CodeQL alone, and cost/runtime. The report explicitly states whether adjudication is complete and whether the data was used for tuning. Labels and sensitive evidence are excluded from general portfolio exports unless the requester has evaluator access.
+The planned benchmark artifact includes dataset/configuration versions, all 50 repository execution statuses, labeled vulnerabilities matched/missed, ambiguous and additional unjudged predictions, supported/unsupported scope, aggregate and per-repository metrics, comparison against declared scanner baselines (including CodeQL where entitled), and cost/runtime. The report explicitly states whether adjudication is complete and whether the data was used for tuning. Labels and sensitive evidence are excluded from general portfolio exports unless the requester has evaluator access.
 
 ### Proposed report acceptance criteria
 

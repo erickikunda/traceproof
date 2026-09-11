@@ -21,6 +21,25 @@ from traceproof.persistence import Snapshot
 from traceproof.reports import csv_cell, get_report, markdown_cell
 
 RULE_CWES = {"py/code-injection": {"CWE-94"}, "py/command-line-injection": {"CWE-78", "CWE-88"}}
+JOERN_RULES = {
+    "traceproof/joern-rust-env-shell-v1": ("rust", {"CWE-78"}),
+    "traceproof/joern-c-argv-system-v1": ("c", {"CWE-78"}),
+    "traceproof/joern-cpp-argv-system-v1": ("cpp", {"CWE-78"}),
+    "traceproof/joern-go-http-shell-v1": ("go", {"CWE-78"}),
+    "traceproof/joern-javascript-express-eval-v1": ("javascript", {"CWE-94"}),
+    "traceproof/joern-typescript-express-eval-v1": ("typescript", {"CWE-94"}),
+    "traceproof/joern-python-flask-system-v1": ("python", {"CWE-78"}),
+    "traceproof/joern-spring-get-jdbc-sql-v1": ("java", {"CWE-89"}),
+    "traceproof/joern-csharp-lookup-commandtext-v1": ("csharp", {"CWE-89"}),
+    "traceproof/joern-python-lookup-system-v1": ("python", {"CWE-78"}),
+    "traceproof/joern-javascript-lookup-eval-v1": ("javascript", {"CWE-94"}),
+    "traceproof/joern-typescript-lookup-eval-v1": ("typescript", {"CWE-94"}),
+    "traceproof/joern-go-lookup-command-v1": ("go", {"CWE-78"}),
+    "traceproof/joern-rust-lookup-arg-v1": ("rust", {"CWE-78"}),
+    "traceproof/joern-c-lookup-system-v1": ("c", {"CWE-78"}),
+    "traceproof/joern-cpp-lookup-system-v1": ("cpp", {"CWE-78"}),
+}
+RULE_CWES.update({rule: scope[1] for rule, scope in JOERN_RULES.items()})
 MAX_CANDIDATES = 20000
 MAX_PAIR_CHECKS = 1000000
 
@@ -86,8 +105,62 @@ class EvaluationPlan(StrictContract):
         return self
 
 
+class JoernEvaluationPlan(StrictContract):
+    schema_version: Literal["2"]
+    mode: Literal["discovery_coverage_audit"]
+    engine: Literal["joern"]
+    manifest_sha256: Digest
+    query_sha256: Digest
+    scanner_version: str = Field(pattern=r"^[0-9]+\.[0-9]+\.[0-9]+$", max_length=50)
+    profile: Literal["standard"]
+    rule_ids: list[str] = Field(min_length=1, max_length=1)
+    reports: list[ReportSelection] = Field(max_length=1000)
+
+    @model_validator(mode="after")
+    def known_scope(self):
+        if self.rule_ids[0] not in JOERN_RULES or len({r.repo_id for r in self.reports}) != len(
+            self.reports
+        ):
+            raise ValueError("Unknown Joern profile or duplicate repository")
+        return self
+
+
+class PlanContract:
+    @staticmethod
+    def model_validate(value):
+        if isinstance(value, dict) and value.get("schema_version") == "2":
+            return JoernEvaluationPlan.model_validate(value)
+        return EvaluationPlan.model_validate(value)
+
+
 def scope_gaps(report, repository, plan):
     gaps = []
+    if isinstance(plan, JoernEvaluationPlan):
+        # Coverage audit only: never relax the existing evidence/recall qualification gate.
+        gaps.append("discovery_profile_not_qualified_for_recall")
+        for key, expected in (
+            ("snapshot_id", repository.snapshot_id),
+            ("profile", plan.profile),
+            ("query_sha256", plan.query_sha256),
+        ):
+            if report.get(key) != expected:
+                gaps.append(f"{key}_mismatch_or_unknown")
+        scanner = report.get("scanner") or {}
+        if scanner.get("engine_id") != "joern":
+            gaps.append("scanner_engine_mismatch_or_unknown")
+        if scanner.get("version") != plan.scanner_version:
+            gaps.append("scanner_version_mismatch_or_unknown")
+        language = JOERN_RULES[plan.rule_ids[0]][0]
+        if report.get("language") != language or repository.languages != [language]:
+            gaps.append("language_scope_mismatch")
+        if (
+            report.get("analysis_status") != "completed"
+            or report.get("execution_complete") is not True
+        ):
+            gaps.append("analysis_incomplete")
+        if report.get("candidate_count") is None:
+            gaps.append("candidate_count_unknown")
+        return gaps
     for key, expected in (
         ("snapshot_id", repository.snapshot_id),
         ("profile", plan.profile),
@@ -111,7 +184,7 @@ def evaluate_benchmark(store, manifest_path, labels_path, plan_path):
     manifest = read_contract(manifest_path, BenchmarkManifest)
     labels = read_contract(labels_path, BenchmarkLabels)
     manifest_digest = validate_pair(manifest, labels)
-    plan = read_contract(plan_path, EvaluationPlan)
+    plan = read_contract(plan_path, PlanContract)
     if plan.manifest_sha256 != manifest_digest:
         raise TraceProofError("Evaluation plan does not match benchmark manifest")
     selections = {item.repo_id: item.report_id for item in plan.reports}
@@ -216,6 +289,18 @@ def evaluate_benchmark(store, manifest_path, labels_path, plan_path):
                 else "evaluated",
                 "scope_gaps": gaps,
                 "candidate_count": report.get("candidate_count") if report else None,
+                **(
+                    {
+                        "scanner": report.get("scanner") if report else None,
+                        "language": report.get("language") if report else None,
+                        "discovery_coverage": report.get("discovery_coverage") if report else None,
+                        "scanner_limitations": report.get("scanner_limitations", [])
+                        if report
+                        else [],
+                    }
+                    if isinstance(plan, JoernEvaluationPlan)
+                    else {}
+                ),
                 "label_counts": dict(Counter(row["status"] for row in local_rows)),
             }
         )
@@ -223,7 +308,7 @@ def evaluate_benchmark(store, manifest_path, labels_path, plan_path):
     total = len(label_rows)
     body = {
         "schema_version": "1",
-        "evaluator_version": "2",
+        "evaluator_version": "3" if isinstance(plan, JoernEvaluationPlan) else "2",
         "report_kind": "candidate_location_scorecard",
         "manifest_sha256": manifest_digest,
         "labels_sha256": hashlib.sha256(canonical(labels.model_dump())).hexdigest(),
@@ -233,7 +318,11 @@ def evaluate_benchmark(store, manifest_path, labels_path, plan_path):
         "label_set_version": labels.label_set_version,
         "evaluation_scope": {
             key: plan.model_dump()[key]
-            for key in ("query_sha256", "codeql_version", "profile", "rule_ids")
+            for key in (
+                ("query_sha256", "scanner_version", "engine", "mode", "profile", "rule_ids")
+                if isinstance(plan, JoernEvaluationPlan)
+                else ("query_sha256", "codeql_version", "profile", "rule_ids")
+            )
         },
         "repository_count": len(repository_rows),
         "label_count": total,
@@ -268,6 +357,16 @@ def evaluate_benchmark(store, manifest_path, labels_path, plan_path):
             "No benchmark scans or model calls are dispatched by this evaluator.",
         ],
     }
+    if isinstance(plan, JoernEvaluationPlan):
+        body["report_kind"] = "discovery_coverage_audit"
+        body["candidate_recall_proxy"]["value"] = None
+        body["complete"] = False
+        for metric in body["weaknesses"]:
+            metric["candidate_recall_proxy_value"] = None
+        body["limitations"].insert(
+            0,
+            "Coverage audit only; recall unknown. CWE mappings describe unqualified query intent.",
+        )
     encoded = canonical(body)
     if len(encoded) > 8 * 1024 * 1024:
         raise TraceProofError("Evaluation scorecard exceeds 8 MiB")
@@ -302,7 +401,11 @@ def render_scorecard(report, format="json"):
         "",
         f"Scorecard: {report['scorecard_id']}",
         "",
-        f"Candidate recall proxy: {metric['numerator']} / {metric['denominator']}",
+        (
+            "Candidate recall proxy: not evaluable (coverage audit)"
+            if report.get("report_kind") == "discovery_coverage_audit"
+            else f"Candidate recall proxy: {metric['numerator']} / {metric['denominator']}"
+        ),
         "",
         f"Evaluation complete: {report['complete']}",
         "",
@@ -411,6 +514,8 @@ def scorecard_csv(report, format):
                 "confirmed_recall",
             ],
         }[grain]
+        if grain == "repositories" and report.get("report_kind") == "discovery_coverage_audit":
+            fields += ["scanner", "language", "discovery_coverage", "scanner_limitations"]
         rows = report[grain]
     output = io.StringIO(newline="")
     writer = csv.DictWriter(output, fieldnames=[*common, *fields], lineterminator="\n")

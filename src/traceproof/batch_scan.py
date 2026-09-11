@@ -15,7 +15,7 @@ from traceproof.scanning import query_entry
 def scan_import(
     store,
     import_id,
-    query,
+    query=None,
     offset=0,
     limit=1,
     rescan=False,
@@ -30,13 +30,44 @@ def scan_import(
     allow_csharp_downloads=False,
     csharp_dependency_profile=None,
     csharp_offline=False,
+    engine="codeql",
+    joern_home=None,
+    joern_repair_dir=None,
+    rust_home=None,
+    joern_profile=None,
+    advisory=None,
 ):
+    if advisory is not None and engine != "joern":
+        raise TraceProofError("Scan advisory options require engine joern")
     resources = resource_settings(threads, ram_mb)
-    validate_selection(language, java_profile)
+    if engine == "joern":
+        from traceproof.joern_pipeline import validate_options
+
+        validate_options(
+            query,
+            language,
+            joern_home,
+            threads,
+            ram_mb,
+            java_profile=java_profile,
+            java_dependency_profile=java_dependency_profile,
+            allow_csharp_downloads=allow_csharp_downloads,
+            csharp_dependency_profile=csharp_dependency_profile,
+            csharp_offline=csharp_offline,
+        )
+    elif engine == "codeql":
+        if query is None or any(
+            x is not None for x in (joern_home, joern_repair_dir, rust_home, joern_profile)
+        ):
+            raise TraceProofError("CodeQL requires queries and does not accept Joern tooling")
+        validate_selection(language, java_profile)
+    else:
+        raise TraceProofError("Unsupported scanner engine")
     validate_page(offset, limit)
     if not 1 <= extraction_timeout <= 3600 or not 1 <= query_timeout <= 3600:
         raise TraceProofError("Stage timeouts must be between 1 and 3600 seconds")
-    query = query_entry(store, query)
+    if engine == "codeql":
+        query = query_entry(store, query)
     intake = import_status(store, import_id)
     admitted = intake["items"]
     selected = admitted[offset : offset + limit]
@@ -70,6 +101,12 @@ def scan_import(
                 allow_csharp_downloads=allow_csharp_downloads,
                 csharp_dependency_profile=csharp_dependency_profile,
                 csharp_offline=csharp_offline,
+                engine=engine,
+                joern_home=joern_home,
+                joern_repair_dir=joern_repair_dir,
+                rust_home=rust_home,
+                joern_profile=joern_profile,
+                **({"advisory": advisory} if advisory is not None else {}),
             )
         except TraceProofError as exc:
             # Expected row failures remain explicit; infrastructure errors stop the command.
@@ -89,6 +126,11 @@ def scan_import(
         "rescan_requested": rescan,
         "counts": dict(Counter(row["status"] for row in results)),
         "items": results,
-        "model_calls": 0,
-        "scope": "Sequential local source-only work; skipped/failed rows are not clean scans",
+        "model_calls": sum(row.get("model_calls", 0) for row in results),
+        **(
+            {"live_model_calls": sum(row.get("live_model_calls", 0) for row in results)}
+            if advisory is not None
+            else {}
+        ),
+        "scope": "Sequential bounded work; skipped/failed rows and advisories are not clean scans",
     }

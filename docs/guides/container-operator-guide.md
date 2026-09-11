@@ -269,3 +269,518 @@ This supersedes the earlier blanket exclusion of classic source evidence: suppor
 now includes the narrow public HttpGet string-action patterns described in the CLI
 guide. Raw System.Web request access, arbitrary binders/filters, other sink APIs,
 full builds and broad framework semantics remain unqualified.
+
+### JavaScript/TypeScript acceptance (Slice 58)
+
+```bash
+uv run python scripts/validate_container.py work/container-js-001 --suite javascript
+uv run python scripts/validate_container.py work/container-ts-001 --suite typescript
+```
+
+These suites use the pinned CodeQL bundle's JavaScript extractor and
+javascript-queries 2.4.5 CodeInjection.ql. Each supplies a distinct Express/eval
+vulnerable/fixed source pair. The same arbitrary-UID, read-only-root, network-none
+and resource restrictions apply. No repository package installation or application
+execution occurs. Fixtures require one vulnerable candidate and zero fixed candidates,
+completed query execution, correct language scope, incomplete readiness and zero model
+calls. No additional bank network access or provider credentials are needed.
+
+This is narrow fixture coverage. Package/tsconfig/module resolution, mixed JS/TS imports,
+async and browser-framework behavior, source maps and JS/TS evidence gates remain open.
+The application CLI accepts explicit JS/TS selections; the synthetic acceptance scripts
+are not general-purpose scan submission commands.
+
+## Experimental Joern Linux image
+
+Joern has a separate image recipe, `containers/Containerfile.joern`, using the pinned
+UBI base, Python wheel/dependencies, Temurin JDK 21 and Joern 4.0.625 Linux ARM64.
+It contains no CodeQL or .NET toolchain. Pins are recorded in
+`containers/joern-toolchain.json`; the build checks the local archive digests.
+
+Prepare the approved archives under `work/container-inputs` (Joern ZIP and existing
+JDK TAR.GZ), then run:
+
+```sh
+uv build
+docker build -f containers/Containerfile.joern -t traceproof:joern-linux-poc .
+uv run python scripts/validate_container.py work/joern-linux-check \
+  --suite joern --image traceproof:joern-linux-poc
+```
+
+The output directory must be new. The harness resolves the immutable image ID and runs
+with UID 1000710000/GID 0, read-only root, network none, all capabilities dropped,
+no-new-privileges, 2 CPUs, 4 GiB RAM and 256 PIDs. Writable work/tmp are bounded tmpfs;
+only the report directory is bind-mounted. The runtime probe checks effective privileges,
+root-write denial and external-network denial before scanning. Build-time network for
+Python packages is separate from network-disabled scan execution.
+
+Seven synthetic Spring/JDBC cases exercise intake, discovery, source-bound candidates,
+published reports and Joern evidence-policy isolation. HTML/JSON reports, raw application
+logs, runtime probe, package inventories, Docker configuration/state and validation summary
+are exported. Temporary database/graphs disappear with the container. This validates
+local restricted Linux execution, not durable shared storage or OCP deployment.
+
+Application reports conservatively do not attest to externally imposed network isolation;
+consult `runtime.json` and Docker configuration for the harness enforcement evidence.
+Parser diagnostics and broader Java/framework coverage remain unqualified even when the
+container suite passes. Bank OCP testing remains required and deferred as agreed.
+
+Slice 68 expands the Joern suite to nine cases, adding wholly malformed Java and valid
+cross-file code alongside a malformed file. Both must retain parser warnings and missing
+graph-file coverage without claiming complete analysis; the mixed case retains its valid
+candidate. The same `--suite joern` command runs the expanded suite.
+
+### Experimental repaired Joern C# qualification
+
+This local-only image layers the isolated C# frontend repair on the existing pinned
+Joern Linux ARM64 image. It does not register a production C# backend. Prepare the
+pinned AstCreator.scala identified in scripts/joern/csharp-repair/manifest.json at
+work/container-inputs/AstCreator.scala; the build helper checks its SHA-256.
+
+```sh
+uv build
+docker image inspect traceproof:joern-linux-poc --format '{{.Id}}'
+docker build --network=none -f containers/Containerfile.joern-csharp \
+  -t traceproof:joern-csharp-linux-poc .
+uv run python scripts/validate_container.py work/joern-csharp-linux-new \
+  --suite joern-csharp --image traceproof:joern-csharp-linux-poc
+```
+
+The recipe defaults to a local base tag; record/verify its immutable ID against the
+qualified base and do not assume a reused tag identifies the same tools. Building a
+production release from a registry digest and pinning the patch are separate work.
+The acceptance runner resolves the final image ID before execution.
+
+The suite tests ten original C# cases and ten adversarial binding cases, then replays
+18 baseline path nodes through source mapping and checks seven source/five sink syntax
+fact attachments (some source nodes refer to the same parameter). Runtime restrictions
+are the same arbitrary UID, read-only root, network none, dropped capabilities, no-new-
+privileges, 2 CPUs, 4 GiB memory, PID and tmpfs limits as the other local suites. Image
+compilation happens at build time; scanned applications are not built or executed.
+
+Results include runtime.json, baseline-results.json, binding-results.json, framework.json,
+build-receipt.json, case-results.json, validation.json, native environment inventories and
+stage logs. A failure exports available logs; success requires all cases and evidence
+checks. No API keys or bank data are required. Actual bank OCP SCC/SELinux/PVC behavior,
+upstream patch qualification and broader C# semantics remain separate acceptance gates.
+
+The C# suite also runs two durable discovery cases (22 total): source-archive intake,
+SQLite persistence, scan retrieval, HTML/JSON publication and evidence-bundle gating.
+The vulnerable/fixed pair must yield 1/0 candidates, all published paths must validate,
+and both reports must remain incomplete. Exported durable-vulnerable.html and
+durable-fixed.html can be shared; durable-*.json contains scan reports and case results.
+This acceptance run uses synthetic sources and no LLM. It does not measure production
+throughput or validate PostgreSQL, cluster scheduling, or bank OCP deployment.
+
+## Experimental Python Joern integration
+
+```sh
+uv build
+docker build --network=none -f containers/Containerfile.joern-python \
+  -t traceproof:joern-python-linux-poc .
+uv run python scripts/validate_container.py work/joern-python-linux-new \
+  --suite joern-python --image traceproof:joern-python-linux-poc
+```
+
+Uses the same trusted local Joern base and records the final immutable image ID.
+Five existing synthetic cases exercise durable intake/discovery/report retrieval,
+single-file and cross-file vulnerable/fixed pairs, and disconnected input. Recorded
+source snippets must match their reported lines. All cases retain incomplete coverage
+and unsupported qualified triage. HTML/JSON reports and environment evidence are exported
+under the supplied new output directory. No LLM calls or application builds are needed.
+The standard restricted runtime applies; this is local Linux acceptance, not bank OCP
+or throughput qualification.
+
+## Experimental JavaScript/TypeScript Joern integration
+
+```sh
+uv build
+docker build --network=none -f containers/Containerfile.joern-javascript \
+  -t traceproof:joern-javascript-linux-poc .
+uv run python scripts/validate_container.py work/joern-js-linux-new \
+  --suite joern-javascript --image traceproof:joern-javascript-linux-poc
+uv run python scripts/validate_container.py work/joern-ts-linux-new \
+  --suite joern-typescript --image traceproof:joern-javascript-linux-poc
+```
+
+The shared image uses the trusted local Joern base; each run records its immutable ID.
+Run suites sequentially on the laptop to stay within its memory budget. Each uses five
+existing fixtures, including ES-module cross-file and disconnected-flow cases, through
+archive intake, persistence and report retrieval. Source snippets must match reported
+lines; coverage remains incomplete. Output includes HTML/JSON reports and runtime
+evidence. Standard restricted Linux limits apply. These are bounded local integration
+checks, not full framework, mixed-language, production capacity or OCP qualification.
+
+## Experimental Go Joern integration
+
+```sh
+uv build
+docker build --network=none -f containers/Containerfile.joern-go \
+  -t traceproof:joern-go-linux-poc .
+uv run python scripts/validate_container.py work/joern-go-linux-new \
+  --suite joern-go --image traceproof:joern-go-linux-poc
+```
+
+This local image layer uses the trusted Joern base; the runner records its immutable ID.
+Five existing dependency-free module fixtures cover single-file and three-package
+vulnerable/fixed pairs plus disconnected input. The normal restricted runtime applies.
+Acceptance checks persistent report retrieval, source coordinates, graph inventory and
+incomplete coverage. HTML/JSON reports and runtime evidence are exported to the new
+output directory. No application build or LLM call is requested. This is not a capacity
+benchmark or actual bank OCP qualification.
+
+## Experimental Rust Joern integration
+
+Prepare the official Linux ARM64 Rust and rust-src archives identified in
+`scripts/joern/rust-linux-toolchain.json` at `work/container-inputs/rust-linux-arm64.tar.xz`
+and `work/container-inputs/rust-src.tar.xz`. The image build checks both digests.
+
+```sh
+uv build
+docker build --network=none -f containers/Containerfile.joern-rust \
+  -t traceproof:joern-rust-linux-poc .
+uv run python scripts/validate_container.py work/joern-rust-linux-new \
+  --suite joern-rust --image traceproof:joern-rust-linux-poc
+```
+
+The Rust runtime uses digest-pinned UBI 10 Python 3.12 Minimal because the bundled
+Rust AST generator requires GLIBC 2.39; the other language images stay on UBI 9.
+The image installs the pinned rustc, cargo, target standard library and rust-src from
+local archives. Five dependency-free Cargo fixtures exercise durable reports and
+single-file/cross-file vulnerable/fixed plus disconnected flows. The normal restricted
+Linux runtime applies; no application execution or LLM calls are requested. This does
+not qualify arbitrary Cargo dependencies, procedural macros, cfg/build semantics, bank
+OCP deployment or production capacity. HTML/JSON and runtime evidence are exported.
+
+## Experimental C/C++ Joern integration
+
+```sh
+uv build
+docker build --network=none -f containers/Containerfile.joern-c-family \
+  -t traceproof:joern-c-family-linux-poc .
+uv run python scripts/validate_container.py work/joern-c-linux-new \
+  --suite joern-c --image traceproof:joern-c-family-linux-poc
+uv run python scripts/validate_container.py work/joern-cpp-linux-new \
+  --suite joern-cpp --image traceproof:joern-c-family-linux-poc
+```
+
+Run sequentially on the laptop. Each suite reuses five existing fixtures: single-file
+and three-translation-unit vulnerable/fixed pairs with shared declarations, and a
+disconnected-input negative. Checks include persistent report retrieval, source-line
+agreement, graph inventory and incomplete coverage. The shared image uses the trusted
+UBI 9 Joern base; standard restricted Linux limits apply. HTML/JSON and runtime evidence
+are exported. No LLM calls, application build or production capacity/OCP qualification.
+
+## Main Joern workflow acceptance
+
+```sh
+uv build
+docker build --network=none -f containers/Containerfile.joern-pipeline \
+  -t traceproof:joern-pipeline-linux-poc .
+uv run python scripts/validate_container.py work/joern-pipeline-linux-new \
+  --suite joern-pipeline --image traceproof:joern-pipeline-linux-poc
+```
+
+The existing Python fixtures exercise scan-import, auto language selection, exact-attempt
+publication, batch retry suppression and a fresh direct scan-run. The suite makes six
+actual scans across five cases. Standard restricted Linux limits and incomplete coverage
+gates apply. This is shared orchestration acceptance, not a repeat qualification of every
+language frontend. Per-language tool requirements and image acceptance remain documented
+in their own sections. No LLM calls, distributed scheduling or OCP qualification.
+
+## Flask profile acceptance
+
+```sh
+uv build
+docker build --network=none -f containers/Containerfile.joern-flask \
+  -t traceproof:joern-flask-linux-poc .
+uv run python scripts/validate_container.py work/joern-flask-linux-new \
+  --suite joern-flask --image traceproof:joern-flask-linux-poc
+```
+
+Eight cases cover direct and cross-file vulnerable/fixed pairs, renamed/aliased input,
+shadowed request/os bindings and disconnected flow. Main scan-import/report publication
+and retry skipping are exercised, plus one direct rescan. Source-line assertions apply
+to the path endpoints; synthetic intermediate nodes are retained without such a claim.
+Standard restricted Linux conditions apply; no model calls or application execution.
+
+## Express profile acceptance on the laptop
+
+Build the shared JavaScript/TypeScript profile layer after building the pinned Joern
+base described above, then run the suites sequentially within Docker Desktop's memory:
+
+```sh
+uv build
+docker build --network=none -f containers/Containerfile.joern-express \
+  -t traceproof:joern-express-poc .
+uv run python scripts/validate_container.py work/express-js-acceptance \
+  --suite joern-express-javascript --image traceproof:joern-express-poc
+uv run python scripts/validate_container.py work/express-ts-acceptance \
+  --suite joern-express-typescript --image traceproof:joern-express-poc
+```
+
+Each suite exercises eight synthetic cases through CSV intake, automatic language
+selection, main pipeline scanning, publication/retrieval, profile-aware retry skipping
+and evidence gates; the fixed case also receives a fresh explicit scan. The runner uses
+an arbitrary UID, read-only root, dropped capabilities, no network, and bounded resources.
+No LLM calls are made. Laptop Linux acceptance does not qualify deployment to bank OCP.
+
+## Go HTTP profile acceptance on the laptop
+
+```sh
+uv build
+docker build --network=none -f containers/Containerfile.joern-go-http \
+  -t traceproof:joern-go-http-poc .
+uv run python scripts/validate_container.py work/go-http-acceptance \
+  --suite joern-go-http --image traceproof:joern-go-http-poc
+```
+
+Use the pinned Joern base prepared above. Nine synthetic cases cover direct/cross-package
+pairs, disconnected data, aliases/PostFormValue, lookalike imports and a non-shell
+command. Main intake/scanning, publication/retrieval, retry suppression and evidence
+gates are exercised with no LLM calls; the fixed case is also explicitly rescanned.
+The runner enforces arbitrary UID, read-only root, disabled network and resource limits.
+Reports and immutable image identity are exported to the output directory. This is local
+Linux acceptance; bank OCP deployment testing remains a separate deferred gate.
+
+## C/C++ argv profile acceptance on the laptop
+
+```sh
+uv build
+docker build --network=none -f containers/Containerfile.joern-argv \
+  -t traceproof:joern-argv-poc .
+uv run python scripts/validate_container.py work/argv-c-acceptance \
+  --suite joern-argv-c --image traceproof:joern-argv-poc
+uv run python scripts/validate_container.py work/argv-cpp-acceptance \
+  --suite joern-argv-cpp --image traceproof:joern-argv-poc
+```
+
+Use the pinned Joern base prepared above and run the suites sequentially. Each suite has
+eight cases: direct and cross-file pairs, renamed array syntax, disconnected flow,
+non-main source and local system definition. Main intake/scanning, report publication
+and retrieval, endpoint coordinates, graph inventory and retry/evidence gates are checked.
+The fixed case also receives a fresh explicit scan. There are no LLM calls.
+The runner uses arbitrary UID, read-only root, no network and bounded resources, exporting
+reports and immutable image identity. Actual bank OCP testing remains a deferred gate.
+
+## Rust environment profile acceptance on the laptop
+
+```sh
+uv build
+docker build --network=none -f containers/Containerfile.joern-rust-env \
+  -t traceproof:joern-rust-env-poc .
+uv run python scripts/validate_container.py work/rust-env-acceptance \
+  --suite joern-rust-env --image traceproof:joern-rust-env-poc
+```
+
+This layer uses the previously prepared pinned Rust UBI 10 image and its /opt/rust
+toolchain. The UBI 9 Joern base is insufficient for the pinned Rust AST generator.
+Nine synthetic cases exercise direct/cross-module pairs, aliases, disconnected flow,
+lookalike source/sink APIs and a non-shell command. The main intake/scan/report workflow,
+retry suppression, graph inventory, endpoint coordinates and incomplete evidence gates
+are checked. Fixed input is also explicitly rescanned. No LLM calls occur.
+
+The runner uses arbitrary UID, read-only root, no network and bounded resources and
+exports image identity, diagnostics and shareable reports. This remains laptop Linux
+acceptance; bank OCP execution and base-image approval are deferred gates.
+
+## Joern Spring evidence-gate acceptance
+
+```sh
+uv build
+docker build --network=none -f containers/Containerfile.joern-spring-evidence \
+  -t traceproof:joern-spring-evidence-poc .
+uv run python scripts/validate_container.py work/spring-evidence-acceptance \
+  --suite joern-spring-evidence --image traceproof:joern-spring-evidence-poc
+```
+
+Seven existing Java fixtures exercise native discovery and report publication. Vulnerable
+and renamed cross-file candidates additionally pass the explicit evidence gate using
+synthetic deterministic claims, not LLM-generated judgments. Fixed/disconnected and
+annotation/sink/route lookalikes remain zero-candidate controls. Exported *-gate.json files
+retain the policy, engine and unknowns. No model calls occur. The same restricted Linux
+runner and deferred bank OCP gate apply.
+
+## Joern Spring replay advisory acceptance
+
+```sh
+uv build
+docker build --network=none -f containers/Containerfile.joern-spring-advisory \
+  -t traceproof:joern-spring-advisory-poc .
+uv run python scripts/validate_container.py work/spring-advisory-acceptance \
+  --suite joern-spring-advisory --image traceproof:joern-spring-advisory-poc
+```
+
+Seven fresh Java scan cases are reused. The two positive cross-file candidates each receive
+one explicit replay advisory, with native preflight, durable cost accounting, idempotent
+retry and updated report publication. Zero live calls occur. The standard arbitrary-UID,
+read-only-root, no-network and resource constraints apply. Exported *-advisory.json files
+contain the ledger and the HTML reports include simulated advisory history. Target-bank
+OCP acceptance remains deferred.
+
+## Main Joern workflow with replay advisory
+
+```sh
+uv build
+docker build --network=none -f containers/Containerfile.joern-workflow-advisory \
+  -t traceproof:joern-workflow-advisory-poc .
+uv run python scripts/validate_container.py work/workflow-advisory-acceptance \
+  --suite joern-workflow-advisory --image traceproof:joern-workflow-advisory-poc
+```
+
+Seven native Java cases use the main scan-import path with preconfigured budgets and an
+explicit replay advisory page. Acceptance checks per-run and aggregate invocation counts,
+retry skips, immutable returned report IDs, simulated advice, and ledger charges. Five
+negative cases make no provider calls. The usual restricted Linux controls apply; bank
+OCP qualification remains deferred.
+
+### Flask advisory workflow acceptance (Slice 99)
+
+Using the locally prepared Joern base image:
+
+```sh
+uv build
+docker build -f containers/Containerfile.joern-flask-advisory \
+  -t traceproof:joern-flask-advisory-linux-poc .
+uv run python scripts/validate_container.py --suite joern-flask-advisory \
+  --image traceproof:joern-flask-advisory-linux-poc work/flask-advisory-acceptance
+```
+
+Choose a new output directory. Eight native fixture cases exercise discovery and three
+positive advisory rescans, using synthetic replies derived from the initial fixture
+bundles. No live provider runs. The harness checks budget accounting, duplicate suppression,
+exact report retrieval and incomplete/unverified outcomes, exporting gates, bundles,
+ledgers and HTML reports. The restricted local Linux run does not replace bank OCP testing.
+
+### Express advisory acceptance (Slice 100)
+
+Build the Joern acceptance layer with the updated hash-pinned Python requirements:
+
+```sh
+uv build
+docker build -f containers/Containerfile.joern-express-advisory \
+  -t traceproof:joern-express-advisory-linux-poc .
+uv run python scripts/validate_container.py --suite joern-express-advisory-javascript \
+  --image traceproof:joern-express-advisory-linux-poc work/express-advisory-js
+uv run python scripts/validate_container.py --suite joern-express-advisory-typescript \
+  --image traceproof:joern-express-advisory-linux-poc work/express-advisory-ts
+```
+
+Choose new output directories and run the two suites sequentially on the laptop. The
+image build adds locked JS/TS parser binaries; runtime remains offline and executes no
+repository packages. Each suite checks eight native cases and three replay advisory
+rescans, exporting source/native evidence, gates, ledgers and shareable reports. The bank
+must mirror the new dependencies as part of its normal image build process; local Linux
+acceptance does not replace target OCP testing.
+
+### Repaired C# advisory acceptance (Slice 101)
+
+Using the previously prepared traceproof:joern-csharp-linux-poc image:
+
+```sh
+uv build
+docker build -f containers/Containerfile.joern-csharp-advisory \
+  -t traceproof:joern-csharp-advisory-linux-poc .
+uv run python scripts/validate_container.py --suite joern-csharp-advisory \
+  --image traceproof:joern-csharp-advisory-linux-poc work/csharp-advisory-acceptance
+```
+
+Choose a new output directory. The layer reuses the existing repair, installs the current
+locked requirements and wheel, and adds the acceptance runner. Runtime remains offline
+under the existing arbitrary-UID/read-only-root restrictions. Ten cases exercise Core,
+MVC, Web API, cross-file flow, fixed input and misleading request sources. Four replay
+advisories qualify; two candidate-bearing cases abstain without provider calls. Gates,
+ledgers, native bundles and shareable HTML reports are exported. This is local Linux
+acceptance and does not qualify the image for the bank's OCP environment.
+
+### Go HTTP advisory acceptance (Slice 102)
+
+```sh
+uv build
+docker build -f containers/Containerfile.joern-go-advisory \
+  -t traceproof:joern-go-advisory-linux-poc .
+uv run python scripts/validate_container.py --suite joern-go-advisory \
+  --image traceproof:joern-go-advisory-linux-poc work/go-advisory-acceptance
+```
+
+Choose a new output directory. The layer uses the existing Joern base and the updated
+hash-pinned Python requirements, including the Go grammar binary. Runtime remains offline,
+with arbitrary UID, read-only root, dropped capabilities and bounded resources. Nine cases
+exercise native discovery and three positive replay advisory rescans. The runner exports
+gates, bundles, native output, ledgers and HTML reports; it makes no live model calls.
+Bank package-mirror and actual OCP acceptance remain separate work.
+
+### Rust environment advisory acceptance (Slice 103)
+
+Use the existing traceproof:joern-rust-linux-poc base (UBI 10 and the trusted Rust toolchain):
+
+```sh
+uv build
+docker build -f containers/Containerfile.joern-rust-advisory \
+  -t traceproof:joern-rust-advisory-linux-poc .
+uv run python scripts/validate_container.py --suite joern-rust-advisory \
+  --image traceproof:joern-rust-advisory-linux-poc work/rust-advisory-acceptance
+```
+
+Choose a new output directory. Locked parser binaries are installed at image build time;
+runtime remains offline under arbitrary UID, read-only root and bounded resources. Nine
+cases exercise native discovery, including an eight-node cross-file path, with three
+positive replay advisory rescans. The runner exports gates, bundles, native output,
+ledgers and shareable HTML, without live model calls. Local acceptance does not replace
+bank package approval or actual OCP execution.
+
+
+## C/C++ advisory replay acceptance (Slice 104)
+
+Build on the existing pinned Joern Linux base, then run the suites sequentially:
+
+```sh
+uv build
+docker build -f containers/Containerfile.joern-argv-advisory -t traceproof:joern-argv-advisory-linux-poc .
+uv run python scripts/validate_container.py --suite joern-argv-advisory-c --image traceproof:joern-argv-advisory-linux-poc work/argv-c-advisory
+uv run python scripts/validate_container.py --suite joern-argv-advisory-cpp --image traceproof:joern-argv-advisory-linux-poc work/argv-cpp-advisory
+```
+
+Each suite expects eight cases and three replay advisories, zero live calls. Use a fresh
+output directory. Dependency installation occurs at image build; runtime network is disabled.
+The harness enforces the shared restricted runtime settings. This is laptop Linux fixture
+acceptance, not bank OCP qualification or a throughput measurement.
+
+## Offline OpenShift smoke bundle (Slice 106)
+
+The [deployment guide](../../deploy/openshift/README.md) covers the pinned ARM64 image,
+manifest rendering, one-row CSV/archive input, local Docker rehearsal and deferred cluster
+steps. This is C argv-to-system discovery only, with ephemeral SQLite and exact JSON/HTML
+exports. No Redis, LLM key or hosted API is required. Actual OCP admission/storage/network
+acceptance has not been performed. The smoke image retains its pinned base application
+version; rebuild that base explicitly when upgrading TraceProof.
+
+
+Slice 107 supersedes the C-only smoke selection above: the entrypoint, renderer and rehearsal
+runner accept `--language java|python|javascript|typescript|go|c|cpp`, selecting the existing
+packaged discovery profile. See the deployment guide for the matrix. C#/Rust require separate
+toolchain images; this smoke image rejects them. No advisory or language-coverage promotion.
+
+
+Slice 108 adds separate `Containerfile.ocp-smoke-csharp` and `Containerfile.ocp-smoke-rust`
+layers. Use the matching language and image in the renderer/rehearsal. The general smoke
+image continues rejecting these languages. Each specialized layer retains its qualified
+base wheel/toolchain snapshot; see the deployment guide for builds, fixed tool paths,
+limitations and image-upgrade requirements. Zero model calls; OCP acceptance remains deferred.
+
+
+Slice 113 supersedes the pinned-application limitations above. All three smoke recipes now
+install the same freshly built application wheel and current hash-locked Python dependencies
+over their existing toolchain bases. Run uv build before rebuilding, and use the exact
+qualified digests in containers/ocp-smoke-images.json. Receipt-enabled intake and projection
+13 are qualified locally in these refreshed images; older digests remain unchanged. The
+build-input hash record is not a full SBOM or signature. Actual OCP remains deferred.
+
+
+## Separate Git acquisition container (Slice 115)
+
+Use Containerfile.git-acquisition for networked repositories.csv acquisition, then mount its
+handoff output read-only in the offline scanner. See the
+[acquisition container guide](acquisition-container-guide.md) for build/run commands, exact
+path preservation, partial-batch handling and security/enterprise limitations. Public HTTPS
+only; no private credentials or actual OCP qualification. No automatic scan dispatch.

@@ -24,10 +24,13 @@ from traceproof.reports import get_report, render_report
 def main(fixture="java"):
     spring = fixture == "spring"
     csharp = fixture.startswith("csharp")
-    language = "csharp" if csharp else "java"
+    js = fixture in ("javascript", "typescript")
+    language = fixture if js else "csharp" if csharp else "java"
     filename = (
         "LookupController.cs" if csharp else "LookupController.java" if spring else "DbLookup.java"
     )
+    if js:
+        filename = "app.ts" if fixture == "typescript" else "app.js"
     rule = (
         "cs/sql-injection"
         if csharp
@@ -35,9 +38,9 @@ def main(fixture="java"):
         if spring
         else "java/concatenated-sql-query"
     )
-    parser = argparse.ArgumentParser(
-        description=f"Run {fixture} source-only Java acceptance fixtures"
-    )
+    if js:
+        rule = "js/code-injection"
+    parser = argparse.ArgumentParser(description=f"Run {fixture} source-only acceptance fixtures")
     parser.add_argument("query", type=Path)
     parser.add_argument("output", type=Path)
     parser.add_argument(
@@ -139,7 +142,7 @@ def main(fixture="java"):
                 "language_selection": report["language_scope"]["language_selection"]
                 == ("automatic" if args.auto_language else "explicit"),
                 "syntax_index": report["language_scope"]["semantic_index"] == "not_qualified"
-                if csharp
+                if csharp or js
                 else report["language_scope"]["syntax_index"]["syntax_gate"] == "ready",
                 "honest_readiness": report["static_review_readiness"]["state"] == "incomplete",
                 "no_model_calls": report["triage_call_count"] == 0,

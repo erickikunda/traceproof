@@ -5,7 +5,7 @@ from test_reports import scanned as scanned
 from test_triage import evidence_fixture as evidence_fixture
 from typer.testing import CliRunner
 
-from traceproof import pipeline
+from traceproof import pipeline, scanner_backends
 from traceproof.cli import app
 from traceproof.domain import TraceProofError
 from traceproof.persistence import ScanAttempt
@@ -25,7 +25,7 @@ def test_index_gate_stops_downstream_work(store, scanned, query, monkeypatch):
     def forbidden(*args, **kwargs):
         pytest.fail("Downstream stage invoked after blocked index")
 
-    monkeypatch.setattr(pipeline, "extract", forbidden)
+    monkeypatch.setattr(scanner_backends, "extract", forbidden)
     monkeypatch.setattr(pipeline, "analyze", forbidden)
     result = pipeline.scan_run(store, scanned[1], query)
     assert result["status"] == "blocked" and result["report_id"] is None
@@ -35,7 +35,7 @@ def test_index_gate_stops_downstream_work(store, scanned, query, monkeypatch):
 def test_extraction_failure_never_republishes_old_scan(store, scanned, query, monkeypatch):
     old = publish_report(store, scanned[0])
     monkeypatch.setattr(
-        pipeline,
+        scanner_backends,
         "extract",
         lambda *a, **kw: {"attempt_id": "failed-extraction", "status": "timeout"},
     )
@@ -60,7 +60,7 @@ def test_exact_attempt_publication_and_cli(store, scanned, query, monkeypatch):
         seen.append(timeout)
         return {"attempt_id": scanned[2], "status": "completed"}
 
-    monkeypatch.setattr(pipeline, "extract", extract)
+    monkeypatch.setattr(scanner_backends, "extract", extract)
     monkeypatch.setattr(pipeline, "analyze", analyze)
     result = CliRunner().invoke(
         app,
@@ -97,7 +97,9 @@ def test_preflight_rejects_bad_query_and_timeout(store, scanned, tmp_path, query
 
 def test_failed_query_publishes_incomplete_attempt(store, scanned, query, monkeypatch):
     monkeypatch.setattr(
-        pipeline, "extract", lambda *a, **kw: {"attempt_id": "extract", "status": "extracted"}
+        scanner_backends,
+        "extract",
+        lambda *a, **kw: {"attempt_id": "extract", "status": "extracted"},
     )
 
     def fail_query(*args, **kwargs):

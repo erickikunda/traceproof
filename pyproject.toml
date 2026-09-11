@@ -13,13 +13,24 @@ dependencies = [
   "pydantic>=2.11,<3",
   "sqlalchemy>=2.0.41,<2.1",
   "tree-sitter>=0.25,<0.26",
+  "tree-sitter-c>=0.24,<0.25",
   "tree-sitter-c-sharp>=0.23,<0.24",
+  "tree-sitter-cpp>=0.23,<0.24",
+  "tree-sitter-go>=0.25,<0.26",
   "tree-sitter-java>=0.23,<0.24",
+  "tree-sitter-javascript>=0.25,<0.26",
+  "tree-sitter-rust>=0.24,<0.25",
+  "tree-sitter-typescript>=0.23,<0.24",
   "typer>=0.16,<1",
 ]
 
 [project.scripts]
 traceproof = "traceproof.cli:app"
+
+[project.optional-dependencies]
+gcs = [
+    "google-cloud-storage>=3.4,<4",
+]
 
 [dependency-groups]
 dev = ["pytest>=8.4,<10", "ruff>=0.12,<1"]
@@ -37,3 +48,6 @@ select = ["E", "F", "I", "UP", "B"]
 
 [tool.ruff.lint.per-file-ignores]
 "src/traceproof/cli.py" = ["B008"]
+"tests/fixtures/joern-flask/shadow-*/*.py" = ["F401", "F811"]
+"tests/fixtures/joern-flask/fixed/*.py" = ["F841"]
+"tests/fixtures/joern-flask/disconnected/*.py" = ["F841"]

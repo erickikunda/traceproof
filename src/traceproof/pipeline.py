@@ -1,8 +1,7 @@
-"""Explicit local source-only orchestration; no automatic model calls or retries."""
+"""Local scan orchestration with explicit, bounded Joern advisory opt-in."""
 
 from sqlalchemy import func, select
 
-from traceproof.codeql import extract
 from traceproof.codeql_resources import resource_settings
 from traceproof.csharp_dependencies import load_profile
 from traceproof.domain import TraceProofError
@@ -18,13 +17,14 @@ from traceproof.languages import (
 from traceproof.network_isolation import MODE, validate_offline
 from traceproof.persistence import Run, ScanAttempt, exclusive_worker
 from traceproof.reports import publish_report
+from traceproof.scanner_backends import backend_for
 from traceproof.scanning import analyze, query_entry
 
 
 def scan_run(
     store,
     run_id,
-    queries,
+    queries=None,
     extraction_timeout=300,
     query_timeout=600,
     *,
@@ -37,7 +37,50 @@ def scan_run(
     allow_csharp_downloads=False,
     csharp_dependency_profile=None,
     csharp_offline=False,
+    engine="codeql",
+    joern_home=None,
+    joern_repair_dir=None,
+    rust_home=None,
+    joern_profile=None,
+    advisory=None,
 ):
+    if engine == "joern":
+        from traceproof import joern_pipeline
+
+        joern_pipeline.validate_options(
+            queries,
+            language,
+            joern_home,
+            threads,
+            ram_mb,
+            java_profile=java_profile,
+            java_dependency_profile=java_dependency_profile,
+            allow_csharp_downloads=allow_csharp_downloads,
+            csharp_dependency_profile=csharp_dependency_profile,
+            csharp_offline=csharp_offline,
+        )
+        if not 1 <= extraction_timeout <= 3600 or not 1 <= query_timeout <= 3600:
+            raise TraceProofError("Stage timeouts must be between 1 and 3600 seconds")
+        return joern_pipeline.scan_run(
+            store,
+            run_id,
+            language,
+            joern_home,
+            joern_repair_dir,
+            rust_home,
+            extraction_timeout,
+            query_timeout,
+            skip_existing,
+            joern_profile,
+            advisory=advisory,
+        )
+    if advisory is not None:
+        raise TraceProofError("Scan advisory options require engine joern")
+    if any(x is not None for x in (joern_home, joern_repair_dir, rust_home, joern_profile)):
+        raise TraceProofError("Joern tooling options require engine joern")
+    if queries is None:
+        raise TraceProofError("CodeQL requires the queries argument")
+    backend = backend_for(engine)
     resources = resource_settings(threads, ram_mb)
     validate_selection(language, java_profile)
     requested_language = language
@@ -73,6 +116,10 @@ def scan_run(
                     select(ScanAttempt)
                     .where(
                         ScanAttempt.run_id == run_id,
+                        func.coalesce(
+                            ScanAttempt.report["scanner"]["engine_id"].as_string(), "codeql"
+                        )
+                        == backend.engine_id,
                         func.coalesce(
                             ScanAttempt.report["language_scope"]["java_dependency_profile"][
                                 "id"
@@ -147,7 +194,7 @@ def scan_run(
                 result["java_syntax_index"] = build_java_index(store, run_id)
                 if result["java_syntax_index"]["syntax_gate"] != "ready":
                     return {**result, "reason": "Java syntax index is blocked"}
-        extraction = extract(
+        extraction = backend.prepare(
             store,
             run_id,
             timeout=extraction_timeout,

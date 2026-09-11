@@ -35,6 +35,9 @@ def render_html(report):
     metric = report["candidate_recall_proxy"]
     ratio = f"{cell(metric['numerator'])} / {cell(metric['denominator'])}"
     value = "Unknown" if metric["value"] is None else f"{metric['value']:.1%}"
+    audit = report.get("report_kind") == "discovery_coverage_audit"
+    if audit:
+        value = "Not evaluable"
     complete = report["complete"] is True
     sections = [
         '<!doctype html><html lang="en"><head><meta charset="utf-8">',
@@ -56,14 +59,20 @@ def render_html(report):
         "@media print{body{background:white;padding:0}.scroll{overflow:visible}"
         "details{break-inside:avoid}.metrics .card{margin:4px}}",
         "</style></head><body><main><p>TRACEPROOF · BENCHMARK</p>",
-        "<h1>Candidate-location scorecard</h1>",
+        "<h1>Discovery coverage audit</h1>" if audit else "<h1>Candidate-location scorecard</h1>",
         f"<p>Dataset: <strong>{cell(report['dataset_id'])}</strong> · "
         f"Version {cell(report['dataset_version'])}</p>",
         '<p class="notice"><strong>Provisional location matches.</strong> '
         "Precision and confirmed recall are unknown. Additional predictions are unjudged, "
         "not automatically false positives.</p>",
         '<div class="metrics"><section class="card"><h2>Candidate recall proxy</h2>'
-        f'<div class="number">{value}</div><p>{ratio} declared labels matched</p></section>',
+        f'<div class="number">{value}</div><p>'
+        + (
+            "Discovery profiles are not qualified for recall."
+            if audit
+            else f"{ratio} declared labels matched"
+        )
+        + "</p></section>",
         '<section class="card"><h2>Evaluation status</h2><div class="number">'
         + ("Complete" if complete else "Incomplete")
         + "</div><p>Completion describes evaluation, not security coverage.</p></section>",

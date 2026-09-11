@@ -9,7 +9,7 @@ from pydantic import ValidationError
 from sqlalchemy import func, select
 
 from traceproof.bundles import canonical, get_bundle
-from traceproof.claims import GATE_VERSION, assess_evidence, requirements
+from traceproof.claims import GATE_VERSION, assess_evidence, bundle_engine, requirements
 from traceproof.domain import TraceProofError
 from traceproof.intake import now
 from traceproof.models import PROMPT_VERSION, Adapter, Decision, ModelConfig, request_body
@@ -99,7 +99,9 @@ def triage_report(store, run_id, offset=0, limit=100):
         }
 
 
-def triage(store, bundle_id: str, config: ModelConfig, adapter: Adapter, key: str):
+def triage(
+    store, bundle_id: str, config: ModelConfig, adapter: Adapter, key: str, *, review_policy=None
+):
     if not key.strip() or len(key) > 200:
         raise TraceProofError("Triage key must contain 1–200 characters")
     store.require_initialized()
@@ -116,7 +118,13 @@ def triage(store, bundle_id: str, config: ModelConfig, adapter: Adapter, key: st
                 raise TraceProofError(
                     "Set the configured API-key environment variable before live triage"
                 )
-        body = request_body(bundle, config)
+        preflight = None
+        if review_policy is not None:
+            from traceproof.joern_claims import require_policy, review_preflight
+
+            require_policy(review_policy)
+            preflight = review_preflight(bundle, review_policy)
+        body = request_body(bundle, config, review_policy=review_policy)
         # Preserve existing replay/cloud idempotency hashes when adding local-only settings.
         policy_identity = config.model_dump(
             exclude={"ollama_context_tokens"} if config.provider != "ollama" else set()
@@ -129,6 +137,11 @@ def triage(store, bundle_id: str, config: ModelConfig, adapter: Adapter, key: st
                     "adapter": adapter.identity,
                     "prompt_version": PROMPT_VERSION,
                     "gate_version": GATE_VERSION,
+                    **(
+                        {"review_policy": review_policy, "review_preflight": preflight}
+                        if review_policy is not None
+                        else {}
+                    ),
                 }
             )
         ).hexdigest()
@@ -169,7 +182,12 @@ def triage(store, bundle_id: str, config: ModelConfig, adapter: Adapter, key: st
             state = "running"
             if bundle["status"] != "ready" or not bundle["snippets"]:
                 state, reservation = "incomplete_evidence", 0
-            elif not requirements(bundle["rule_id"])["supported"]:
+            elif preflight is not None and not preflight["passed"]:
+                state, reservation = "incomplete_evidence", 0
+            elif (
+                preflight is None
+                and not requirements(bundle["rule_id"], bundle_engine(bundle))["supported"]
+            ):
                 state, reservation = "unsupported_rule", 0
             elif spent + reservation > budget.limit_micro_usd:
                 state, reservation = "budget_exhausted", 0
@@ -200,6 +218,12 @@ def triage(store, bundle_id: str, config: ModelConfig, adapter: Adapter, key: st
                 "disposition": "abstain",
                 "verified": False,
             }
+            if review_policy is not None:
+                result.update(
+                    review_policy=review_policy,
+                    engine_id=bundle_engine(bundle),
+                    review_preflight=preflight,
+                )
             session.add(
                 TriageCall(
                     id=identity,
@@ -238,7 +262,12 @@ def triage(store, bundle_id: str, config: ModelConfig, adapter: Adapter, key: st
                     state = "invalid_rationale"
                 else:
                     result.update(decision=decision.model_dump(), disposition=decision.verdict)
-                    gate = assess_evidence(bundle, decision)
+                    if review_policy is not None:
+                        from traceproof.joern_claims import assess_review_evidence
+
+                        gate = assess_review_evidence(bundle, decision, review_policy)
+                    else:
+                        gate = assess_evidence(bundle, decision)
                     result["evidence_gate"] = gate
                     if decision.verdict != "abstain" and not gate["passed"]:
                         state = "evidence_rejected"

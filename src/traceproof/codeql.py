@@ -20,6 +20,7 @@ from traceproof.indexing import verified_source
 from traceproof.java_dependencies import java_environment, load_java_profile
 from traceproof.java_index import build_java_index
 from traceproof.languages import (
+    EXTENSIONS,
     adapter_for,
     select_language,
     validate_extraction_scope,
@@ -95,8 +96,10 @@ def extract(
     root = store.root / "codeql" / attempt_id
     root.mkdir(parents=True, mode=0o700)
     extraction_tree = tree
-    copy_suffix = ".cs" if language == "csharp" else ".java"
-    if language == "csharp" or (language == "java" and java_profile == "source-only"):
+    copy_suffix = tuple(suffix for suffix, selected in EXTENSIONS.items() if selected == language)
+    if language in {"csharp", "javascript", "typescript"} or (
+        language == "java" and java_profile == "source-only"
+    ):
         extraction_tree = root / "source"
         extraction_tree.mkdir(mode=0o700)
         for file in manifest.files:

@@ -25,7 +25,7 @@ def static_readiness(session, snapshot_id, scan):
     if language != "python":
         reasons.append(
             f"{language}_semantic_index_not_qualified"
-            if language in {"java", "csharp"}
+            if language in {"java", "csharp", "javascript", "typescript"}
             else "unsupported_language"
         )
     elif not coverage:

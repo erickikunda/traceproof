@@ -1,4 +1,425 @@
-# Implementation progress after Slice 46
+# Implementation progress through Slice 120
+
+## Slice 120 — Live GCS adapter and CLI
+
+Optional SDK and explicit ADC acquisition command pass local mocked boundary tests.
+No real bucket access; next durable cloud provenance and packaging. See [Slice 120](slice-120.md).
+
+## Slice 119 — GCS archive contract
+
+Generation/digest/size-checked internal archive handoff passes five local adapter tests.
+Live GCS transport and CLI remain next; see [Slice 119](slice-119.md).
+
+## Slice 118 — Packaged private acquisition
+
+Refreshed acquisition image passes local HTTPS smart-HTTP/CA/auth/HTTP-proxy tests and
+public-to-offline-scanner handoff. See [Slice 118](slice-118.md). Next GCS archive intake;
+actual bank and OCP acceptance remain pending.
+
+## Slice 117 — Private HTTPS credential input
+
+Exact-repository credentials are supplied only to Git fetch; local HTTPS positive/negative
+authentication and CA tests cover the transport boundary. See [Slice 117](slice-117.md).
+Next acquisition image refresh and packaged validation.
+
+## Slice 116 — Explicit Git transport configuration
+
+Operator CA/proxy options preserve TLS verification and environment isolation. Private
+authentication, native proxy integration and image refresh remain next. See [Slice 116](slice-116.md).
+
+## Slice 115 — Acquisition container and offline handoff
+
+A separate Git/CA acquisition image hands receipt-pinned archives to the qualified offline
+scanner. Public-repository mixed acquisition and one C scan pass, with zero model calls.
+See [Slice 115](slice-115.md). Next enterprise acquisition configuration; no migration or OCP apply.
+
+
+## Slice 114 — repositories.csv acquisition
+
+Explicit bounded Git CSV acquisition emits successful archives.csv rows and a complete
+per-row acquisition summary, reusing source/receipt safeguards. See [Slice 114](slice-114.md).
+No migration, model or scan execution. Next dedicated networked acquisition-stage packaging.
+
+
+## Slice 113 — Refreshed application in smoke images
+
+All three toolchain variants now install the current built application and locked Python
+dependencies. Plain/receipt-enabled mounted batch checks verify projection 13 and explicit
+invalid-row outcomes. See [Slice 113](slice-113.md). Next bounded repositories.csv acquisition.
+No migration or bank deployment; immutable earlier image versions remain unchanged.
+
+
+## Slice 112 — Durable Git provenance
+
+Optional pinned receipt columns persist validated provenance in existing intake JSON and
+bind it to captured file hashes. Projection 13 exposes commit/archive identity and binding
+status across report formats. See [Slice 112](slice-112.md). No migration. Next container
+application refresh/requalification before provenance-enabled PVC input is used there.
+
+
+## Slice 111 — Mounted multi-row archive batches
+
+Separate batch entrypoint reuses intake and sequential scanning, with up to ten rows,
+per-row exact reports, progress summaries and explicit incomplete/failed exits. See
+[Slice 111](slice-111.md). No migration or OCP operation. Next durable Git provenance.
+
+
+## Slice 110 — PVC archive manifest naming
+
+Mounted smoke entrypoints accept archives.csv with input.csv compatibility and reject
+ambiguous/Git/linked/non-file input before scan state. See [Slice 110](slice-110.md).
+One-row smoke semantics remain; next bounded mounted multi-row handoff. No migration.
+
+
+## Slice 109 — Public HTTPS Git acquisition
+
+Explicit acquire-git prepares commit-pinned raw-blob source ZIP, hashed CSV and provenance
+sidecar for existing archive intake. Host allowlist, bounded execution and unsupported-content
+rejection are enforced. See [Slice 109](slice-109.md). No migration or automatic scan.
+Next durable intake/report binding of acquisition provenance; private Git/GCS remain open.
+
+
+## Slice 108 — Specialized C# and Rust smoke images
+
+The shared mounted archive-to-report workflow now has separate C# repair and Rust toolchain
+layers, with per-image selection and the existing tool identity gates. See [Slice 108](slice-108.md).
+No migration or bank deployment. Next bounded repository-URL acquisition intake.
+
+
+## Slice 107 — Seven-language mounted smoke workflow
+
+Explicit language/profile selection now connects the namespace Job to the shared offline
+scan/report workflow for Java, Python, JavaScript, TypeScript, Go, C and C++. C#/Rust remain
+outside this image pending their separate toolchain layers. See [Slice 107](slice-107.md).
+No migration or cluster operation. Next C#/Rust deployment handoff, not further CLI polish.
+
+
+## Slice 106 — Offline OCP smoke deployment preparation
+
+Namespace manifest renderer, digest-pinned ARM64 image and one-archive C-profile entrypoint
+are implemented. Restricted Docker archive-to-report vulnerable/fixed runs pass 1/0 with
+zero model calls. No cluster operation or migration. See [Slice 106](slice-106.md).
+Next representative mounted-input integration across profiles; OCP acceptance stays deferred.
+
+
+## Slice 105 — POC readiness checkpoint
+
+The bounded language/advisory pass is complete for its documented profiles. The remaining
+immediate local priority is an OCP-2 offline smoke deployment bundle and Docker rehearsal.
+Git/GCS acquisition, hosted HTTP API, PostgreSQL/distributed qualification, real benchmark,
+live gateway and actual OCP acceptance remain open. See [checkpoint](slice-105.md).
+This documentation checkpoint adds no runtime behavior; 947 tests is the Slice 104 baseline.
+
+
+## Slice 104 — C/C++ argv-to-system advisory
+
+Two explicit policies reuse budgeted scan/triage/report integration with isolated syntax
+and complete native/source evidence checks. 59 new tests and 16 restricted Linux fixture
+cases pass; six replay calls and zero live calls. See [Slice 104](slice-104.md).
+Next: POC readiness/integration-gap checkpoint across the language/profile matrix.
+
+
+## Slice 103 — Rust environment-to-shell advisory
+
+Explicit joern-rust-env-review-v1 adds bounded syntax/native/context checks and the existing
+budgeted scan/triage/report workflow. Rust's eight-node cross-file path is retained in full.
+888 tests and nine restricted Linux cases pass; three replay calls, zero live calls.
+See [Slice 103](slice-103.md). Next bounded C/C++ argv-to-system advisory.
+
+## Slice 102 — Go HTTP-to-shell advisory
+
+Explicit joern-go-http-review-v1 adds isolated request/shell syntax checks and bounded
+native/source eligibility to the existing scan/advisory/report workflow. 844 tests and nine
+restricted Linux cases pass; three replay calls, zero live calls. See [Slice 102](slice-102.md).
+Next bounded Rust environment-to-shell advisory, then C-family portability.
+
+## Slice 101 — Repaired C#/ASP.NET advisory
+
+Explicit joern-csharp-review-v1 replays source mapping, checks repair provenance and binds
+endpoint claims to mapped syntax facts. Budgeted workflow/report integration is available;
+unsupported source candidates abstain without calls. 805 tests and ten restricted Linux
+cases pass; four replay advisories, zero live calls. See [Slice 101](slice-101.md).
+Next bounded Go HTTP-to-shell advisory; broader C# discovery stays a separate enhancement.
+
+## Slice 100 — JavaScript/TypeScript Express advisory
+
+Explicit language-specific Express policies now support bounded native/source/syntax checks
+and budgeted scan/triage/report workflows. 760 tests and 16 restricted Linux cases pass;
+six replay advisories, zero live calls. See [Slice 100](slice-100.md). Next bounded C# advisory
+using the existing repaired Joern and source-location evidence.
+
+## Slice 99 — Bounded Flask advisory
+
+Explicit Flask evidence/triage policy now uses the main advisory workflow, with native
+provenance, isolated endpoint binding and generated intermediates retained as observations.
+Eight restricted Linux cases and 696 tests pass; three replay advisories, zero live calls.
+See [Slice 99](slice-99.md). Next bounded JavaScript/TypeScript Express advisory portability.
+
+## Slice 98 — Main scan/advisory workflow
+
+Explicit bounded Java/Spring advisory now runs from scan-run/scan-import with existing
+budgets, stop/skip reporting, invocation counts and exact-attempt publication. Seven Linux
+cases and 678 tests pass; zero live calls. See [Slice 98](slice-98.md). Next bounded Python
+Flask evidence/advisory portability, reusing the workflow rather than refining CLI mechanics.
+
+
+## Slice 97 — Budgeted Joern Spring advisory
+
+Explicit triage/triage-attempt policy now supports native/context preflight, durable
+budgets, policy-aware idempotency and post-response checks. Seven Linux cases with two
+replay advisories and 667 tests pass. Default Joern scans remain discovery-only. See
+[Slice 97](slice-97.md). Next explicit advisory integration into the main scan workflow.
+
+
+## Slice 96 — Explicit Joern Spring evidence review
+
+Fresh native output is bound to query/SARIF/source evidence; an explicitly selected policy
+can assess needs_review claims without invoking a model. Seven restricted Linux cases and
+654 tests pass. Automatic Joern triage remains disabled. See [Slice 96](slice-96.md).
+Next opt-in budgeted advisory orchestration with replay acceptance and preflight gates.
+
+
+## Slice 95 — Rust environment discovery and POC checkpoint
+
+Opt-in environment-to-shell profile passes nine restricted Linux cases; 635 tests pass.
+The useful-input expansion pass ends here. Next bounded Java/Spring Joern evidence/triage
+portability: the current main Joern path still makes no model calls and qualified policies
+remain CodeQL-only. See [Slice 95](slice-95.md). Bank benchmark, fleet throughput and OCP
+execution remain separate open gates.
+
+
+## Slice 94 — C/C++ command-line discovery
+
+Opt-in main argument-vector reads to system now run through the main workflow. Eight
+restricted Linux cases per language pass; 629 tests pass. Native probes resolved array
+and C++ graph-name differences without changing acceptance fixtures. See
+[Slice 94](slice-94.md). Next useful Rust input-source modeling within bounded Cargo scope.
+
+
+## Slice 93 — Go HTTP form-to-shell discovery
+
+Opt-in FormValue/PostFormValue to literal shell -c command text now runs through the
+main workflow. Nine restricted Linux cases and 621 tests pass. Command construction
+remains separate from proven execution/reachable routes. See [Slice 93](slice-93.md).
+Next bounded C/C++ command-line source modeling, preserving breadth-first scope.
+
+
+## Slice 92 — Express HTTP-input discovery
+
+Opt-in JS/TS request query/body/params field-to-eval profile now runs through the main
+workflow. Eight restricted Linux cases per language and 615 tests pass. The observed
+factory import-alias gap remains explicit; no triage/recall promotion. See
+[Slice 92](slice-92.md). Next bounded Go HTTP-input modeling, preserving breadth.
+
+
+## Slice 91 — Flask request-to-shell discovery
+
+Opt-in import-aware syntax endpoints remove fixture-name dependence for this bounded
+Python profile. Eight Linux cases and 607 tests pass. See [Slice 91](slice-91.md).
+Next useful JS/TS HTTP-input profile, preserving breadth-first priorities.
+
+## Slice 90 — Joern benchmark coverage audit
+
+Schema-2 audit plans accept bounded Joern profiles; gaps remain explicit and recall
+unknown. Real retained-report publication/retrieval and 596 tests pass.
+See [Slice 90](slice-90.md). Next useful detection-profile expansion and scoped evaluation.
+
+## Slice 89 — Joern main scan workflow
+
+scan-run/scan-import route explicit Joern profiles with auto selection and engine-aware
+retry skipping. Shared restricted Linux acceptance and 584 tests pass. See [Slice 89](slice-89.md).
+Next benchmark/evaluation compatibility and visible coverage gaps.
+
+## Slice 88 — C/C++ durable Joern integration
+
+Five restricted Linux cases per language pass; 566 tests pass. See [Slice 88](slice-88.md).
+The bounded opt-in language sequence is complete; next shared backend/pipeline integration.
+
+## Slice 87 — Rust durable Joern integration
+
+Five cases pass on macOS and restricted UBI 10 Linux; 562 tests pass.
+Cargo admission remains dependency-free and single-binary. See [Slice 87](slice-87.md).
+Next planned C/C++ durable integration.
+
+## Slice 86 — Go durable Joern integration
+
+Five restricted Linux cases pass, including three-package flow; 548 tests pass.
+See [Slice 86](slice-86.md). Next Rust integration and Linux acceptance.
+
+## Slice 85 — JavaScript/TypeScript durable Joern integration
+
+Both profiles pass five restricted Linux cases each; 546 regression tests pass.
+See [Slice 85](slice-85.md). Next Go integration, then Rust.
+
+## Slice 84 — Python durable Joern integration
+
+Five restricted Linux cases pass (1/0 single-file, 1/0 cross-file, disconnected 0);
+542 tests pass. See [Slice 84](slice-84.md). Next JavaScript/TypeScript integration.
+Further C# refinement is deferred under the approved breadth-first priority.
+
+## Slice 83 — Durable C# Linux acceptance
+
+All 22 cases pass under restricted Linux, including durable 1/0 discovery and reports.
+537 tests pass. See [Slice 83](slice-83.md). Next bounded ASP.NET source-profile qualification.
+
+## Slice 82 — Experimental C# durable discovery
+
+Opt-in command publishes validated paths through normal scan/report storage; real
+intake-to-report pair yields 1/0 and stays incomplete. See [Slice 82](slice-82.md).
+537 tests pass. Durable Linux integration acceptance is next.
+
+## Slice 81 — Repaired C# restricted Linux acceptance
+
+All 20 flow/binding cases, 18 spans and expected syntax facts pass with arbitrary UID,
+read-only root, no network and bounded resources. See [Slice 81](slice-81.md).
+Experimental discovery integration is next; actual bank OCP remains deferred.
+
+## Slice 80 — C# framework syntax facts
+
+Optional framework facts attach through validated byte spans and hashes; attributed
+parameter subspans are supported. Eighteen baseline nodes validate; 533 tests pass.
+See [Slice 80](slice-80.md). Restricted Linux validation is next; triage remains unchanged.
+
+## Slice 79 — C# source-span validation
+
+All 16 retained binding-fixture nodes map to unique syntax spans with raw coordinates
+preserved. Repeated/multiline and invalid-input regression tests pass. See [Slice 79](slice-79.md).
+Framework facts and runtime qualification remain next; no triage gate is promoted.
+
+## Slice 78 — C# adversarial binding checks
+
+Ten additional cases pass exact callee and flow assertions, including namespace,
+instance/overload and disconnected/duplicate-name cases. See [Slice 78](slice-78.md).
+Per-node source mapping is next; broader dispatch and runtime qualification remain open.
+
+## Slice 77 — Experimental C# global-namespace repair
+
+A one-line frontend change recovers the original cross-file flow and all ten existing
+cases pass. Joern installation and fixtures remain unchanged. See [Slice 77](slice-77.md).
+Adversarial binding, source mapping and runtime qualification remain open.
+
+## Slice 76 — Opengrep C# comparison
+
+Stable and interfile alpha pass single-file pairs but miss cross-file and combined-file
+call-chain positives. Sample returned coordinates are consistent. See [Slice 76](slice-76.md).
+Neither replaces CodeQL evidence yet; bounded Joern repair remains next.
+
+## Slice 75 — C# recovery investigation
+
+Explicit namespaces recover the synthetic cross-file pair (1/0); original global-namespace
+failure remains. Mixed raw coordinate errors rule out blanket offsets. See [Slice 75](slice-75.md)
+for the bounded repair recommendation. C# remains unqualified.
+
+## Slice 74 — Early C/C++ feasibility
+
+Ten common-subset .c/.cpp cases passed, including shared-header cross-file flows and
+disconnected negatives. Sample coordinates matched. See [Slice 74](slice-74.md).
+Initial language assessments are complete; C# investigation is next. C++ features,
+memory safety and restricted runtime qualification remain open.
+
+## Slice 73 — Go initial feasibility
+
+Five Go module cases passed, including a three-package flow and disconnected negative.
+All returned sample source lines matched. See [Slice 73](slice-73.md). Early C/C++ is
+next, followed by the deferred C# review; broad Go and Linux qualification remain open.
+
+## Slice 72 — JavaScript/TypeScript initial feasibility
+
+Ten real source-only cases passed across both languages, including ES-module cross-file
+flows and disconnected negatives. Sample source lines matched; framework and runtime
+qualification remain open. See [Slice 72](slice-72.md). Go is next, followed by early
+C/C++ and the deferred C# review.
+
+## Slice 71 — Python initial feasibility
+
+Five source-only Python cases passed: single-file and cross-file pairs 1/0 plus a
+disconnected negative. Sample source lines matched; framework and runtime qualification
+remain open. See [Slice 71](slice-71.md). JavaScript/TypeScript is next, before Go, early
+C/C++ and the deferred C# review.
+
+## Slice 70 — Rust initial feasibility
+
+Four real Cargo-based Rust flow cases passed, including a six-node cross-file path.
+Preparation requires a Cargo project/toolchain in this profile; runtime/build-policy
+qualification remains open. See [Slice 70](slice-70.md). C# remediation is deferred until
+Python, JS/TS, Go and early C/C++ assessments finish.
+
+## Slice 69 — C# gate not passed
+
+The real C# probe missed the vulnerable cross-file chain and exposed framework metadata
+and source-line gaps. Single-file Core/MVC/Web API pairs retained expected 1/0 flows;
+that does not qualify the backend. See [Slice 69](slice-69.md). Existing 521 tests pass.
+C# registration remains gated; no external access blocker requires user action.
+
+## Slice 68 — parser diagnostic observations
+
+Bounded log observations now retain parser-problem files and event counts, with explicit
+unknown/truncated states. Nine-case Linux acceptance includes malformed and partially
+parsed inputs. See [Slice 68](slice-68.md). Next: Joern C#/ASP.NET feasibility, then Rust.
+
+## Slice 67 — restricted Linux Joern
+
+A separate UBI/JDK21/Joern image and durable seven-case acceptance suite exercise arbitrary
+UID, read-only root, network denial and resource limits. See [Slice 67](slice-67.md) for
+runtime evidence and the remaining bank OCP boundary. No migration is required.
+
+## Slice 66 — Joern coverage and unknown diagnostics
+
+Joern now reports modeled source/sink/flow counts and missing graph files. Process success
+is separate from complete analysis; unqualified parser diagnostics remain null. Shared
+reports retain the new coverage block. See [Slice 66](slice-66.md).
+
+## Slice 65 — bounded Spring/JDBC model
+
+Joern now uses fully qualified graph annotations and the JDBC signature rather than
+fixture names. Seven real cases cover renamed sources, safe/disconnected flows and
+annotation/sink lookalikes. Discovery remains partial and unqualified for triage.
+See [Slice 65](slice-65.md).
+
+## Slice 64 — durable experimental Joern
+
+Explicit Joern discovery now stores attempts, candidates and reports. Real durable tests
+passed 1/0/0; all reports remain incomplete and Joern triage remains unsupported. The query
+is still fixture-scoped. See [Slice 64](slice-64.md). No migration required.
+
+## Slice 63 — real Joern feasibility
+
+Pinned Joern 4.0.625 produced 1/0/0 flows for the vulnerable, parameterized and disconnected
+three-file Java fixtures. Source references and hashes are retained. This is fixture-level
+macOS feasibility, not Spring qualification or a selectable production adapter. See
+[Slice 63](slice-63.md). Existing 499 tests pass.
+
+## Slice 62 — preparation routing and recorded identity
+
+Creation and lookup now route through the selected backend. Static attempts record
+version-aware configuration identity; automatic reuse remains disabled until transitive
+rule packs and prepared artifacts are pinned. Next: Joern Java feasibility/adapter with
+explicit preparation/output contracts. See [Slice 62](slice-62.md).
+
+## Slice 61 — evidence isolation
+
+Backend-owned prepared-input lookup and engine-scoped evidence policies are delivered.
+Builder 6, gate 8 and prompt 3 prevent another engine from qualifying via CodeQL rule
+names. Legacy CodeQL bundles remain supported. See [Slice 61](slice-61.md).
+
+## Slice 60 — engine provenance
+
+New attempts record engine/capability, prepared-input and rule-entry metadata. Explicitly
+different engines cannot satisfy the CodeQL existing-attempt guard. Historical reports
+remain readable; CodeQL is the only runnable backend. S2 is partial: prepared-input
+routing, evidence-policy isolation and full engine/rule-pack reuse remain open.
+See [Slice 60](slice-60.md).
+
+## Current priority — scanner portability
+
+Slice 59 separates CodeQL process execution from integrity checks and publication.
+All 484 tests pass. Joern is the preferred qualification candidate; it is not installed
+or runnable through TraceProof yet. Plan §18 supersedes the earlier queue: complete
+engine-neutral contracts, qualify Java/Spring then C#/Rust early, compare Opengrep,
+and resume language expansion. C and C++ follow the existing language work plan.
+See [Slice 59](slice-59.md) for scope and remaining boundaries.
+
+The language-priority notes below describe the earlier planning baseline.
 
 ## Priority reset — 10 September 2026
 
@@ -223,3 +644,7 @@ Approved planning addition: T1–T4 configurable triage policy packs, with disco
 explicit exploratory and qualified advisory modes. Current behavior is unchanged.
 JavaScript/TypeScript remains next; registry work is reconsidered after initial L3
 qualification without indefinitely blocking the remaining language priorities.
+
+Slice 58 starts JavaScript/TypeScript extraction-to-report support with separate
+source-only selections, a shared CodeQL extractor and distinct Express/eval fixture
+pairs. Semantic resolution and JS/TS triage remain unsupported; readiness stays incomplete.

@@ -43,10 +43,12 @@ def submit(store: Store, csv_path: Path, input_root: Path, key: str) -> str:
         required = {"repo_id", "source_type", "source_uri", "owner", "classification"}
         if not headers or len(headers) != len(set(headers)):
             raise TraceProofError("CSV must have unique column names")
-        if not required.issubset(headers) or not set(headers).issubset(IntakeSpec.model_fields):
+        if not required.issubset(headers) or not set(headers).issubset(
+            set(IntakeSpec.model_fields) - {"acquisition_data"}
+        ):
             raise TraceProofError(
                 "CSV columns must include repo_id, source_type, source_uri, owner, classification; "
-                "only sha256 and scan_profile are optional in this slice"
+                "optional fields: sha256, scan_profile, acquisition_receipt, acquisition_sha256"
             )
         rows = []
         for number, row in enumerate(reader, start=2):
@@ -84,6 +86,9 @@ def submit(store: Store, csv_path: Path, input_root: Path, key: str) -> str:
                         raise TraceProofError("CSV row has a different field count from its header")
                     normalized = {k: v for k, v in row.items() if v.strip()}
                     spec = IntakeSpec.model_validate(normalized)
+                    from traceproof.acquisition_provenance import admit
+
+                    spec = admit(spec, root)
                     with open_scoped_source(spec.source_uri, root):
                         pass
                     repo = session.get(Repository, spec.repo_id)
@@ -259,6 +264,9 @@ def process(store: Store, artifacts: ArtifactStore, import_id: str, max_items: i
             spec = IntakeSpec.model_validate(item.spec)
         try:
             manifest = artifacts.capture(spec, root)
+            from traceproof.acquisition_provenance import verify_snapshot
+
+            verify_snapshot(spec, manifest)
         except TraceProofError as exc:
             with store.transaction() as session:
                 item = session.get(ImportItem, item_id)

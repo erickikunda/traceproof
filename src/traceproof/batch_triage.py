@@ -13,7 +13,13 @@ from traceproof.triage import triage
 CONTINUE_STATES = {"completed", "evidence_rejected", "unsupported_rule", "incomplete_evidence"}
 
 
-def triage_attempt(store, repo_id, attempt_id, config, adapter, key, offset=0, limit=1):
+def triage_attempt(
+    store, repo_id, attempt_id, config, adapter, key, offset=0, limit=1, *, review_policy=None
+):
+    if review_policy is not None:
+        from traceproof.joern_claims import require_policy
+
+        require_policy(review_policy)
     validate_page(offset, limit)
     if limit > 100:
         raise TraceProofError("Batch triage limit must not exceed 100 candidates")
@@ -47,13 +53,21 @@ def triage_attempt(store, repo_id, attempt_id, config, adapter, key, offset=0, l
     halted = False
     next_offset = offset
     for fingerprint in fingerprints:
-        request_key = (
-            "batch:" + hashlib.sha256(canonical([key, attempt_id, fingerprint])).hexdigest()
-        )
+        identity = [key, attempt_id, fingerprint]
+        if review_policy is not None:
+            identity.append(review_policy)
+        request_key = "batch:" + hashlib.sha256(canonical(identity)).hexdigest()
         row = {"candidate_fingerprint": fingerprint, "request_key": request_key}
         try:
             bundle = build_bundle(store, attempt_id, fingerprint)
-            result = triage(store, bundle["bundle_id"], config, adapter, request_key)
+            result = triage(
+                store,
+                bundle["bundle_id"],
+                config,
+                adapter,
+                request_key,
+                **({"review_policy": review_policy} if review_policy else {}),
+            )
         except TraceProofError as exc:
             rows.append({**row, "state": "operation_error", "error": str(exc)})
             halted = True

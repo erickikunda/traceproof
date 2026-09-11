@@ -173,3 +173,35 @@ def test_csharp_reports_do_not_inherit_python_readiness(store, scanned):
     assert report["static_review_readiness"]["state"] == "incomplete"
     assert "csharp_semantic_index_not_qualified" in report["static_review_readiness"]["reasons"]
     assert get_report(store, repo, report["report_id"]) == report
+
+
+@pytest.mark.parametrize("language,filename", [("javascript", "app.js"), ("typescript", "app.ts")])
+def test_js_ts_distinct_scope_and_automatic_selection(language, filename):
+    from traceproof.languages import select_language
+
+    snapshot = manifest(filename, "package.json", "tsconfig.json")
+    assert select_language(snapshot, "auto") == language
+    assert adapter_for(language).extractor == "javascript"
+    scope = validate_extraction_scope(snapshot, language)
+    assert scope["selected_file_count"] == 1 and scope["omitted_file_count"] == 2
+    assert scope["evidence_gate"] == "unsupported"
+    assert scope["configuration_files"] == "omitted"
+    with pytest.raises(TraceProofError, match="Automatic selection"):
+        select_language(manifest("app.js", "app.ts"), "auto")
+
+
+@pytest.mark.parametrize("language,filename", [("javascript", "app.js"), ("typescript", "app.ts")])
+def test_js_ts_report_readiness_stays_incomplete(store, scanned, language, filename):
+    repo, run, attempt, _ = scanned
+    with store.transaction() as session:
+        record = session.get(ScanAttempt, attempt)
+        record.report = {
+            **record.report,
+            "language": language,
+            "language_scope": validate_extraction_scope(manifest(filename), language),
+        }
+    report = publish_report(store, repo, run, attempt)
+    assert report["static_review_readiness"]["state"] == "incomplete"
+    assert (
+        f"{language}_semantic_index_not_qualified" in report["static_review_readiness"]["reasons"]
+    )

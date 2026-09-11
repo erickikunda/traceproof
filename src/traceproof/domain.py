@@ -4,7 +4,7 @@ from enum import StrEnum
 from pathlib import PurePosixPath
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class TraceProofError(Exception):
@@ -41,6 +41,19 @@ class IntakeSpec(Contract):
     classification: Annotated[str, Field(min_length=1, max_length=100)]
     sha256: Digest | None = None
     scan_profile: Literal["standard"] = "standard"
+    acquisition_receipt: str | None = None
+    acquisition_sha256: Digest | None = None
+    acquisition_data: dict | None = None
+
+    @model_validator(mode="after")
+    def receipt_pair(self):
+        if bool(self.acquisition_receipt) != bool(self.acquisition_sha256):
+            raise ValueError("Acquisition receipt path and digest must be supplied together")
+        if self.acquisition_receipt and (
+            not self.acquisition_receipt.startswith("/") or not self.sha256
+        ):
+            raise ValueError("Acquisition receipt requires an absolute path and archive SHA-256")
+        return self
 
     @field_validator("source_uri")
     @classmethod

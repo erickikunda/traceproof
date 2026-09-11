@@ -78,7 +78,7 @@ def classic_source(parameter, imports):
     return False
 
 
-def parse(source):
+def parse(source, *, include_spans=False):
     empty = {"sources": [], "sinks": []}
     if len(source) > MAX_BYTES:
         return {**empty, "status": "size_limit"}
@@ -125,7 +125,20 @@ def parse(source):
     for node in nodes:
         location = dict(line=node.start_point.row + 1, end_line=node.end_point.row + 1)
         if node.type == "parameter" and classic_source(node, imports):
-            sources.append(location)
+            sources.append(
+                {
+                    **location,
+                    **(
+                        {
+                            "start_byte": node.start_byte,
+                            "end_byte": node.end_byte,
+                            "fact": "classic_http_get_parameter",
+                        }
+                        if include_spans
+                        else {}
+                    ),
+                }
+            )
         if node.type == "attribute":
             name = node.child_by_field_name("name")
             written = name.text.decode() if name else ""
@@ -143,7 +156,20 @@ def parse(source):
                     and "using Microsoft.AspNetCore.Mvc;" in imports
                 )
             ):
-                sources.append(location)
+                sources.append(
+                    {
+                        **location,
+                        **(
+                            {
+                                "start_byte": target.start_byte,
+                                "end_byte": target.end_byte,
+                                "fact": "explicit_from_query_parameter",
+                            }
+                            if include_spans
+                            else {}
+                        ),
+                    }
+                )
         if node.type == "assignment_expression":
             left = node.child_by_field_name("left")
             name = left.child_by_field_name("name") if left else None
@@ -153,7 +179,21 @@ def parse(source):
                 and name is not None
                 and name.text == b"CommandText"
             ):
-                sinks.append(location)
+                right = node.child_by_field_name("right")
+                sinks.append(
+                    {
+                        **location,
+                        **(
+                            {
+                                "start_byte": right.start_byte,
+                                "end_byte": right.end_byte,
+                                "fact": "command_text_rhs_syntax",
+                            }
+                            if include_spans and right
+                            else {}
+                        ),
+                    }
+                )
     return dict(status="parsed", sources=sources, sinks=sinks)
 
 

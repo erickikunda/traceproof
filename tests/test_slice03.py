@@ -224,7 +224,7 @@ sys.exit(7 if {mode!r} == 'failed' else 0)
 """)
     fake.chmod(0o700)
     monkeypatch.setenv("TEST_SECRET", "do-not-forward")
-    monkeypatch.setattr("traceproof.scanning.shutil.which", lambda _: str(fake))
+    monkeypatch.setattr("traceproof.codeql_scanner.shutil.which", lambda _: str(fake))
     report = analyze(store, extraction_id, query, timeout=1)
     assert report["status"] == status
     assert report["candidate_count"] == count
@@ -233,6 +233,15 @@ sys.exit(7 if {mode!r} == 'failed' else 0)
     assert len(retrieved["candidates"]) == (count or 0)
     assert retrieved["verified_finding_count"] is None
     assert retrieved["analysis_codeql_version"] == "test"
+    assert retrieved["analysis_identity"]["automatic_reuse_eligible"] is False
+    assert len(retrieved["analysis_identity"]["configuration_sha256"]) == 64
+    assert retrieved["scanner"]["engine_id"] == "codeql"
+    assert retrieved["scanner"]["version"] == "test"
+    assert retrieved["scanner"]["capabilities"]["flow_paths_guaranteed"] is False
+    assert retrieved["prepared_input"]["preparation_id"] == extraction_id
+    assert retrieved["prepared_input"]["snapshot_id"] == retrieved["snapshot_id"]
+    assert retrieved["rule_entry"]["sha256"] == retrieved["query_sha256"]
+    assert retrieved["rule_entry"]["transitive_dependencies_verified"] is False
     runner = CliRunner()
     result = runner.invoke(
         app, ["--state-dir", str(store.root), "scan-report", "example", "--format", "markdown"]
