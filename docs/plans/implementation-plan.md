@@ -45,7 +45,7 @@ framework heuristics. Reports remain per profile; errors/unsupported scope are e
 Explicit overrides are preserved. Optional LLM wrapper discovery remains later work.
 See [operator guide](../guides/automatic-scan-selection.md) for compatibility details.
 
-## Current checkpoint after Slice 136
+## Current checkpoint after Slice 137
 
 Git/PVC/GCS intake now has explicit archive handoff and durable provenance. Git private
 HTTPS and HTTP CONNECT transport have local native acceptance; GCS has a live optional SDK
@@ -1329,3 +1329,15 @@ object filters and runtime exploitability remain unverified, advisory unsupporte
 See [guide](../guides/java-deserialization-discovery.md). No migration or image
 promotion. Next assess bounded Java XML external-entity discovery (CWE-611), with
 parser-configuration evidence and explicit uncertainty.
+
+
+## Slice 137 — explicitly enabled Java XML entity discovery
+
+Added `java-spring-xml-entities-v1` (CWE-611), requiring request input into DOM parsing
+and a linked factory binding with explicit external-general-entities=true. Unknown
+defaults are omitted, not safe; configuration overrides and actual resolution remain
+unverified. Eight bounded CWE families have discovery profiles. See
+[guide](../guides/java-xml-discovery.md). Automatic selection includes the profile,
+with separate report identity and no qualified advisory. No migration/image promotion.
+Next prioritize Java process-execution breadth, then reassess remaining language/API
+gaps against the roadmap rather than refining these profiles indefinitely.

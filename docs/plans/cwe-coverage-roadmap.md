@@ -175,3 +175,11 @@ filter adequacy and gadget availability are not inferred. Seven bounded CWE fami
 now have discovery profiles; no claim of whole-CWE coverage or measured recall.
 See [guide](../guides/java-deserialization-discovery.md). Next Java XML configuration
 and external-entity candidate feasibility.
+
+## Slice 137 — explicit Java XML entity candidates
+
+`java-spring-xml-entities-v1` adds CWE-611 DOM input flow with an observed linked
+external-general-entities=true factory setting. Missing/default settings are a recall
+gap; effective parser configuration is not established. Eight bounded CWE families
+now have profiles, not whole-CWE coverage or measured recall. See
+[guide](../guides/java-xml-discovery.md). Next Java process-execution breadth.
