@@ -45,7 +45,7 @@ framework heuristics. Reports remain per profile; errors/unsupported scope are e
 Explicit overrides are preserved. Optional LLM wrapper discovery remains later work.
 See [operator guide](../guides/automatic-scan-selection.md) for compatibility details.
 
-## Current checkpoint after Slice 139
+## Current checkpoint after Slice 140
 
 Git/PVC/GCS intake now has explicit archive handoff and durable provenance. Git private
 HTTPS and HTTP CONNECT transport have local native acceptance; GCS has a live optional SDK
@@ -1363,3 +1363,13 @@ helper. Automatic selection preserves legacy and new profiles separately. Runtim
 route/database identity remains unverified; new-rule advisory unsupported. See
 [guide](../guides/csharp-query-discovery.md). No migration/image promotion. Next assess
 C# sink breadth with these source facts, prioritizing useful file/process patterns.
+
+
+## Slice 140 — C# query-to-file discovery
+
+Added `csharp-query-file-read-v1` (CWE-22) using fully qualified ReadAllText receiver
+syntax, mapped query-source facts and a conservative local-type-lookalike exclusion.
+The frontend does not resolve the API signature; runtime identity and directory
+escape remain unverified. Automatic selection retains separate reports. See
+[guide](../guides/csharp-file-discovery.md). No migration, new advisory or image
+promotion. Next assess bounded C# process execution with argument/option evidence.

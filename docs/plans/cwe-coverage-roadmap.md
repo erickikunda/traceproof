@@ -198,3 +198,10 @@ query-binding syntax at each published flow's source. Native Core FromQuery dire
 and namespaced cross-file fixtures pass; database sink identity and actual routing
 remain unverified. Eight CWE families remain. See
 [guide](../guides/csharp-query-discovery.md). Next C# sink breadth using these sources.
+
+## Slice 140 — C# file-path breadth
+
+`csharp-query-file-read-v1` adds CWE-22 query-source flow to fully qualified
+System.IO.File.ReadAllText syntax. API signatures remain unresolved; source-defined
+System/IO/File types conservatively exclude this profile. Eight CWE families remain.
+See [guide](../guides/csharp-file-discovery.md). Next C# process-execution feasibility.

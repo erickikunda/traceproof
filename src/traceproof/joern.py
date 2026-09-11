@@ -176,6 +176,8 @@ def to_sarif(raw, source, manifest, language="java", rule=RULE):
                             if rule == "traceproof/joern-python-flask-sql-v1"
                             else "CWE-918: Flask input to requests.get URL; destination unverified."
                             if rule == "traceproof/joern-python-flask-ssrf-v1"
+                            else "CWE-22: C# query input to File.ReadAllText; candidate."
+                            if rule == "traceproof/joern-csharp-query-file-read-v1"
                             else "CWE-89: C# query-binding syntax to CommandText; candidate."
                             if rule == "traceproof/joern-csharp-query-commandtext-v1"
                             else "CWE-78: Spring input to Runtime.exec shell text; candidate."
@@ -257,6 +259,7 @@ def discover(
         raise TraceProofError("Unsupported Joern language/repair combination")
     supported_profiles = {
         "csharp-query-commandtext-v1": {"csharp"},
+        "csharp-query-file-read-v1": {"csharp"},
         "python-flask-system-v1": {"python"},
         "python-flask-path-v1": {"python"},
         "python-flask-ssrf-v1": {"python"},
@@ -296,6 +299,8 @@ def discover(
         "c": "traceproof/joern-c-lookup-system-v1",
         "cpp": "traceproof/joern-cpp-lookup-system-v1",
     }[language]
+    if discovery_profile == "csharp-query-file-read-v1":
+        rule = "traceproof/joern-csharp-query-file-read-v1"
     if discovery_profile == "csharp-query-commandtext-v1":
         rule = "traceproof/joern-csharp-query-commandtext-v1"
     if discovery_profile == "python-flask-system-v1":
@@ -630,6 +635,17 @@ def discover(
                 "Syntax parser limits/ambiguity can omit paths; advisory unsupported.",
                 "Discovery only; no complete coverage or clean verdict.",
             ]
+        if discovery_profile == "csharp-query-file-read-v1":
+            report["cwe_scope"] = ["CWE-22"]
+            report["limitations"] = [
+                "Mapped query-binding source to fully qualified System.IO.File.ReadAllText syntax.",
+                "Short names and local System/IO/File type lookalikes excluded.",
+                "Frontend API signature unresolved; receiver text is not binding proof.",
+                "Runtime API identity, confinement, guards and file access unverified.",
+                "Raw graph counts precede syntax filtering; parser limits can omit paths.",
+                "Other file APIs and query forms omitted; advisory unsupported.",
+                "Discovery only; no proven directory escape or clean verdict.",
+            ]
         with store.transaction() as session:
             session.add(ScanAttempt(id=attempt_id, run_id=run_id, created_at=now(), report=report))
         candidates = []
@@ -742,6 +758,8 @@ def discover(
                     if discovery_profile == "python-flask-path-v1"
                     else "queries/joern-python-flask-system.sc"
                     if discovery_profile == "python-flask-system-v1"
+                    else "queries/joern-csharp-path.sc"
+                    if discovery_profile == "csharp-query-file-read-v1"
                     else "queries/joern-csharp-query.sc"
                     if discovery_profile == "csharp-query-commandtext-v1"
                     else f"queries/joern-{language}-flow.sc"
@@ -813,7 +831,8 @@ def discover(
                     doc,
                     source,
                     selected,
-                    require_query_source=discovery_profile == "csharp-query-commandtext-v1",
+                    require_query_source=discovery_profile
+                    in {"csharp-query-commandtext-v1", "csharp-query-file-read-v1"},
                 )
                 (root / "source-mapping.json").write_text(json.dumps(mapping, indent=2))
                 report["source_mapping"] = {
