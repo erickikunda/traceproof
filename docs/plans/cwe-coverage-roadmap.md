@@ -158,3 +158,11 @@ in JS/TS, then reflected XSS, subject to native frontend evidence.
 for both languages. Automatic selection retains separate eval/exec reports. This
 expands language/API breadth within the existing five CWE families; advisory is
 unsupported. See [guide](../guides/express-command-discovery.md). Next reflected XSS.
+
+## Slice 135 — explicit HTML reflected-XSS candidates
+
+`express-html-send-v1` adds CWE-79 for JS/TS Express request fields to explicit HTML
+response bodies. JSON and explicit plain-text output are outside this detector.
+Six bounded CWE families now have discovery profiles; this is not complete CWE
+coverage or measured recall. See [guide](../guides/express-html-discovery.md).
+Next assess Java deserialization scope with native positive/negative fixtures.

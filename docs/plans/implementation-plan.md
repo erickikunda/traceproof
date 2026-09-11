@@ -45,7 +45,7 @@ framework heuristics. Reports remain per profile; errors/unsupported scope are e
 Explicit overrides are preserved. Optional LLM wrapper discovery remains later work.
 See [operator guide](../guides/automatic-scan-selection.md) for compatibility details.
 
-## Current checkpoint after Slice 134
+## Current checkpoint after Slice 135
 
 Git/PVC/GCS intake now has explicit archive handoff and durable provenance. Git private
 HTTPS and HTTP CONNECT transport have local native acceptance; GCS has a live optional SDK
@@ -1307,3 +1307,14 @@ into child_process.exec command text (CWE-78). Automatic selection includes eval
 and exec as separate attempts/reports. Advisory remains unsupported for the new
 rules. See [operator guide](../guides/express-command-discovery.md). No migration
 or published-image promotion. Next prioritize bounded reflected XSS discovery.
+
+
+## Slice 135 — explicit HTML response discovery
+
+Added `express-html-send-v1` for JavaScript/TypeScript request fields flowing into
+chained response.type("html").send(...) output (CWE-79). Automatic selection retains
+separate eval, exec and HTML attempts/reports. This adds a sixth bounded CWE family;
+encoding and browser execution remain unverified and advisory is unsupported.
+See [guide](../guides/express-html-discovery.md). No migration or published-image
+promotion. Next assess bounded Java deserialization candidates (CWE-502), keeping
+useful breadth ahead of local refinement.

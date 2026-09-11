@@ -188,6 +188,8 @@ def to_sarif(raw, source, manifest, language="java", rule=RULE):
                             if rule.endswith("-argv-system-v1")
                             else "Go HTTP form input to shell command text; discovery only."
                             if rule == "traceproof/joern-go-http-shell-v1"
+                            else "CWE-79: Express input to explicit HTML response; discovery only."
+                            if rule.endswith("-express-html-send-v1")
                             else "CWE-78: Express input to child_process.exec; discovery only."
                             if rule.endswith("-express-exec-v1")
                             else "Express request property to builtin eval; discovery only."
@@ -252,6 +254,7 @@ def discover(
         "python-flask-sql-v1": {"python"},
         "java-spring-file-path-v1": {"java"},
         "java-spring-url-stream-v1": {"java"},
+        "express-html-send-v1": {"javascript", "typescript"},
         "express-request-exec-v1": {"javascript", "typescript"},
         "express-request-eval-v1": {"javascript", "typescript"},
         "go-http-shell-v1": {"go"},
@@ -295,6 +298,8 @@ def discover(
         rule = "traceproof/joern-spring-get-file-path-v1"
     elif discovery_profile == "python-flask-path-v1":
         rule = "traceproof/joern-python-flask-path-v1"
+    elif discovery_profile == "express-html-send-v1":
+        rule = f"traceproof/joern-{language}-express-html-send-v1"
     elif discovery_profile == "express-request-exec-v1":
         rule = f"traceproof/joern-{language}-express-exec-v1"
     elif discovery_profile == "express-request-eval-v1":
@@ -484,6 +489,16 @@ def discover(
                 "Discovery only; no qualified triage, complete coverage or clean verdict.",
                 "Go downloads disabled; command does not enforce OS network isolation.",
             ]
+        if discovery_profile == "express-html-send-v1":
+            report["cwe_scope"] = ["CWE-79"]
+            report["limitations"] = [
+                "Express get/post inline callback request fields to response.type(html).send only.",
+                "Literal html/text/html and direct callback response receiver required.",
+                "Encoding, response mutations, middleware and browser execution unverified.",
+                "No runtime type guarantee; graph bindings are not runtime identity proof.",
+                "Other response APIs, templates and JSX/TSX omitted; advisory unsupported.",
+                "Discovery only; no clean verdict or proven exploitability.",
+            ]
         if discovery_profile == "express-request-exec-v1":
             report["cwe_scope"] = ["CWE-78"]
             report["limitations"] = [
@@ -653,6 +668,8 @@ def discover(
                     if discovery_profile == "c-family-argv-system-v1"
                     else "queries/joern-go-http-shell.sc"
                     if discovery_profile == "go-http-shell-v1"
+                    else f"queries/joern-{language}-express-html.sc"
+                    if discovery_profile == "express-html-send-v1"
                     else f"queries/joern-{language}-express-exec.sc"
                     if discovery_profile == "express-request-exec-v1"
                     else f"queries/joern-{language}-express-eval.sc"
