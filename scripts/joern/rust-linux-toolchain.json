@@ -1,0 +1,8 @@
+{
+  "version": "1.98.1",
+  "target": "aarch64-unknown-linux-gnu",
+  "url": "https://static.rust-lang.org/dist/2026-09-03/rust-1.98.1-aarch64-unknown-linux-gnu.tar.xz",
+  "sha256": "0b514a8cc1cbcd939bff0f151661fe58b6ea5c7a7f645a5098c69e32e8c1e0a2",
+  "rust_src_url": "https://static.rust-lang.org/dist/2026-09-03/rust-src-1.98.1.tar.xz",
+  "rust_src_sha256": "5c846ebcebcc7e2e0777a4cdaa12051691593f16a7e94edbae5e6241cc62d98c"
+}

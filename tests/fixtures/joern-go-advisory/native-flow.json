@@ -1,0 +1,30 @@
+{
+  "schema_version": "2",
+  "engine_id": "joern",
+  "rule_id": "traceproof/joern-go-http-shell-v1",
+  "represented_go_files": [
+    "main.go"
+  ],
+  "source_count": 1,
+  "sink_count": 1,
+  "flow_count": 1,
+  "paths": [
+    [
+      {
+        "file": "main.go",
+        "line": 5,
+        "code": "r.FormValue(\"command\")"
+      },
+      {
+        "file": "main.go",
+        "line": 5,
+        "code": "value"
+      },
+      {
+        "file": "main.go",
+        "line": 6,
+        "code": "value"
+      }
+    ]
+  ]
+}

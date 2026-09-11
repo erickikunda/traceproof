@@ -1,7 +1,7 @@
 # LLM-assisted vulnerability discovery platform
 
 **System design, version 0.3 — 11 September 2026**
-**Implementation checkpoint:** through Slice 120. This document separates the implemented laptop POC from the proposed enterprise architecture. It is not an approved Wells Fargo architecture.
+**Implementation checkpoint:** through Slice 121. This document separates the implemented laptop POC from the proposed enterprise architecture. It is not an approved Wells Fargo architecture.
 
 **Revision 0.3:** Records the Joern-first scanner strategy, bounded nine-language profiles, optional advisory policies, Ollama, separate Git acquisition and offline archive scanning, durable provenance, and local OpenShift preparation. PostgreSQL orchestration, Redis coordination, GCS, hosted API, bank OCP execution and fleet qualification remain future work. The [implementation plan](../plans/implementation-plan.md) governs delivery order; [progress](../development/progress.md) and slice records retain acceptance evidence. Section 0 is the current checkpoint; production mechanisms in later sections are design requirements unless explicitly marked implemented.
 
@@ -530,7 +530,7 @@ Generated Git handoffs add acquisition_receipt and acquisition_sha256 alongside 
 
 Git acquisition exports raw tree blobs without checkout/build/filter execution. Submodules, symlinks and LFS pointers cause rejection rather than silent omission. Per-repository limits include 2,000 files, 5 MiB per file and 100 MiB total source; temporary workspace monitoring is a soft limit and requires container/storage quotas for hard isolation. Inputs with unsupported content produce an explicit failure.
 
-The later enterprise manifest may add application ownership, exposure, build profiles, GCS generation and approved credential references. These are schema evolution proposals, not accepted columns in repositories.csv today. Metadata must never grant permissions or choose executable commands. Slice 119 adds an internal generation/digest-checked GCS archive handoff contract tested with a local reader; Slice 120 adds an optional Google SDK reader and acquire-gcs CLI with explicit ADC opt-in and mocked boundary tests. Durable cloud provenance, image packaging and real cloud acceptance remain pending. Local intake has durable idempotency and row status; production asynchronous admission and authorization remain future work.
+The later enterprise manifest may add application ownership, exposure, build profiles, GCS generation and approved credential references. These are schema evolution proposals, not accepted columns in repositories.csv today. Metadata must never grant permissions or choose executable commands. Slice 119 adds an internal generation/digest-checked GCS archive handoff contract tested with a local reader; Slice 120 adds an optional Google SDK reader and acquire-gcs CLI with explicit ADC opt-in and mocked boundary tests. Slice 121 binds GCS receipt metadata to captured archive hash/size and persists it in projection 14 reports. Image packaging and real cloud acceptance remain pending. Local intake has durable idempotency and row status; production asynchronous admission and authorization remain future work.
 
 ### Intake defenses and reproducibility
 
@@ -1057,7 +1057,7 @@ An owner-facing report shows confirmed findings and aggregate uncertainty/covera
 
 ### Implemented retrieval and proposed API
 
-Today operators use `report-history`, `get-report REPO_ID --report-id REPORT_ID --format html` (or json/markdown/scan-csv/candidates-csv), `resolve-report`, `import-reports` and `compare-reports`. Exact retrieval uses saved state with no scanner/model call. Report projection 13 includes acquisition provenance when available; earlier immutable reports retain their original contract. The current local report is an investigator/operator artifact and can include review candidates; authenticated owner-only projections are future work.
+Today operators use `report-history`, `get-report REPO_ID --report-id REPORT_ID --format html` (or json/markdown/scan-csv/candidates-csv), `resolve-report`, `import-reports` and `compare-reports`. Exact retrieval uses saved state with no scanner/model call. Report projection 14 includes Git/GCS acquisition provenance when available; earlier immutable reports retain their original contract. The current local report is an investigator/operator artifact and can include review candidates; authenticated owner-only projections are future work.
 
 The table below is an **unimplemented HTTP API proposal**, not runnable endpoints. An API operator guide should accompany the first hosted API slice; the existing CLI and intake/container guides document current operation. Authentication, domain filtering, service-level latency and revocable share links are production requirements still to implement.
 

@@ -1,0 +1,168 @@
+{
+  "apiVersion": "v1",
+  "kind": "List",
+  "items": [
+    {
+      "apiVersion": "v1",
+      "kind": "ServiceAccount",
+      "metadata": {
+        "name": "traceproof-archive-batch",
+        "namespace": "traceproof-dev"
+      },
+      "automountServiceAccountToken": false
+    },
+    {
+      "apiVersion": "networking.k8s.io/v1",
+      "kind": "NetworkPolicy",
+      "metadata": {
+        "name": "traceproof-archive-batch",
+        "namespace": "traceproof-dev"
+      },
+      "spec": {
+        "podSelector": {
+          "matchLabels": {
+            "app.kubernetes.io/name": "traceproof-smoke",
+            "traceproof-job": "traceproof-archive-batch"
+          }
+        },
+        "policyTypes": [
+          "Ingress",
+          "Egress"
+        ],
+        "ingress": [],
+        "egress": []
+      }
+    },
+    {
+      "apiVersion": "batch/v1",
+      "kind": "Job",
+      "metadata": {
+        "name": "traceproof-archive-batch",
+        "namespace": "traceproof-dev"
+      },
+      "spec": {
+        "backoffLimit": 0,
+        "activeDeadlineSeconds": 1380,
+        "parallelism": 1,
+        "completions": 1,
+        "template": {
+          "metadata": {
+            "labels": {
+              "app.kubernetes.io/name": "traceproof-smoke",
+              "traceproof-job": "traceproof-archive-batch"
+            }
+          },
+          "spec": {
+            "serviceAccountName": "traceproof-archive-batch",
+            "automountServiceAccountToken": false,
+            "restartPolicy": "Never",
+            "enableServiceLinks": false,
+            "nodeSelector": {
+              "kubernetes.io/arch": "arm64"
+            },
+            "securityContext": {
+              "runAsNonRoot": true,
+              "seccompProfile": {
+                "type": "RuntimeDefault"
+              }
+            },
+            "containers": [
+              {
+                "name": "scan",
+                "image": "registry.example.invalid/traceproof/ocp-smoke@sha256:f5b26ceb13df5cf0c37043d9f04ebc0e86cd5134dbf4646aff3dc02dcdec2bc4",
+                "imagePullPolicy": "IfNotPresent",
+                "args": [
+                  "--language",
+                  "c",
+                  "--max-rows",
+                  "3"
+                ],
+                "command": [
+                  "/opt/traceproof-venv/bin/python",
+                  "/opt/traceproof/ocp_archive_batch.py"
+                ],
+                "env": [
+                  {
+                    "name": "TRACEPROOF_EXECUTION_ID",
+                    "valueFrom": {
+                      "fieldRef": {
+                        "fieldPath": "metadata.uid"
+                      }
+                    }
+                  }
+                ],
+                "securityContext": {
+                  "allowPrivilegeEscalation": false,
+                  "readOnlyRootFilesystem": true,
+                  "capabilities": {
+                    "drop": [
+                      "ALL"
+                    ]
+                  }
+                },
+                "resources": {
+                  "requests": {
+                    "cpu": "1",
+                    "memory": "2Gi",
+                    "ephemeral-storage": "2Gi"
+                  },
+                  "limits": {
+                    "cpu": "2",
+                    "memory": "4Gi",
+                    "ephemeral-storage": "8Gi"
+                  }
+                },
+                "volumeMounts": [
+                  {
+                    "name": "input",
+                    "mountPath": "/input",
+                    "readOnly": true
+                  },
+                  {
+                    "name": "reports",
+                    "mountPath": "/reports"
+                  },
+                  {
+                    "name": "work",
+                    "mountPath": "/work"
+                  },
+                  {
+                    "name": "tmp",
+                    "mountPath": "/tmp"
+                  }
+                ]
+              }
+            ],
+            "volumes": [
+              {
+                "name": "input",
+                "persistentVolumeClaim": {
+                  "claimName": "traceproof-input",
+                  "readOnly": true
+                }
+              },
+              {
+                "name": "reports",
+                "persistentVolumeClaim": {
+                  "claimName": "traceproof-reports"
+                }
+              },
+              {
+                "name": "work",
+                "emptyDir": {
+                  "sizeLimit": "6Gi"
+                }
+              },
+              {
+                "name": "tmp",
+                "emptyDir": {
+                  "sizeLimit": "1Gi"
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "schema_version": "2",
+  "engine_id": "joern",
+  "rule_id": "traceproof/joern-rust-env-shell-v1",
+  "represented_rust_files": [
+    "main.rs"
+  ],
+  "source_count": 1,
+  "sink_count": 1,
+  "flow_count": 1,
+  "paths": [
+    [
+      {
+        "file": "main.rs",
+        "line": 2,
+        "code": "std::env::var(\"TRACEPROOF_COMMAND\")"
+      },
+      {
+        "file": "main.rs",
+        "line": 2,
+        "code": "command"
+      },
+      {
+        "file": "main.rs",
+        "line": 3,
+        "code": "command"
+      }
+    ]
+  ]
+}

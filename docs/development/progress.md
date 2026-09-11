@@ -1,4 +1,9 @@
-# Implementation progress through Slice 120
+# Implementation progress through Slice 121
+
+## Slice 121 — Durable cloud provenance
+
+Typed GCS receipts bind repository/archive identity and survive into projection 14 reports.
+See [Slice 121](slice-121.md). Next image refresh and packaged GCS handoff validation.
 
 ## Slice 120 — Live GCS adapter and CLI
 

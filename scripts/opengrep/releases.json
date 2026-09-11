@@ -1,0 +1,14 @@
+[
+  {
+    "tag": "v1.30.0",
+    "url": "https://github.com/opengrep/opengrep/releases/download/v1.30.0/opengrep_osx_arm64",
+    "sha256": "0f5bc3dec09d995c61331a4017b856ede508f90d95b018d95f1dc6166be89fdd",
+    "platform": "macos-arm64"
+  },
+  {
+    "tag": "v2.0.0-nopython-interfile.alpha.2",
+    "url": "https://github.com/opengrep/opengrep/releases/download/v2.0.0-nopython-interfile.alpha.2/opengrep_osx_arm64",
+    "sha256": "7db7030a10701fc7df90263463dad007a73a9177ba61a3f7a2015108fd99720c",
+    "platform": "macos-arm64"
+  }
+]

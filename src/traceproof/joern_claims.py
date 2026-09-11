@@ -1,0 +1,403 @@
+"""Explicit bounded Joern review gates; no exploitability or safety claims."""
+
+import hashlib
+import json
+from importlib.resources import files
+from pathlib import Path
+
+from traceproof.domain import TraceProofError
+
+POLICY = "joern-spring-review-v1"
+RULE = "traceproof/joern-spring-get-jdbc-sql-v1"
+
+
+RUST_POLICY = "joern-rust-env-review-v1"
+
+GO_POLICY = "joern-go-http-review-v1"
+
+CSHARP_POLICY = "joern-csharp-review-v1"
+
+FLASK_POLICY = "joern-flask-review-v1"
+FLASK_RULE = "traceproof/joern-python-flask-system-v1"
+PROFILES = {
+    RUST_POLICY: (
+        "rust",
+        "rust-env-shell-v1",
+        "traceproof/joern-rust-env-shell-v1",
+        "joern-rust-env-shell.sc",
+    ),
+    GO_POLICY: (
+        "go",
+        "go-http-shell-v1",
+        "traceproof/joern-go-http-shell-v1",
+        "joern-go-http-shell.sc",
+    ),
+    CSHARP_POLICY: (
+        "csharp",
+        "default",
+        "traceproof/joern-csharp-lookup-commandtext-v1",
+        "joern-csharp-flow.sc",
+    ),
+    POLICY: ("java", "default", RULE, "joern-java-flow.sc"),
+    FLASK_POLICY: ("python", "python-flask-system-v1", FLASK_RULE, "joern-python-flask-system.sc"),
+}
+
+for _language in ("javascript", "typescript"):
+    PROFILES[f"joern-{_language}-express-review-v1"] = (
+        _language,
+        "express-request-eval-v1",
+        f"traceproof/joern-{_language}-express-eval-v1",
+        f"joern-{_language}-express-eval.sc",
+    )
+for _language in ("c", "cpp"):
+    PROFILES[f"joern-{_language}-argv-review-v1"] = (
+        _language,
+        "c-family-argv-system-v1",
+        f"traceproof/joern-{_language}-argv-system-v1",
+        f"joern-{_language}-argv-system.sc",
+    )
+C_FAMILY_POLICIES = {"joern-c-argv-review-v1", "joern-cpp-argv-review-v1"}
+RULE_POLICIES = {profile[2]: policy for policy, profile in PROFILES.items()}
+
+
+def require_policy(policy):
+    if policy not in PROFILES:
+        raise TraceProofError("Unsupported explicit review policy")
+    return PROFILES[policy]
+
+
+def query_digest(policy=POLICY):
+    return hashlib.sha256(
+        files("traceproof").joinpath("queries/" + require_policy(policy)[3]).read_bytes()
+    ).hexdigest()
+
+
+def native_audit(root, report, manifest, tree, sarif, result, *, policy=POLICY):
+    """Bind one selected SARIF path to pinned native output and source coordinates."""
+    from traceproof.joern import MAX_SARIF_BYTES, VERSION, decode_output, to_sarif
+
+    language, profile, rule, _ = require_policy(policy)
+    audit = {"policy_id": policy, "status": "unavailable", "reason": "missing_native_provenance"}
+    if not report.get("native_output_sha256"):
+        return audit
+    try:
+        scanner = report.get("scanner", {})
+        if (
+            scanner.get("engine_id") != "joern"
+            or scanner.get("version") != VERSION
+            or report.get("language") != language
+            or report.get("discovery_profile", "default") != profile
+            or report.get("query_sha256") != query_digest(policy)
+        ):
+            raise TraceProofError("unsupported_native_profile")
+        native_path = root / "flows.json"
+        if native_path.is_symlink():
+            raise TraceProofError("native_artifact_symlink")
+        with native_path.open("rb") as handle:
+            raw = handle.read(MAX_SARIF_BYTES + 1)
+        if (
+            len(raw) > MAX_SARIF_BYTES
+            or hashlib.sha256(raw).hexdigest() != report["native_output_sha256"]
+        ):
+            raise TraceProofError("native_integrity")
+        doc = decode_output(raw, language, rule)
+        extra = {}
+        if policy == CSHARP_POLICY:
+            from traceproof.csharp_locations import VERSION as span_version
+            from traceproof.joern_csharp import map_output
+
+            identity = report.get("repair_identity", {})
+            if not valid_repair_identity(identity):
+                raise TraceProofError("unsupported_repair_identity")
+            paths = doc["paths"]
+            if (
+                len(paths) > 32
+                or any(not isinstance(path, list) for path in paths)
+                or sum(len(path) for path in paths) > 128
+            ):
+                raise TraceProofError("native_mapping_limit")
+            raw, mapping = map_output(
+                doc, root / "source", [f for f in manifest.files if f.path.endswith(".cs")]
+            )
+            recorded = report.get("source_mapping", {})
+            if any(recorded.get(k) != mapping[k] for k in ("validated_paths", "unsupported_paths")):
+                raise TraceProofError("source_mapping_mismatch")
+            doc = decode_output(raw, language, rule)
+            extra = {"repair_identity": identity, "span_version": span_version}
+        regenerated = to_sarif(raw, root / "source", manifest, language, rule)
+        if regenerated != sarif:
+            raise TraceProofError("native_sarif_mismatch")
+        matches = [
+            i
+            for i, item in enumerate(json.loads(regenerated)["runs"][0]["results"])
+            if item == result
+        ]
+        if len(matches) != 1:
+            raise TraceProofError("ambiguous_native_path")
+        path = doc["paths"][matches[0]]
+        if not 2 <= len(path) <= (8 if policy == RUST_POLICY else 7):
+            raise TraceProofError("native_path_limit")
+        records = {f.path: f for f in manifest.files}
+        nodes = []
+        for step, node in enumerate(path):
+            location = Path(node["file"])
+            if location.is_absolute():
+                location = location.relative_to(root / "source")
+            relative = location.as_posix()
+            record = records[relative]
+            if record.size_bytes > 1024 * 1024:
+                raise TraceProofError("native_source_file_limit")
+            contents = (tree / relative).read_bytes()
+            if hashlib.sha256(contents).hexdigest() != record.sha256:
+                raise TraceProofError("source_integrity")
+            code = node["code"]
+            line = node["line"]
+            if not isinstance(code, str) or not code.strip() or len(code) > 2000:
+                raise TraceProofError("unsupported_native_code")
+            on_source = code in contents.decode("utf-8").splitlines()[line - 1]
+            endpoint = step in (0, len(path) - 1)
+            if not on_source and (policy != FLASK_POLICY or endpoint):
+                raise TraceProofError("native_code_not_on_source_line")
+            nodes.append(
+                {
+                    "flow_step": step,
+                    "path": relative,
+                    "line": line,
+                    "sha256": record.sha256,
+                    "code": code,
+                    **({"source_literal": on_source} if policy == FLASK_POLICY else {}),
+                }
+            )
+        return {
+            **extra,
+            "policy_id": policy,
+            "status": "validated",
+            "scanner_version": VERSION,
+            "query_sha256": report["query_sha256"],
+            "native_output_sha256": report["native_output_sha256"],
+            "sarif_sha256": report["sarif_sha256"],
+            "nodes": nodes,
+            "scope": "native/SARIF/source coordinate consistency, not semantic proof",
+        }
+    except (
+        TraceProofError,
+        OSError,
+        ValueError,
+        KeyError,
+        IndexError,
+        TypeError,
+        UnicodeError,
+    ) as exc:
+        return {
+            **audit,
+            "status": "withheld",
+            "reason": str(exc) if isinstance(exc, TraceProofError) else "invalid_native_evidence",
+        }
+
+
+def review_preflight(bundle, policy=POLICY):
+    """Native/context/syntax eligibility only; produces no advisory decision."""
+    from types import SimpleNamespace
+
+    from traceproof.claims import bundle_engine
+    from traceproof.joern import VERSION
+    from traceproof.source_context import complete_context
+
+    language, _, rule, _ = require_policy(policy)
+    report = {
+        "policy_id": policy,
+        "engine_id": bundle_engine(bundle),
+        "status": "insufficient_native_evidence",
+        "passed": False,
+        "reachability_proven": False,
+        "automatic_triage_enabled": False,
+        "scope": "bounded advisory evidence consistency; not exploitability or safety",
+    }
+    if bundle_engine(bundle) != "joern" or bundle.get("rule_id") != rule:
+        return {**report, "status": "unsupported_profile"}
+    if bundle.get("status") != "ready":
+        return {**report, "status": "incomplete_bundle"}
+    audit = bundle.get("joern_native_audit", {})
+    if (
+        audit.get("status") != "validated"
+        or audit.get("policy_id") != policy
+        or audit.get("scanner_version") != VERSION
+        or audit.get("query_sha256") != query_digest(policy)
+        or audit.get("sarif_sha256") != bundle.get("sarif_sha256")
+        or not isinstance(audit.get("native_output_sha256"), str)
+        or len(audit["native_output_sha256"]) != 64
+    ):
+        return report
+    if policy == CSHARP_POLICY:
+        from traceproof.csharp_locations import VERSION as span_version
+
+        if (
+            not valid_repair_identity(audit.get("repair_identity", {}))
+            or audit.get("span_version") != span_version
+        ):
+            return report
+    nodes = audit.get("nodes", [])
+    retained = [s for s in bundle["snippets"] if s.get("flow_id") is not None]
+    if not 2 <= len(nodes) <= (8 if policy == RUST_POLICY else 7) or len(retained) != len(nodes):
+        return report
+    for step, node in enumerate(nodes):
+        matching = [s for s in retained if s.get("flow_step") == step]
+        if len(matching) != 1:
+            return report
+        snippet = matching[0]
+        if (
+            node.get("flow_step") != step
+            or snippet.get("flow_id") != "F0T0"
+            or snippet.get("flow_steps") != len(nodes)
+            or snippet.get("path") != node.get("path")
+            or snippet.get("sha256") != node.get("sha256")
+            or snippet.get("line") != node.get("line")
+            or snippet.get("end_line") != node.get("line")
+        ):
+            return report
+        context = complete_context(
+            bundle,
+            snippet,
+            {
+                "java": ".java",
+                "python": ".py",
+                "javascript": ".js",
+                "typescript": ".ts",
+                "csharp": ".cs",
+                "go": ".go",
+                "rust": ".rs",
+                "c": (".c", ".h"),
+                "cpp": (".cpp", ".h", ".hpp"),
+            }[language],
+        )
+        if context is None or hashlib.sha256(context.encode()).hexdigest() != node["sha256"]:
+            return report
+        lines = snippet["text"].splitlines()
+        offset = node["line"] - snippet["excerpt_line"]
+        if (
+            not 0 <= offset < len(lines)
+            or not node.get("code")
+            or (
+                (policy != FLASK_POLICY or step in (0, len(nodes) - 1))
+                and node["code"] not in lines[offset]
+            )
+            or (
+                policy == FLASK_POLICY
+                and node.get("source_literal") != (node["code"] in lines[offset])
+            )
+        ):
+            return report
+    for obligation, snippet in [("source", retained[0]), ("sink", retained[-1])]:
+        line = snippet["line"]
+        quote = snippet["text"].splitlines()[line - snippet["excerpt_line"]].strip()
+        anchor = SimpleNamespace(obligation=obligation, line=line, end_line=line, quote=quote)
+        if policy == POLICY:
+            from traceproof.java_claims import anchors
+        elif policy in C_FAMILY_POLICIES:
+            from traceproof.joern_c_family_claims import anchors
+        elif policy == RUST_POLICY:
+            from traceproof.joern_rust_claims import anchors
+        elif policy == GO_POLICY:
+            from traceproof.joern_go_claims import anchors
+        elif policy == CSHARP_POLICY:
+            from traceproof.joern_csharp_claims import anchors
+        elif policy == FLASK_POLICY:
+            from traceproof.joern_flask_claims import anchors
+        else:
+            from traceproof.joern_express_claims import anchors
+        if not anchors(bundle, snippet, anchor):
+            return {**report, "status": "unsupported_endpoint_syntax"}
+    return {**report, "status": "eligible_for_advisory", "passed": True}
+
+
+def spring_preflight(bundle):
+    return review_preflight(bundle, POLICY)
+
+
+def policy_requirements(policy=POLICY):
+    require_policy(policy)
+    return {
+        "policy_id": policy,
+        "query_sha256": query_digest(policy),
+        "engine_id": "joern",
+        "supported": True,
+        "required": ["source", "sink", "flow", "guard"],
+        "negative_requires": "Negative suggestions unsupported; abstain instead",
+        "modeled_source": (
+            "Explicit Spring RequestParam syntax and complete native-bound context"
+            if policy == POLICY
+            else "Global main argv literal index to direct system; libc identity unproven"
+            if policy in C_FAMILY_POLICIES
+            else "std::env::var literal key to Command shell -c chain; complete context"
+            if policy == RUST_POLICY
+            else "Bound net/http Request form input to os/exec.Command shell -c; complete context"
+            if policy == GO_POLICY
+            else "FromQuery/classic HttpGet to CommandText RHS syntax; complete context"
+            if policy == CSHARP_POLICY
+            else "Bound Flask args/form.get literal key to os.system; complete native-bound context"
+            if policy == FLASK_POLICY
+            else "Explicit Express get/post inline request field to direct eval; complete context"
+        ),
+        **(
+            {
+                "intermediate_nodes": (
+                    "Native tool observations; generated code is not source or semantic proof"
+                )
+            }
+            if policy == FLASK_POLICY
+            else {}
+        ),
+        "scope": "Advisory quote/syntax/path consistency; no exploitability or safety proof",
+    }
+
+
+def assess_review_evidence(bundle, decision, policy=POLICY):
+    """Explicit policy only; the default shared triage registry stays unsupported."""
+    from traceproof.claims import POLICIES, _assess_supported
+
+    preflight = review_preflight(bundle, policy)
+    if decision.verdict == "abstain":
+        return {**preflight, "status": "abstained", "passed": False}
+    if decision.verdict != "needs_review":
+        return {**preflight, "status": "unsupported_negative_verdict", "passed": False}
+    if not preflight["passed"]:
+        return preflight
+    checked = _assess_supported(
+        bundle,
+        decision,
+        POLICIES["java/sql-injection"]
+        if policy == POLICY
+        else {
+            "language": "joern_c_family"
+            if policy in C_FAMILY_POLICIES
+            else "joern_rust"
+            if policy == RUST_POLICY
+            else "joern_go"
+            if policy == GO_POLICY
+            else "joern_csharp"
+            if policy == CSHARP_POLICY
+            else "joern_flask"
+            if policy == FLASK_POLICY
+            else "joern_express",
+            "sinks": [],
+        },
+    )
+    return {**checked, **{k: v for k, v in preflight.items() if k not in {"status", "passed"}}}
+
+
+def assess_spring_evidence(bundle, decision):
+    return assess_review_evidence(bundle, decision, POLICY)
+
+
+def valid_repair_identity(identity):
+    from traceproof.joern_csharp import PATCHED_SHA256
+
+    if not isinstance(identity, dict):
+        return False
+    receipt = identity.get("receipt_sha256")
+    return (
+        identity.get("patched_source_sha256") == PATCHED_SHA256
+        and isinstance(receipt, str)
+        and len(receipt) == 64
+        and all(c in "0123456789abcdef" for c in receipt)
+    )

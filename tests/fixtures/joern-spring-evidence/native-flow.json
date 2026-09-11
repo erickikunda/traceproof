@@ -1,0 +1,48 @@
+{
+  "schema_version": "2",
+  "engine_id": "joern",
+  "rule_id": "traceproof/joern-spring-get-jdbc-sql-v1",
+  "source_count": 1,
+  "sink_count": 1,
+  "flow_count": 1,
+  "paths": [
+    [
+      {
+        "code": "@RequestParam String name",
+        "file": "LookupController.java",
+        "line": 5
+      },
+      {
+        "code": "name",
+        "file": "LookupController.java",
+        "line": 6
+      },
+      {
+        "code": "String name",
+        "file": "LookupService.java",
+        "line": 2
+      },
+      {
+        "code": "name",
+        "file": "LookupService.java",
+        "line": 3
+      },
+      {
+        "code": "String value",
+        "file": "LookupRepository.java",
+        "line": 4
+      },
+      {
+        "code": "\"SELECT id FROM users WHERE name = '\" + value + \"'\"",
+        "file": "LookupRepository.java",
+        "line": 6
+      }
+    ]
+  ],
+  "qualification": "bounded_spring_jdbc_discovery",
+  "represented_java_files": [
+    "LookupController.java",
+    "LookupService.java",
+    "LookupRepository.java"
+  ]
+}

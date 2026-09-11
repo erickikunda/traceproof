@@ -1,0 +1,9 @@
+{
+  "java": "default",
+  "python": "python-flask-system-v1",
+  "javascript": "express-request-eval-v1",
+  "typescript": "express-request-eval-v1",
+  "go": "go-http-shell-v1",
+  "c": "c-family-argv-system-v1",
+  "cpp": "c-family-argv-system-v1"
+}

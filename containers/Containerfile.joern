@@ -1,0 +1,42 @@
+# Digest-pinned UBI userland; no dependency on the host RHCOS filesystem.
+FROM registry.access.redhat.com/ubi9/python-312@sha256:b29b44b014b0fad4b6c047abad7cbe42b4107cfe349075318eea8ba6475cbd69 AS python-deps
+USER 0
+COPY containers/requirements.lock /tmp/requirements.lock
+RUN python3.12 -m venv /opt/traceproof-venv && \
+    /opt/traceproof-venv/bin/pip install --no-cache-dir --require-hashes --only-binary=:all: -r /tmp/requirements.lock
+COPY dist/traceproof-0.1.0-py3-none-any.whl /tmp/traceproof-0.1.0-py3-none-any.whl
+RUN /opt/traceproof-venv/bin/pip install --no-cache-dir --no-deps /tmp/traceproof-0.1.0-py3-none-any.whl
+
+FROM registry.access.redhat.com/ubi9/python-312@sha256:b29b44b014b0fad4b6c047abad7cbe42b4107cfe349075318eea8ba6475cbd69 AS tools
+USER 0
+COPY work/container-inputs/jdk-linux-arm64.tar.gz /tmp/jdk.tar.gz
+COPY work/container-inputs/joern-linux-arm64.zip /tmp/joern.zip
+RUN echo "23e37e026f12f3e706f18938ff611db3032d075b09d0879a25d06718c773e223  /tmp/jdk.tar.gz" | sha256sum -c - && \
+    echo "a5daf5f32a5a2cd3d380b0bd3fab39def3cdd3e5f87a084f0e74fbeced9b256b  /tmp/joern.zip" | sha256sum -c - && \
+    mkdir /opt/jdk && tar -xzf /tmp/jdk.tar.gz -C /opt/jdk --strip-components=1
+RUN python3.12 - <<'PYCODE'
+import zipfile
+from pathlib import Path
+with zipfile.ZipFile('/tmp/joern.zip') as archive:
+    archive.extractall('/opt')
+    for member in archive.infolist():
+        path = Path('/opt') / member.filename
+        path.chmod((member.external_attr >> 16) & 0o777)
+PYCODE
+RUN chmod -R a+rX /opt/jdk /opt/joern-cli
+
+FROM registry.access.redhat.com/ubi9/python-312@sha256:b29b44b014b0fad4b6c047abad7cbe42b4107cfe349075318eea8ba6475cbd69
+USER 0
+COPY --from=python-deps /opt/traceproof-venv /opt/traceproof-venv
+COPY --from=tools /opt/jdk /opt/jdk
+COPY --from=tools /opt/joern-cli /opt/joern-cli
+COPY containers/runtime_probe.py containers/joern_acceptance.py /opt/traceproof/
+COPY tests/fixtures/joern-java /opt/traceproof/fixtures
+RUN mkdir -p /work /reports && chmod 0770 /work /reports && chgrp 0 /work /reports
+ENV PATH="/opt/traceproof-venv/bin:/opt/jdk/bin:/usr/local/bin:/usr/bin:/bin" \
+    JAVA_HOME=/opt/jdk BASH_ENV=/dev/null HOME=/work TMPDIR=/tmp \
+    PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+WORKDIR /work
+USER 1001:0
+ENTRYPOINT ["traceproof"]
+CMD ["--help"]

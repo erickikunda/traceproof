@@ -13,7 +13,11 @@ and optional complementary backend, not a mandatory second scan of every reposit
 C and C++ are required follow-on languages after the current language work plan.
 See §18 for the superseding delivery sequence and acceptance gates.
 
-## Current checkpoint after Slice 120
+## Current checkpoint after Slice 121
+
+Slice 121 adds durable GCS receipt binding and report projection 14. Next rebuild acquisition
+packaging with the optional SDK and validate offline handoff; real cloud access is deferred.
+
 
 Slice 120 adds the live GCS adapter/CLI with mocked SDK acceptance and optional dependencies.
 Next durable GCS provenance and acquisition packaging; real cloud validation remains pending.

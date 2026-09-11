@@ -1,0 +1,9 @@
+# Local offline qualification layer; runner records immutable image identity.
+ARG JOERN_BASE=traceproof:joern-linux-poc
+FROM ${JOERN_BASE}
+USER 0
+COPY dist/traceproof-0.1.0-py3-none-any.whl /tmp/traceproof-0.1.0-py3-none-any.whl
+RUN /opt/traceproof-venv/bin/pip install --no-index --no-deps --force-reinstall /tmp/traceproof-0.1.0-py3-none-any.whl
+COPY scripts/validate_joern_javascript_discovery.py /opt/traceproof/scripts/
+COPY tests/fixtures/joern-javascript /opt/traceproof/tests/fixtures/joern-javascript
+USER 1001:0

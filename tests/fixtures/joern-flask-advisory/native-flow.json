@@ -1,0 +1,52 @@
+{
+  "schema_version": "2",
+  "engine_id": "joern",
+  "rule_id": "traceproof/joern-python-flask-system-v1",
+  "represented_python_files": [
+    "app.py"
+  ],
+  "source_count": 1,
+  "sink_count": 1,
+  "method_names": [
+    "<module>",
+    "<operator>.assignment",
+    "<operator>.fieldAccess",
+    "<operator>.import",
+    "get",
+    "search",
+    "system"
+  ],
+  "call_names": [
+    "<operator>.assignment",
+    "<operator>.fieldAccess",
+    "<operator>.import",
+    "get",
+    "system"
+  ],
+  "flow_count": 1,
+  "paths": [
+    [
+      {
+        "code": "request.args.get(\"term\")",
+        "file": "app.py",
+        "line": 7
+      },
+      {
+        "code": "tmp0 = request.args\nrequest.args.get(\"term\")",
+        "file": "app.py",
+        "line": 7
+      },
+      {
+        "code": "term",
+        "file": "app.py",
+        "line": 7
+      },
+      {
+        "code": "term",
+        "file": "app.py",
+        "line": 8
+      }
+    ]
+  ],
+  "qualification": "bounded_flask_syntax_discovery"
+}

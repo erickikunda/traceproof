@@ -1,0 +1,11 @@
+--- a/AstCreator.scala
++++ b/AstCreator.scala
+@@ -59,7 +59,7 @@
+     val importAsts                              = cu.json(ParserKeys.Usings).arr.flatMap(astForNode).toSeq
+     val members                                 = cu.json(ParserKeys.Members).arr.map(createDotNetNodeInfo).toSeq
+     val (globalStatements, nonGlobalStatements) = members.partition(_.node == GlobalStatement)
+-    val nonGlobalStatementAsts                  = nonGlobalStatements.flatMap(astForNode)
++    val nonGlobalStatementAsts                  = astForMembers(nonGlobalStatements)
+ 
+     // If there are global statements, we should treat this file as an entry-point.
+     // Roslyn implicitly wraps these statements inside the following block:

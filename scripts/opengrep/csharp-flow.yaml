@@ -1,0 +1,17 @@
+rules:
+  - id: traceproof-csharp-fixture-flow
+    languages: [csharp]
+    message: Fixture input reaches CommandText; qualification required.
+    severity: WARNING
+    mode: taint
+    pattern-sources:
+      - patterns:
+          - pattern: $RET Lookup(..., $TYPE $INPUT, ...) { ... }
+          - metavariable-regex:
+              metavariable: $INPUT
+              regex: ^name$
+          - focus-metavariable: $INPUT
+    pattern-sinks:
+      - patterns:
+          - pattern: $CMD.CommandText = $VALUE
+          - focus-metavariable: $VALUE

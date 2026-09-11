@@ -1,0 +1,18 @@
+# Pinned UBI Python/Git/CA userland; acquisition has no scanner toolchain.
+FROM registry.access.redhat.com/ubi9/python-312@sha256:b29b44b014b0fad4b6c047abad7cbe42b4107cfe349075318eea8ba6475cbd69
+USER 0
+COPY containers/requirements.lock /tmp/requirements.lock
+RUN python3.12 -m venv /opt/traceproof-venv && \
+    /opt/traceproof-venv/bin/pip install --no-cache-dir --require-hashes --only-binary=:all: -r /tmp/requirements.lock
+COPY dist/traceproof-0.1.0-py3-none-any.whl /tmp/traceproof-0.1.0-py3-none-any.whl
+RUN /opt/traceproof-venv/bin/pip install --no-index --no-deps /tmp/traceproof-0.1.0-py3-none-any.whl && \
+    /opt/traceproof-venv/bin/pip check && \
+    mkdir -p /opt/traceproof /work /handoff && chmod 0770 /work /handoff && chgrp 0 /work /handoff && \
+    sha256sum /tmp/traceproof-0.1.0-py3-none-any.whl /tmp/requirements.lock > /opt/traceproof/application-inputs.sha256 && \
+    rpm -q git-core ca-certificates > /opt/traceproof/acquisition-packages.txt
+ENV PATH="/opt/traceproof-venv/bin:/usr/local/bin:/usr/bin:/bin" \
+    HOME=/work TMPDIR=/tmp PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+WORKDIR /work
+USER 1001:0
+ENTRYPOINT ["traceproof", "acquire-git-csv"]
+CMD ["--help"]

@@ -1,0 +1,12 @@
+{
+  "schema_version": "1",
+  "slice": 118,
+  "image_id": "sha256:eec78f8f909b5b67645a34f2db92344272660f40a3e0a8a81d859e64bf9fcf3a",
+  "architecture": "arm64",
+  "os": "linux",
+  "build_inputs": "bf7645a79ff3aaa24bf48a2863af313bad841a85f8dbd8ea5746140e7df72bc2  /tmp/traceproof-0.1.0-py3-none-any.whl\n59edc8148280b5021a505a745076b53b9f2fc1b265b68e704441aca9b7c4a75b  /tmp/requirements.lock\n",
+  "packages": "git-core-2.52.0-1.el9.aarch64\nca-certificates-2025.2.80_v9.0.305-91.el9.noarch\n",
+  "ocp_qualified": false,
+  "validation": "work/slice118/private-validation.json",
+  "handoff_validation": "work/slice118-handoff/validation.json"
+}

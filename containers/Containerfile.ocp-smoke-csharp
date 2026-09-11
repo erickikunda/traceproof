@@ -1,0 +1,16 @@
+# Retains the qualified toolchain; installs the current locked application at build time.
+FROM traceproof:joern-csharp-advisory-linux-poc@sha256:bcfc0b4a498c50e95c6c1c2b78fa77fc0c85a55e3b8572c090cf16631649944a
+USER 0
+COPY containers/requirements.lock /tmp/requirements.lock
+RUN /opt/traceproof-venv/bin/pip install --no-cache-dir --require-hashes --only-binary=:all: -r /tmp/requirements.lock
+COPY dist/traceproof-0.1.0-py3-none-any.whl /tmp/traceproof-0.1.0-py3-none-any.whl
+RUN /opt/traceproof-venv/bin/pip install --no-index --no-deps --force-reinstall /tmp/traceproof-0.1.0-py3-none-any.whl && \
+    /opt/traceproof-venv/bin/pip check && \
+    sha256sum /tmp/traceproof-0.1.0-py3-none-any.whl /tmp/requirements.lock > /opt/traceproof/application-inputs.sha256
+
+COPY containers/ocp_smoke.py /opt/traceproof/ocp_smoke.py
+COPY containers/ocp-smoke-csharp-profiles.json /opt/traceproof/ocp-smoke-profiles.json
+COPY containers/ocp_archive_batch.py /opt/traceproof/ocp_archive_batch.py
+USER 1001:0
+ENTRYPOINT ["/opt/traceproof-venv/bin/python", "/opt/traceproof/ocp_smoke.py"]
+CMD []

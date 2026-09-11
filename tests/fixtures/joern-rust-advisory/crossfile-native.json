@@ -1,0 +1,84 @@
+{
+  "schema_version": "2",
+  "engine_id": "joern",
+  "rule_id": "traceproof/joern-rust-env-shell-v1",
+  "represented_rust_files": [
+    "main.rs",
+    "repository.rs",
+    "service.rs"
+  ],
+  "source_count": 1,
+  "sink_count": 1,
+  "method_names": [
+    "<global>",
+    "<operator>.addressOf",
+    "<operator>.assignment",
+    "<operator>.indirection",
+    "arg",
+    "dispatch",
+    "execute",
+    "main",
+    "new",
+    "status",
+    "unwrap",
+    "var"
+  ],
+  "call_names": [
+    "<operator>.addressOf",
+    "<operator>.assignment",
+    "<operator>.indirection",
+    "arg",
+    "dispatch",
+    "execute",
+    "new",
+    "status",
+    "unwrap",
+    "var"
+  ],
+  "flow_count": 1,
+  "paths": [
+    [
+      {
+        "code": "std::env::var(\"TRACEPROOF_COMMAND\")",
+        "file": "main.rs",
+        "line": 4
+      },
+      {
+        "code": "std::env::var(\"TRACEPROOF_COMMAND\").unwrap()",
+        "file": "main.rs",
+        "line": 4
+      },
+      {
+        "code": "value",
+        "file": "main.rs",
+        "line": 4
+      },
+      {
+        "code": "value",
+        "file": "main.rs",
+        "line": 5
+      },
+      {
+        "code": "value: String",
+        "file": "service.rs",
+        "line": 1
+      },
+      {
+        "code": "value",
+        "file": "service.rs",
+        "line": 1
+      },
+      {
+        "code": "value: String",
+        "file": "repository.rs",
+        "line": 1
+      },
+      {
+        "code": "value",
+        "file": "repository.rs",
+        "line": 2
+      }
+    ]
+  ],
+  "qualification": "fixture_feasibility_only"
+}

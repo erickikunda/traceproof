@@ -1,0 +1,9 @@
+{
+  "platform": "linux/arm64",
+  "joern_version": "4.0.625",
+  "joern_url": "https://github.com/joernio/joern/releases/download/v4.0.625/joern-cli-linux-arm64.zip",
+  "joern_sha256": "a5daf5f32a5a2cd3d380b0bd3fab39def3cdd3e5f87a084f0e74fbeced9b256b",
+  "jdk_version": "21.0.12.1+1",
+  "jdk_sha256": "23e37e026f12f3e706f18938ff611db3032d075b09d0879a25d06718c773e223",
+  "base_image": "registry.access.redhat.com/ubi9/python-312@sha256:b29b44b014b0fad4b6c047abad7cbe42b4107cfe349075318eea8ba6475cbd69"
+}

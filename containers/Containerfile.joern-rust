@@ -1,0 +1,36 @@
+# Offline Linux ARM64 qualification layer; tool archives verified before installation.
+ARG JOERN_BASE=traceproof:joern-linux-poc
+FROM ${JOERN_BASE} AS prepared
+USER 0
+COPY work/container-inputs/rust-linux-arm64.tar.xz /tmp/rust.tar.xz
+COPY work/container-inputs/rust-src.tar.xz /tmp/rust-src.tar.xz
+RUN echo "0b514a8cc1cbcd939bff0f151661fe58b6ea5c7a7f645a5098c69e32e8c1e0a2  /tmp/rust.tar.xz" | sha256sum -c - && \
+    echo "5c846ebcebcc7e2e0777a4cdaa12051691593f16a7e94edbae5e6241cc62d98c  /tmp/rust-src.tar.xz" | sha256sum -c - && \
+    mkdir /tmp/rust-dist /tmp/rust-source && \
+    tar -xf /tmp/rust.tar.xz -C /tmp/rust-dist --strip-components=1 && \
+    tar -xf /tmp/rust-src.tar.xz -C /tmp/rust-source --strip-components=1 && \
+    /tmp/rust-dist/install.sh --prefix=/opt/rust --components=rustc,cargo,rust-std-aarch64-unknown-linux-gnu --disable-ldconfig && \
+    /tmp/rust-source/install.sh --prefix=/opt/rust --disable-ldconfig && \
+    rm -rf /tmp/rust-dist /tmp/rust-source /tmp/rust.tar.xz /tmp/rust-src.tar.xz
+COPY dist/traceproof-0.1.0-py3-none-any.whl /tmp/traceproof-0.1.0-py3-none-any.whl
+RUN /opt/traceproof-venv/bin/pip install --no-index --no-deps --force-reinstall /tmp/traceproof-0.1.0-py3-none-any.whl
+COPY scripts/validate_joern_rust_discovery.py /opt/traceproof/scripts/
+COPY tests/fixtures/joern-rust /opt/traceproof/tests/fixtures/joern-rust
+USER 1001:0
+
+# Rust AST generator requires glibc 2.39; UBI 9 is insufficient for this pinned binary.
+FROM registry.access.redhat.com/ubi10/python-312-minimal@sha256:4a710e7971581b5894a417663e29d6259e0c4339058608a29539baa9b66830c4
+USER 0
+COPY --from=prepared /opt/traceproof-venv /opt/traceproof-venv
+COPY --from=prepared /opt/jdk /opt/jdk
+COPY --from=prepared /opt/joern-cli /opt/joern-cli
+COPY --from=prepared /opt/rust /opt/rust
+COPY --from=prepared /opt/traceproof /opt/traceproof
+RUN mkdir -p /work /reports && chmod 0770 /work /reports && chgrp 0 /work /reports
+ENV PATH="/opt/traceproof-venv/bin:/opt/jdk/bin:/usr/local/bin:/usr/bin:/bin" \
+    JAVA_HOME=/opt/jdk BASH_ENV=/dev/null HOME=/work TMPDIR=/tmp \
+    PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+WORKDIR /work
+USER 1001:0
+ENTRYPOINT ["traceproof"]
+CMD ["--help"]

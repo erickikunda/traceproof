@@ -1,0 +1,52 @@
+{
+  "schema_version": "1",
+  "slice": 113,
+  "ocp_qualified": false,
+  "wheel_sha256": "44f0f7647944175d3199d4907123e09948ae2f80bbd5c37bd459ab958cceb8b2",
+  "requirements_sha256": "59edc8148280b5021a505a745076b53b9f2fc1b265b68e704441aca9b7c4a75b",
+  "images": [
+    {
+      "variant": "general",
+      "local_tag": "traceproof:ocp-smoke-linux-poc",
+      "image_id": "sha256:f5b26ceb13df5cf0c37043d9f04ebc0e86cd5134dbf4646aff3dc02dcdec2bc4",
+      "architecture": "arm64",
+      "os": "linux",
+      "languages": [
+        "java",
+        "python",
+        "javascript",
+        "typescript",
+        "go",
+        "c",
+        "cpp"
+      ],
+      "build_inputs": "44f0f7647944175d3199d4907123e09948ae2f80bbd5c37bd459ab958cceb8b2  /tmp/traceproof-0.1.0-py3-none-any.whl\n59edc8148280b5021a505a745076b53b9f2fc1b265b68e704441aca9b7c4a75b  /tmp/requirements.lock\n"
+    },
+    {
+      "variant": "csharp",
+      "local_tag": "traceproof:ocp-smoke-csharp-linux-poc",
+      "image_id": "sha256:0bbe35eb279f424d472246524bb28fffa9f99e23af9073778ce5a592da97470e",
+      "architecture": "arm64",
+      "os": "linux",
+      "languages": [
+        "csharp"
+      ],
+      "build_inputs": "44f0f7647944175d3199d4907123e09948ae2f80bbd5c37bd459ab958cceb8b2  /tmp/traceproof-0.1.0-py3-none-any.whl\n59edc8148280b5021a505a745076b53b9f2fc1b265b68e704441aca9b7c4a75b  /tmp/requirements.lock\n"
+    },
+    {
+      "variant": "rust",
+      "local_tag": "traceproof:ocp-smoke-rust-linux-poc",
+      "image_id": "sha256:6158a918e4c403b17836cd32cfe0eb0689a2375ae58ede55dd3a92eae5a58f17",
+      "architecture": "arm64",
+      "os": "linux",
+      "languages": [
+        "rust"
+      ],
+      "build_inputs": "44f0f7647944175d3199d4907123e09948ae2f80bbd5c37bd459ab958cceb8b2  /tmp/traceproof-0.1.0-py3-none-any.whl\n59edc8148280b5021a505a745076b53b9f2fc1b265b68e704441aca9b7c4a75b  /tmp/requirements.lock\n"
+    }
+  ],
+  "limitations": [
+    "Local artifact inventory; no signed attestation or complete SBOM",
+    "Registry mirroring and actual OCP qualification deferred"
+  ]
+}

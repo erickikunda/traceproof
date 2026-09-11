@@ -1,0 +1,52 @@
+[
+  {
+    "name": "file-scoped-vulnerable",
+    "positive": true,
+    "expected_owner": "Probe.Worker"
+  },
+  {
+    "name": "file-scoped-fixed",
+    "positive": false,
+    "expected_owner": "Probe.Worker"
+  },
+  {
+    "name": "qualified-vulnerable",
+    "positive": true,
+    "expected_owner": "Probe.Worker"
+  },
+  {
+    "name": "qualified-fixed",
+    "positive": false,
+    "expected_owner": "Probe.Worker"
+  },
+  {
+    "name": "instance-vulnerable",
+    "positive": true,
+    "expected_owner": "Worker"
+  },
+  {
+    "name": "instance-fixed",
+    "positive": false,
+    "expected_owner": "Worker"
+  },
+  {
+    "name": "overload-vulnerable",
+    "positive": true,
+    "expected_owner": "Worker"
+  },
+  {
+    "name": "overload-fixed",
+    "positive": false,
+    "expected_owner": "Worker"
+  },
+  {
+    "name": "duplicate",
+    "positive": false,
+    "expected_owner": "Safe.Worker"
+  },
+  {
+    "name": "disconnected",
+    "positive": false,
+    "expected_owner": "Safe.Worker"
+  }
+]

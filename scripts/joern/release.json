@@ -1,0 +1,7 @@
+{
+  "version": "4.0.625",
+  "platform": "macos-arm64",
+  "asset": "joern-cli-macos-arm64.zip",
+  "url": "https://github.com/joernio/joern/releases/download/v4.0.625/joern-cli-macos-arm64.zip",
+  "sha256": "86ae415d1be580681c74f08ff66579e5d1a7d6b81fb0cc5b9de61dcca9b59e5d"
+}

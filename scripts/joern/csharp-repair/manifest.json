@@ -1,0 +1,7 @@
+{
+  "upstream_version": "4.0.625",
+  "source_url": "https://raw.githubusercontent.com/joernio/joern/v4.0.625/joern-cli/frontends/csharpsrc2cpg/src/main/scala/io/joern/csharpsrc2cpg/astcreation/AstCreator.scala",
+  "source_sha256": "e7bb7963db12521ad1680a57c4fefc1cd569415885865ce9870be3eb18c5f269",
+  "patched_source_sha256": "81bd230f4a7b6cfd12da1ce4135251003cb7563ad72b82c18aeef643603c05a0",
+  "qualification": "experimental_only"
+}
