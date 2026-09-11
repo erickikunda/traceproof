@@ -188,7 +188,7 @@ def projection(session, repo_id, run_id, attempt_id):
         raise TraceProofError("Stored candidate count does not reconcile; report not published")
     return {
         "schema_version": "1",
-        "projection_version": "14",
+        "projection_version": "15",
         "report_kind": "repository_summary",
         "repo_id": repo_id,
         "run_id": run.id,
@@ -203,6 +203,7 @@ def projection(session, repo_id, run_id, attempt_id):
         "joern_diagnostics": scan.get("joern_diagnostics"),
         "source_mapping": scan.get("source_mapping"),
         "discovery_profile": scan.get("discovery_profile"),
+        "cwe_scope": scan.get("cwe_scope", []),
         "endpoint_audit": scan.get("endpoint_audit"),
         "scanner_limitations": scan.get("limitations", []),
         "language_scope": scan.get("language_scope"),
@@ -465,6 +466,8 @@ def render_report(report, format="json"):
         provenance = report.get("acquisition_provenance") or {}
         for key in ("kind", "bucket", "object", "generation"):
             common["acquisition_" + key] = provenance.get(key)
+        common["cwe_scope"] = canonical(report.get("cwe_scope", [])).decode()
+        common["discovery_profile"] = report.get("discovery_profile")
         common["git_commit"] = provenance.get("resolved_commit")
         common["acquisition_archive_sha256"] = provenance.get("archive_sha256")
         common["acquisition_binding_state"] = provenance.get("state")

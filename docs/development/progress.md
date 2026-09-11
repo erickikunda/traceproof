@@ -1,4 +1,29 @@
-# Implementation progress through Slice 125
+# Implementation progress through Slice 128
+
+## Slice 128 — First CWE breadth addition
+
+Python/Flask CWE-22 profile passes six native fixture cases with discovery-only reporting.
+See [Slice 128](slice-128.md). Next Java/Spring path coverage. No new advisory claims.
+
+## Slice 127 — CWE scope and breadth roadmap
+
+Current profiles cover bounded CWE-78/89/94 patterns. Next Python/Flask CWE-22 discovery,
+then Java path coverage, SSRF and SQL breadth. See [Slice 127](slice-127.md) and the
+[CWE roadmap](../plans/cwe-coverage-roadmap.md). No new coverage is claimed by this assessment.
+
+## Current priority override — approved after Slice 126
+
+Functional completeness and useful detection breadth take precedence over optimization/refinement.
+Next Slice 127 inventories/prioritizes language/framework/CWE coverage; Slice 128 onward implements
+selected additions. PostgreSQL and distributed-worker qualification are deferred together to
+pilot. Recovery refinement stays behind detection breadth unless a demonstrated blocker requires it.
+See the standing delivery priority in the implementation plan. Historical next-step notes below
+are retained as history, not the current queue.
+
+## Slice 126 — Local acceptance entrypoint
+
+Retained 18-case audit and three negative tests pass; fresh native/test modes are explicit.
+See [Slice 126](slice-126.md). Next local PostgreSQL compatibility work.
 
 ## Slice 125 — General GCS image matrix
 

@@ -1,7 +1,7 @@
 # LLM-assisted vulnerability discovery platform
 
 **System design, version 0.3 — 11 September 2026**
-**Implementation checkpoint:** through Slice 125. This document separates the implemented laptop POC from the proposed enterprise architecture. It is not an approved Wells Fargo architecture.
+**Implementation checkpoint:** through Slice 128. This document separates the implemented laptop POC from the proposed enterprise architecture. It is not an approved Wells Fargo architecture.
 
 **Revision 0.3:** Records the Joern-first scanner strategy, bounded nine-language profiles, optional advisory policies, Ollama, separate Git acquisition and offline archive scanning, durable provenance, and local OpenShift preparation. PostgreSQL orchestration, Redis coordination, GCS, hosted API, bank OCP execution and fleet qualification remain future work. The [implementation plan](../plans/implementation-plan.md) governs delivery order; [progress](../development/progress.md) and slice records retain acceptance evidence. Section 0 is the current checkpoint; production mechanisms in later sections are design requirements unless explicitly marked implemented.
 
@@ -9,6 +9,12 @@
 
 See the [intake operator guide](../guides/intake-operator-guide.md) and
 [current readiness checkpoint](../development/slice-123.md) for current execution guidance.
+
+**Standing POC delivery priority (approved after Slice 126):** functional completeness and
+useful detection breadth precede optimization/refinement. Next assess language/framework/CWE
+coverage and implement prioritized additions. Keep SQLite/single-worker for the POC; defer
+PostgreSQL and distributed-worker correctness to pilot. Necessary correctness/security fixes
+still take precedence when they block useful operation.
 
 ### Current architecture and delivery status
 
@@ -26,6 +32,10 @@ TraceProof is a Python CLI application with SQLite and local artifacts, bounded 
 | Scale | Bounded sequential local batches and local controls | PostgreSQL multiworker correctness, fleet recovery and measured 1,000 repositories/day |
 
 The existing CLI may retain CodeQL defaults for compatibility: select Joern explicitly. Scanner-neutral identity and result contracts are in place, but CodeQL prepared databases and Joern source/CPG execution still have distinct paths. Opengrep is an assessed potential supplement, not an integrated replacement or a required second scan. The bounded C# comparison missed cross-file positives; the accepted path uses the experimental repaired Joern frontend. This is a scope decision, not a general rating of either tool.
+
+The [CWE coverage roadmap](../plans/cwe-coverage-roadmap.md) records Slice 127's assessment:
+three original bounded CWE families plus Slice 128 Python/Flask CWE-22 candidates.
+Java path traversal, SSRF and SQL expansion remain next; CWE-22 advisory is not qualified.
 
 ### Current language and evidence scope
 

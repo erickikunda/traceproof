@@ -1,6 +1,6 @@
 # Joern language assessment register
 
-Status at Slice 105. Results are scoped experiments, not language-wide production ratings.
+Language evidence baseline at Slice 105; see [Slice 127 CWE roadmap](cwe-coverage-roadmap.md) for current detection priorities. Results are scoped experiments, not language-wide production ratings.
 CodeQL remains the reference POC backend. The main scan-run/scan-import workflow now
 routes bounded Joern profiles explicitly; detection/triage qualification remains scoped.
 

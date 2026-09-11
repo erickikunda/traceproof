@@ -79,3 +79,6 @@ POC; shared SQLite on PVC is not a substitute for future PostgreSQL multiworker 
 
 The complete saved local matrix is containers/gcs-acceptance-matrix.json (18 cases across
 nine languages). It records fixture acceptance only, with no real cloud/model qualification.
+
+See [local acceptance](local-acceptance.md) for retained evidence review and explicit fresh
+Docker/test runs, with deferred bank/platform gates kept visible.

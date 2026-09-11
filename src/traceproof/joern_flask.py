@@ -12,7 +12,7 @@ RULE = "traceproof/joern-python-flask-system-v1"
 PROFILE = "python-flask-system-v1"
 
 
-def endpoints(source, include_code=False):
+def endpoints(source, include_code=False, file_paths=False):
     if len(source) > 1024 * 1024:
         return {"status": "size_limit", "sources": [], "sinks": []}
     try:
@@ -69,11 +69,39 @@ def endpoints(source, include_code=False):
             ):
                 del bindings[name]
                 break
+    open_shadowed = "open" in imports or any(
+        (isinstance(n, ast.Name) and n.id == "open" and isinstance(n.ctx, (ast.Store, ast.Del)))
+        or (isinstance(n, ast.arg) and n.arg == "open")
+        or (
+            isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef, ast.ExceptHandler))
+            and n.name == "open"
+        )
+        or (isinstance(n, (ast.MatchAs, ast.MatchStar)) and n.name == "open")
+        or (isinstance(n, ast.MatchMapping) and n.rest == "open")
+        for n in nodes
+    )
     result = {"status": "parsed", "sources": [], "sinks": []}
     for node in nodes:
         if not isinstance(node, ast.Call) or node.lineno != node.end_lineno:
             continue
         func = node.func
+        if (
+            file_paths
+            and isinstance(func, ast.Name)
+            and func.id == "open"
+            and not open_shadowed
+            and 1 <= len(node.args) <= 2
+            and not node.keywords
+            and not any(isinstance(a, ast.Starred) for a in node.args)
+            and (
+                len(node.args) == 1
+                or (
+                    isinstance(node.args[1], ast.Constant)
+                    and node.args[1].value in ("r", "rb", "rt")
+                )
+            )
+        ):
+            result["sinks"].append({"line": node.lineno, "name": "open"})
         if not isinstance(func, ast.Attribute):
             continue
         value = func.value
@@ -105,7 +133,8 @@ def endpoints(source, include_code=False):
                 }
             )
         if (
-            func.attr == "system"
+            not file_paths
+            and func.attr == "system"
             and isinstance(value, ast.Name)
             and bindings.get(value.id) == "os"
             and len(node.args) == 1
@@ -134,7 +163,7 @@ def endpoints(source, include_code=False):
     return result
 
 
-def parse_isolated(source, include_code=False):
+def parse_isolated(source, include_code=False, file_paths=False):
     try:
         proc = subprocess.run(
             [
@@ -142,6 +171,7 @@ def parse_isolated(source, include_code=False):
                 "-I",
                 str(Path(__file__).resolve()),
                 *(["--include-code"] if include_code else []),
+                *(["--file-paths"] if file_paths else []),
             ],
             input=source,
             capture_output=True,
@@ -160,5 +190,11 @@ if __name__ == "__main__":
     if sys.platform == "linux":
         resource.setrlimit(resource.RLIMIT_AS, (512 * 1024 * 1024, 512 * 1024 * 1024))
     print(
-        json.dumps(endpoints(sys.stdin.buffer.read(1024 * 1024 + 1), "--include-code" in sys.argv))
+        json.dumps(
+            endpoints(
+                sys.stdin.buffer.read(1024 * 1024 + 1),
+                "--include-code" in sys.argv,
+                "--file-paths" in sys.argv,
+            )
+        )
     )

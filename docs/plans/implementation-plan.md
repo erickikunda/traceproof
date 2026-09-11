@@ -13,7 +13,31 @@ and optional complementary backend, not a mandatory second scan of every reposit
 C and C++ are required follow-on languages after the current language work plan.
 See §18 for the superseding delivery sequence and acceptance gates.
 
-## Current checkpoint after Slice 125
+## Standing delivery priority — user-approved after Slice 126
+
+**Prioritize functional completeness and useful detection breadth over feature optimization
+or refinement.** Apply this when selecting every next slice, not just the current track.
+Choose work that adds a missing end-to-end capability or materially useful language/framework/CWE
+coverage. Refine existing functionality when a demonstrated correctness, security or usability
+problem blocks useful operation; avoid repeated polishing of already adequate bounded slices.
+Maintain honest coverage limits and necessary validation rather than equating breadth with
+unqualified detection claims.
+
+**Next: Slice 127 — CWE coverage assessment and prioritization.** Map language/framework × CWE ×
+scanner profile, distinguishing candidate detection, supported advisory evidence and unproven
+claims. Identify high-value gaps using enterprise relevance, demonstrated scanner capabilities,
+and benchmark labels when available. Define bounded vulnerable/fixed acceptance fixtures.
+**Slice 128 onward:** implement the selected detection additions; exact CWEs follow the assessment.
+
+The POC remains single-worker with SQLite. Defer PostgreSQL compatibility, distributed
+claims/leases/fencing and concurrent-worker qualification together to the pilot phase.
+Local recovery improvements remain backlog items, behind useful detection breadth unless an
+observed reliability problem blocks POC use. This supersedes the proposed PostgreSQL-first
+and recovery-first sequences and the next-step note in Slice 126. Bank OCP dev acceptance
+remains a required, externally deferred gate; the 50-repository benchmark remains pending
+availability in an authorized environment.
+
+## Current checkpoint after Slice 128
 
 Git/PVC/GCS intake now has explicit archive handoff and durable provenance. Git private
 HTTPS and HTTP CONNECT transport have local native acceptance; GCS has a live optional SDK
@@ -22,8 +46,12 @@ No real cloud, bank OCP, hosted API or production throughput qualification is cl
 
 Slice 124 refreshes C#/Rust images with projection 14 vulnerable/fixed GCS handoff acceptance.
 Slice 125 completes all seven general-language fixture pairs and the nine-language saved matrix.
-Next consolidate a repeatable local acceptance entrypoint and remaining external gates. This supersedes
-older next-step notes. See [current readiness](../development/slice-123.md) and the
+Slice 126 provides the local acceptance entrypoint with explicit retained/fresh evidence modes.
+Slice 128 adds bounded Python/Flask path-traversal candidates and native fixture acceptance.
+Next Slice 129 implements Java/Spring path candidates, then SSRF and SQL expansion.
+See [CWE coverage roadmap](cwe-coverage-roadmap.md) for per-profile gaps and acceptance gates.
+Keep SQLite/single-worker for the POC and defer PostgreSQL/distributed work to pilot.
+The standing delivery priority above supersedes older next-step notes. See [current readiness](../development/slice-123.md) and the
 [consolidated intake guide](../guides/intake-operator-guide.md).
 
 The 50-repository benchmark, bank gateway/identity and required OCP dev execution remain

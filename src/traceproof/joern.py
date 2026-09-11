@@ -172,7 +172,9 @@ def to_sarif(raw, source, manifest, language="java", rule=RULE):
                     "ruleId": rule,
                     "message": {
                         "text": (
-                            "Environment value to shell command text; discovery only."
+                            "CWE-22: Flask input to file path; directory escape unverified."
+                            if rule == "traceproof/joern-python-flask-path-v1"
+                            else "Environment value to shell command text; discovery only."
                             if rule == "traceproof/joern-rust-env-shell-v1"
                             else "Command-line argument to system command text; discovery only."
                             if rule.endswith("-argv-system-v1")
@@ -235,6 +237,7 @@ def discover(
         raise TraceProofError("Unsupported Joern language/repair combination")
     supported_profiles = {
         "python-flask-system-v1": {"python"},
+        "python-flask-path-v1": {"python"},
         "express-request-eval-v1": {"javascript", "typescript"},
         "go-http-shell-v1": {"go"},
         "rust-env-shell-v1": {"rust"},
@@ -267,6 +270,8 @@ def discover(
         from traceproof.joern_flask import RULE as flask_rule
 
         rule = flask_rule
+    elif discovery_profile == "python-flask-path-v1":
+        rule = "traceproof/joern-python-flask-path-v1"
     elif discovery_profile == "express-request-eval-v1":
         rule = f"traceproof/joern-{language}-express-eval-v1"
     if discovery_profile == "go-http-shell-v1":
@@ -383,6 +388,14 @@ def discover(
                 "Discovery only; no qualified triage, complete coverage or clean verdict.",
                 "Trusted tools required; command does not enforce OS network isolation.",
             ]
+        if discovery_profile == "python-flask-path-v1":
+            report["limitations"] = [
+                "CWE-22 candidate: Flask args/form.get to unshadowed open read-path argument.",
+                "Single-line calls, positional paths, optional constant read mode only.",
+                "Directory confinement, guards and runtime builtin identity unverified.",
+                "Discovery only; advisory unsupported; no clean verdict or complete coverage.",
+            ]
+            report["cwe_scope"] = ["CWE-22"]
         if language in {"javascript", "typescript"}:
             report["limitations"] = [
                 "Experimental lookup(input) parameter to call named eval argument profile only.",
@@ -494,7 +507,7 @@ def discover(
                 (source / "Cargo.toml").write_bytes(cargo)
             endpoint_args = []
             endpoint_digest = None
-            if discovery_profile == "python-flask-system-v1":
+            if discovery_profile in {"python-flask-system-v1", "python-flask-path-v1"}:
                 from traceproof.joern_flask import parse_isolated
 
                 audit = []
@@ -508,7 +521,14 @@ def discover(
                     facts = (
                         {"status": "local_module_shadow", "sources": [], "sinks": []}
                         if shadowed
-                        else parse_isolated((source / record.path).read_bytes())
+                        else parse_isolated(
+                            (source / record.path).read_bytes(),
+                            **(
+                                {"file_paths": True}
+                                if discovery_profile == "python-flask-path-v1"
+                                else {}
+                            ),
+                        )
                     )
                     audit.append(
                         dict(
@@ -538,6 +558,8 @@ def discover(
                     if discovery_profile == "go-http-shell-v1"
                     else f"queries/joern-{language}-express-eval.sc"
                     if discovery_profile == "express-request-eval-v1"
+                    else "queries/joern-python-flask-path.sc"
+                    if discovery_profile == "python-flask-path-v1"
                     else "queries/joern-python-flask-system.sc"
                     if discovery_profile == "python-flask-system-v1"
                     else f"queries/joern-{language}-flow.sc"
