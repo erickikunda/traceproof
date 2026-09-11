@@ -19,6 +19,7 @@ PROFILES = {
         "java-spring-url-stream-v1",
         "java-spring-object-read-v1",
         "java-spring-xml-entities-v1",
+        "java-spring-runtime-shell-v1",
     ),
     "csharp": (None,),
     "javascript": ("express-request-eval-v1", "express-request-exec-v1", "express-html-send-v1"),

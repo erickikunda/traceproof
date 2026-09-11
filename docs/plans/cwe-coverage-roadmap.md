@@ -183,3 +183,10 @@ external-general-entities=true factory setting. Missing/default settings are a r
 gap; effective parser configuration is not established. Eight bounded CWE families
 now have profiles, not whole-CWE coverage or measured recall. See
 [guide](../guides/java-xml-discovery.md). Next Java process-execution breadth.
+
+## Slice 138 — Java shell command breadth
+
+`java-spring-runtime-shell-v1` adds CWE-78 command-text flow for exact inline
+Runtime.exec(String[]) shell arrays. Eight bounded CWE families remain; this expands
+Java API breadth. See [guide](../guides/java-shell-discovery.md). Next assess C#/ASP.NET
+HTTP-source discovery before extending synthetic Lookup-only sink coverage.

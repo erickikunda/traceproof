@@ -176,6 +176,8 @@ def to_sarif(raw, source, manifest, language="java", rule=RULE):
                             if rule == "traceproof/joern-python-flask-sql-v1"
                             else "CWE-918: Flask input to requests.get URL; destination unverified."
                             if rule == "traceproof/joern-python-flask-ssrf-v1"
+                            else "CWE-78: Spring input to Runtime.exec shell text; candidate."
+                            if rule == "traceproof/joern-spring-get-runtime-shell-v1"
                             else "CWE-611: Spring input to entity-enabled DOM; candidate."
                             if rule == "traceproof/joern-spring-get-xml-entities-v1"
                             else "CWE-502: Spring input to ObjectInputStream.readObject; candidate."
@@ -260,6 +262,7 @@ def discover(
         "java-spring-url-stream-v1": {"java"},
         "java-spring-object-read-v1": {"java"},
         "java-spring-xml-entities-v1": {"java"},
+        "java-spring-runtime-shell-v1": {"java"},
         "express-html-send-v1": {"javascript", "typescript"},
         "express-request-exec-v1": {"javascript", "typescript"},
         "express-request-eval-v1": {"javascript", "typescript"},
@@ -298,6 +301,8 @@ def discover(
         rule = "traceproof/joern-python-flask-sql-v1"
     elif discovery_profile == "python-flask-ssrf-v1":
         rule = "traceproof/joern-python-flask-ssrf-v1"
+    elif discovery_profile == "java-spring-runtime-shell-v1":
+        rule = "traceproof/joern-spring-get-runtime-shell-v1"
     elif discovery_profile == "java-spring-xml-entities-v1":
         rule = "traceproof/joern-spring-get-xml-entities-v1"
     elif discovery_profile == "java-spring-object-read-v1":
@@ -410,6 +415,15 @@ def discover(
             ],
             "omitted_file_count": len(manifest.files) - len(prepared),
         }
+        if discovery_profile == "java-spring-runtime-shell-v1":
+            report["cwe_scope"] = ["CWE-78"]
+            report["limitations"] = [
+                "Spring GET String RequestParam to Runtime.exec(String[]) shell text only.",
+                "Inline three-element array: literal sh/bash, -c, then command text.",
+                "Other overloads, ProcessBuilder, array variables and Windows shells omitted.",
+                "Guards, executable identity and runtime exploitability unverified.",
+                "Discovery only; advisory unsupported and no clean verdict.",
+            ]
         if discovery_profile == "java-spring-xml-entities-v1":
             report["cwe_scope"] = ["CWE-611"]
             report["limitations"] = [
@@ -687,6 +701,8 @@ def discover(
                     if discovery_profile == "python-flask-sql-v1"
                     else "queries/joern-python-flask-ssrf.sc"
                     if discovery_profile == "python-flask-ssrf-v1"
+                    else "queries/joern-java-shell.sc"
+                    if discovery_profile == "java-spring-runtime-shell-v1"
                     else "queries/joern-java-xml.sc"
                     if discovery_profile == "java-spring-xml-entities-v1"
                     else "queries/joern-java-deserialization.sc"

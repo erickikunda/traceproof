@@ -777,3 +777,14 @@ unverified. Eight bounded CWE families have discovery profiles. See
 with separate report identity and no qualified advisory. No migration/image promotion.
 Next prioritize Java process-execution breadth, then reassess remaining language/API
 gaps against the roadmap rather than refining these profiles indefinitely.
+
+
+## Slice 138 — Java shell command-text discovery
+
+Added `java-spring-runtime-shell-v1` (CWE-78): Spring String RequestParam flow to
+the command-text element of an inline Runtime.exec shell array. Automatic selection
+retains separate attempt/report identity. Ordinary arguments and extra-element arrays
+are excluded; no general process/argument-injection claim. See
+[guide](../guides/java-shell-discovery.md). No migration, advisory qualification or
+image promotion. Next assess practical C#/ASP.NET request-source breadth, where
+legacy Lookup-based discovery remains a significant functional limitation.
