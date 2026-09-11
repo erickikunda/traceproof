@@ -176,6 +176,8 @@ def to_sarif(raw, source, manifest, language="java", rule=RULE):
                             if rule == "traceproof/joern-python-flask-sql-v1"
                             else "CWE-918: Flask input to requests.get URL; destination unverified."
                             if rule == "traceproof/joern-python-flask-ssrf-v1"
+                            else "CWE-89: C# query-binding syntax to CommandText; candidate."
+                            if rule == "traceproof/joern-csharp-query-commandtext-v1"
                             else "CWE-78: Spring input to Runtime.exec shell text; candidate."
                             if rule == "traceproof/joern-spring-get-runtime-shell-v1"
                             else "CWE-611: Spring input to entity-enabled DOM; candidate."
@@ -254,6 +256,7 @@ def discover(
     if language not in SUFFIXES or (language == "csharp") != (repair_dir is not None):
         raise TraceProofError("Unsupported Joern language/repair combination")
     supported_profiles = {
+        "csharp-query-commandtext-v1": {"csharp"},
         "python-flask-system-v1": {"python"},
         "python-flask-path-v1": {"python"},
         "python-flask-ssrf-v1": {"python"},
@@ -293,6 +296,8 @@ def discover(
         "c": "traceproof/joern-c-lookup-system-v1",
         "cpp": "traceproof/joern-cpp-lookup-system-v1",
     }[language]
+    if discovery_profile == "csharp-query-commandtext-v1":
+        rule = "traceproof/joern-csharp-query-commandtext-v1"
     if discovery_profile == "python-flask-system-v1":
         from traceproof.joern_flask import RULE as flask_rule
 
@@ -615,6 +620,16 @@ def discover(
                 "Trusted tools required; receipt hashes do not authenticate the publisher.",
                 "Network not isolated by this command; automatic result reuse disabled.",
             ]
+        if discovery_profile == "csharp-query-commandtext-v1":
+            report["cwe_scope"] = ["CWE-89"]
+            report["limitations"] = [
+                "Parameter flows filtered by mapped FromQuery/classic HTTP syntax facts.",
+                "Method and parameter names unrestricted; runtime route exposure unverified.",
+                "CommandText property name only; database type and execution unverified.",
+                "Raw graph source counts include parameters before syntax filtering.",
+                "Syntax parser limits/ambiguity can omit paths; advisory unsupported.",
+                "Discovery only; no complete coverage or clean verdict.",
+            ]
         with store.transaction() as session:
             session.add(ScanAttempt(id=attempt_id, run_id=run_id, created_at=now(), report=report))
         candidates = []
@@ -727,6 +742,8 @@ def discover(
                     if discovery_profile == "python-flask-path-v1"
                     else "queries/joern-python-flask-system.sc"
                     if discovery_profile == "python-flask-system-v1"
+                    else "queries/joern-csharp-query.sc"
+                    if discovery_profile == "csharp-query-commandtext-v1"
                     else f"queries/joern-{language}-flow.sc"
                 )
                 .read_bytes()
@@ -792,7 +809,12 @@ def discover(
                 _, after_identity = repaired_frontend(store, home, Path(repair_dir))
                 if after_identity != repair_identity:
                     raise TraceProofError("Repair tooling changed during scan")
-                raw, mapping = map_output(doc, source, selected)
+                raw, mapping = map_output(
+                    doc,
+                    source,
+                    selected,
+                    require_query_source=discovery_profile == "csharp-query-commandtext-v1",
+                )
                 (root / "source-mapping.json").write_text(json.dumps(mapping, indent=2))
                 report["source_mapping"] = {
                     "validated_paths": mapping["validated_paths"],

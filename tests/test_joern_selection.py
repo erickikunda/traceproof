@@ -51,8 +51,8 @@ def test_scope_failure_continues_other_languages_and_reports(monkeypatch):
     )
     assert len(result["report_ids"]) == 4
     assert result["items"][0]["status"] == "scope_error"
-    assert result["items"][1]["status"] == "unsupported_language"
-    assert len(calls) == 5
+    assert result["items"][2]["status"] == "unsupported_language"
+    assert len(calls) == 6
     assert all(skip for _, skip, _ in calls)
     assert result["model_calls"] == 0
     assert result["security_completion_verified"] is False

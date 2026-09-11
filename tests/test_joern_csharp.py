@@ -72,3 +72,20 @@ def test_csharp_durable_discovery_and_raw_mapping(store, captured_source, tmp_pa
     published = publish_report(store, "example", run, result["attempt_id"])
     assert published["source_mapping"]["validated_paths"] == 1
     assert published["static_review_readiness"]["state"] == "incomplete"
+
+
+@pytest.mark.parametrize("attribute,expected", [("[FromQuery] ", 1), ("", 0)])
+def test_query_source_gate_requires_mapped_fact(tmp_path, attribute, expected):
+    data = (
+        "using Microsoft.AspNetCore.Mvc;\nclass C {\n"
+        f" void Search({attribute}string term) {{ }}\n}}\n"
+    ).encode()
+    (tmp_path / "A.cs").write_bytes(data)
+    selected = [SimpleNamespace(path="A.cs", sha256=hashlib.sha256(data).hexdigest())]
+    doc = {"paths": [[{"file": "A.cs", "code": "string term", "line": 3}]], "flow_count": 1}
+    raw, audit = joern_csharp.map_output(doc, tmp_path, selected, require_query_source=True)
+    assert len(json.loads(raw)["paths"]) == expected
+    assert audit["validated_paths"] == expected
+    # Legacy syntax-span mapping remains available without the source gate.
+    raw, _ = joern_csharp.map_output(doc, tmp_path, selected)
+    assert len(json.loads(raw)["paths"]) == 1

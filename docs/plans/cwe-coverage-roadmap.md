@@ -190,3 +190,11 @@ now have profiles, not whole-CWE coverage or measured recall. See
 Runtime.exec(String[]) shell arrays. Eight bounded CWE families remain; this expands
 Java API breadth. See [guide](../guides/java-shell-discovery.md). Next assess C#/ASP.NET
 HTTP-source discovery before extending synthetic Lookup-only sink coverage.
+
+## Slice 139 — C# query-source breadth
+
+`csharp-query-commandtext-v1` removes Lookup(name) restrictions by requiring mapped
+query-binding syntax at each published flow's source. Native Core FromQuery direct
+and namespaced cross-file fixtures pass; database sink identity and actual routing
+remain unverified. Eight CWE families remain. See
+[guide](../guides/csharp-query-discovery.md). Next C# sink breadth using these sources.

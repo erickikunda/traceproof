@@ -54,7 +54,7 @@ def repaired_frontend(store, home, repair):
         raise TraceProofError("Invalid or modified operator C# repair build") from None
 
 
-def map_output(doc, source, selected):
+def map_output(doc, source, selected, *, require_query_source=False):
     records = {r.path: r for r in selected}
     mapped, audit = [], []
     if len(doc["paths"]) > 10_000:
@@ -83,8 +83,18 @@ def map_output(doc, source, selected):
             if result["status"] == "parsed" and result["nodes"][0]["status"] == "validated_span":
                 span = result["nodes"][0]["span"]
                 nodes.append({**node, "file": relative, "line": span["line"]})
-        valid = len(nodes) == len(flow)
-        audit.append({"published": valid, "nodes": results})
+        source_verified = bool(
+            results
+            and results[0].get("nodes")
+            and any(
+                fact.get("category") == "sources"
+                for fact in results[0]["nodes"][0].get("framework_facts", [])
+            )
+        )
+        valid = len(nodes) == len(flow) and (not require_query_source or source_verified)
+        audit.append(
+            {"published": valid, "query_source_verified": source_verified, "nodes": results}
+        )
         if valid:
             mapped.append(nodes)
     return json.dumps({**doc, "paths": mapped, "flow_count": len(mapped)}).encode(), {

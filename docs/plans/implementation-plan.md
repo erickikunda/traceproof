@@ -45,7 +45,7 @@ framework heuristics. Reports remain per profile; errors/unsupported scope are e
 Explicit overrides are preserved. Optional LLM wrapper discovery remains later work.
 See [operator guide](../guides/automatic-scan-selection.md) for compatibility details.
 
-## Current checkpoint after Slice 138
+## Current checkpoint after Slice 139
 
 Git/PVC/GCS intake now has explicit archive handoff and durable provenance. Git private
 HTTPS and HTTP CONNECT transport have local native acceptance; GCS has a live optional SDK
@@ -1352,3 +1352,14 @@ are excluded; no general process/argument-injection claim. See
 [guide](../guides/java-shell-discovery.md). No migration, advisory qualification or
 image promotion. Next assess practical C#/ASP.NET request-source breadth, where
 legacy Lookup-based discovery remains a significant functional limitation.
+
+
+## Slice 139 — C# query-binding discovery
+
+Added `csharp-query-commandtext-v1` (CWE-89): parameter-to-CommandText flows require
+a mapped query-binding syntax fact at their source, removing Lookup(name) naming
+restrictions. Native coverage uses renamed Core FromQuery actions and a cross-file
+helper. Automatic selection preserves legacy and new profiles separately. Runtime
+route/database identity remains unverified; new-rule advisory unsupported. See
+[guide](../guides/csharp-query-discovery.md). No migration/image promotion. Next assess
+C# sink breadth with these source facts, prioritizing useful file/process patterns.
