@@ -13,42 +13,22 @@ and optional complementary backend, not a mandatory second scan of every reposit
 C and C++ are required follow-on languages after the current language work plan.
 See §18 for the superseding delivery sequence and acceptance gates.
 
-## Current checkpoint after Slice 121
+## Current checkpoint after Slice 124
 
-Slice 121 adds durable GCS receipt binding and report projection 14. Next rebuild acquisition
-packaging with the optional SDK and validate offline handoff; real cloud access is deferred.
+Git/PVC/GCS intake now has explicit archive handoff and durable provenance. Git private
+HTTPS and HTTP CONNECT transport have local native acceptance; GCS has a live optional SDK
+adapter with mocked boundary acceptance and a packaged synthetic-to-real-C-scan handoff.
+No real cloud, bank OCP, hosted API or production throughput qualification is claimed.
 
+Slice 124 refreshes C#/Rust images with projection 14 vulnerable/fixed GCS handoff acceptance.
+Next validate remaining general-language selections and consolidate the local image matrix. This supersedes
+older next-step notes. See [current readiness](../development/slice-123.md) and the
+[consolidated intake guide](../guides/intake-operator-guide.md).
 
-Slice 120 adds the live GCS adapter/CLI with mocked SDK acceptance and optional dependencies.
-Next durable GCS provenance and acquisition packaging; real cloud validation remains pending.
-
-
-Slice 119 implements the internal generation-pinned GCS archive reader/handoff contract.
-Next add the live GCS adapter and CLI; no real bucket access or cloud qualification yet.
-
-
-Slice 118 supersedes the transport next-step notes below: the rebuilt acquisition image
-passes local private smart-HTTP, CA and HTTP CONNECT proxy acceptance plus offline handoff.
-Next implement GCS archive intake with local contract tests. Bank/OCP validation remains
-pending; no private infrastructure configuration is needed from the user yet.
-
-
-Slice 117 adds exact-repository private Basic/token credentials with local HTTPS transport tests. Next refresh the acquisition image and validate packaged behavior; bank authentication/proxy acceptance remains pending.
-
-Slice 116 adds explicit operator CA/proxy options for Git acquisition; private authentication and end-to-end transport qualification remain next. Existing acquisition images require rebuilding for these options.
-
-The bounded language integration/advisory pass is complete for its tested scope. The next
-implementation priority is enterprise acquisition configuration (corporate CA/proxy
-and private authentication), validated locally without assuming bank gateway access. Bounded repositories.csv acquisition is implemented in Slice 114. Slice 113
-refreshes the three container variants for the receipt-enabled intake/report contract. The
-requested bounded mounted multi-row archive handoff is implemented in Slice 111.
-Bounded public HTTPS repository acquisition is implemented in Slice 109, separate from
-offline scanning. Specialized C#/Rust smoke handoff is delivered in Slice 108; seven other
-language selections have the shared smoke entrypoint from Slice 107.
-The first OCP-2 offline smoke bundle and restricted Docker rehearsal passed in Slice 106. See
-[the readiness checkpoint](../development/slice-105.md) for scope and acceptance.
-This supersedes older immediate-next-step notes, while retaining their historical evidence.
-No bank deployment, hosted API, Redis service or production throughput is claimed.
+The 50-repository benchmark, bank gateway/identity and required OCP dev execution remain
+acceptance gates when authorized inputs/platform access are available. Functional laptop
+work continues without requesting bank secrets. PostgreSQL multiworker correctness and
+measured fleet capacity remain pilot work; Redis is not a local POC requirement.
 
 ## Current execution priority — breadth before further local refinement
 

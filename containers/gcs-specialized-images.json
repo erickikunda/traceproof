@@ -1,0 +1,30 @@
+{
+  "slice": 124,
+  "images": [
+    {
+      "language": "csharp",
+      "tag": "traceproof:ocp-smoke-gcs-csharp-linux-poc",
+      "image_id": "sha256:ad8737f051b3d5330de0f2f8c6cfcb72e85585fd67a36fd62ba2d76489bbe65b",
+      "os": "linux",
+      "architecture": "arm64",
+      "build_inputs": "252463d8b92ff4ae8e2cf9c430fd7eea5994bb11582cf7edda1ee2ff3095d43d  /tmp/traceproof-0.1.0-py3-none-any.whl\n59edc8148280b5021a505a745076b53b9f2fc1b265b68e704441aca9b7c4a75b  /tmp/requirements.lock\n",
+      "validations": [
+        "work/slice124-csharp-vulnerable/validation.json",
+        "work/slice124-csharp-fixed/validation.json"
+      ]
+    },
+    {
+      "language": "rust",
+      "tag": "traceproof:ocp-smoke-gcs-rust-linux-poc",
+      "image_id": "sha256:69cb4d32885d3ee6a9c118799badaf1acbc3b6dc8217ebf6ad625421babcfda8",
+      "os": "linux",
+      "architecture": "arm64",
+      "build_inputs": "252463d8b92ff4ae8e2cf9c430fd7eea5994bb11582cf7edda1ee2ff3095d43d  /tmp/traceproof-0.1.0-py3-none-any.whl\n59edc8148280b5021a505a745076b53b9f2fc1b265b68e704441aca9b7c4a75b  /tmp/requirements.lock\n",
+      "validations": [
+        "work/slice124-rust-vulnerable/validation.json",
+        "work/slice124-rust-fixed/validation.json"
+      ]
+    }
+  ],
+  "ocp_qualified": false
+}

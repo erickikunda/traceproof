@@ -1,4 +1,19 @@
-# Implementation progress through Slice 121
+# Implementation progress through Slice 124
+
+## Slice 124 — Specialized GCS image acceptance
+
+C#/Rust refreshed image pairs retain projection 14 cloud provenance with 1/0 fixture results.
+See [Slice 124](slice-124.md). Next general image matrix acceptance.
+
+## Slice 123 — Consolidated intake/readiness
+
+Operator guidance and current plan now distinguish supported intake, image compatibility
+and remaining gates. See [Slice 123](slice-123.md). Next specialized image refresh.
+
+## Slice 122 — Packaged GCS handoff
+
+Dedicated SDK image and refreshed general scanner pass synthetic GCS-to-real-C-scan handoff,
+with snapshot-bound projection 14, zero cloud/model calls. See [Slice 122](slice-122.md).
 
 ## Slice 121 — Durable cloud provenance
 

@@ -43,3 +43,31 @@ packaging remains follow-up work; durable GCS provenance is implemented in Slice
 performed by this command.
 
 SDK behavior reference: [Google Blob API](https://docs.cloud.google.com/python/docs/reference/storage/latest/google.cloud.storage.blob.Blob).
+
+## Container packaging (Slice 122)
+
+A dedicated image now includes the optional SDK, using containers/requirements-gcs.lock:
+
+```sh
+uv build
+docker build -f containers/Containerfile.gcs-acquisition -t traceproof:gcs-acquisition-linux-poc .
+docker build -f containers/Containerfile.ocp-smoke -t traceproof:ocp-smoke-gcs-linux-poc .
+uv run python scripts/validate_gcs_handoff.py work/new-gcs-handoff
+```
+
+The acquisition entrypoint is acquire-gcs; pass its arguments as in the example above.
+Provide operator-approved ADC configuration only to acquisition, mount input configuration
+read-only, and write archives/receipts to the handoff PVC. Mount the same handoff path
+read-only into scanning. No cloud credential belongs in the offline scanner container.
+
+The local rehearsal replaces SDK responses with synthetic archive bytes and then performs
+a real offline C scan. It verifies report projection 14 with snapshot-bound cloud provenance.
+It does not access Google services. Exact images and input hashes are recorded in
+containers/gcs-handoff-images.json. Slice 124 supplies separate GCS-compatible C#/Rust images with vulnerable/fixed handoff
+acceptance. See containers/gcs-specialized-images.json; older smoke tags are unchanged.
+
+
+Specialized validation uses --language csharp or --language rust and --case vulnerable/fixed
+on scripts/validate_gcs_handoff.py. Build the matching Containerfile.ocp-smoke-csharp or
+Containerfile.ocp-smoke-rust with tag traceproof:ocp-smoke-gcs-csharp-linux-poc or
+traceproof:ocp-smoke-gcs-rust-linux-poc first. Use a new output directory for every case.

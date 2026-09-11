@@ -16,7 +16,7 @@ These five columns are required; archive-only fields and arbitrary Git options a
 accepted here. Use a full refs/heads or refs/tags revision, or a 40-character commit.
 URLs must be credential-free HTTPS with no redirects. Hosts are approved explicitly at
 invocation, never supplied by CSV metadata. Existing acquisition restrictions apply to
-each row: no private credentials, inherited proxy/custom CA config, submodules, LFS or
+each row: no inherited credentials/proxy/custom CA config, submodules, LFS or
 symlink content; no checkout, build, scanner or model execution.
 
 ```sh
@@ -83,9 +83,8 @@ partition it intentionally before dispatching profile-specific Jobs. Automatic p
 language/image routing is not implemented here.
 
 This command is available from the local checkout and the separate acquisition image
-(Slice 115). The pinned offline scanner images are not a networked acquisition service. Private repository authentication, corporate
-CA/proxy integration, GCS and actual OCP acceptance
-remain separate work. An allowed hostname is not an OS-level egress isolation guarantee.
+(Slice 115). The pinned offline scanner images are not a networked acquisition service. Private Basic/token and explicit CA/proxy options are implemented. Corporate infrastructure
+and actual OCP acceptance remain pending; GCS uses its separate acquire-gcs path. An allowed hostname is not an OS-level egress isolation guarantee.
 
 ## Explicit CA and proxy options (Slice 116)
 

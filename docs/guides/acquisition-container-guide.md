@@ -59,9 +59,9 @@ records, not a full SBOM, source signature or bank approval. Tags are mutable; u
 image digests for handoff. Scanner and acquisition images may contain different application
 builds while sharing the qualified receipt/CSV contract; the exact tested pairing is recorded.
 
-No private authentication, custom corporate CA/proxy configuration or injected secrets are
-introduced. Git still uses a minimal environment and ignores inherited credential helpers.
-This stage is public HTTPS only. Do not embed tokens in URLs. The networked stage has not
+Slice 118 includes explicit private Basic/token credentials and corporate CA/proxy options.
+Git still uses a minimal environment and ignores inherited credential helpers.
+Only operator-configured exact-repository credentials are passed to fetch. Do not embed tokens in URLs. The networked stage has not
 been deployed to OCP and no permissive egress manifest is generated automatically. Bank
 registry, namespace, network allow rules, storage/SELinux and auth integration remain open.
 
