@@ -59,6 +59,23 @@ def scan_run(
     *,
     advisory=None,
 ):
+    if discovery_profile == "auto":
+        from traceproof.joern_selection import scan_selected
+
+        return scan_selected(
+            store,
+            run_id,
+            language,
+            joern_home,
+            repair_dir,
+            rust_home,
+            extraction_timeout,
+            query_timeout,
+            skip_existing,
+            advisory=advisory,
+        )
+    if discovery_profile == "default":
+        discovery_profile = None
     run, manifest, _ = verified_source(store, run_id)
     requested = language
     language = selected_language(manifest, requested)

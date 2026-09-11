@@ -1,7 +1,7 @@
 # LLM-assisted vulnerability discovery platform
 
 **System design, version 0.3 — 11 September 2026**
-**Implementation checkpoint:** through Slice 129. This document separates the implemented laptop POC from the proposed enterprise architecture. It is not an approved Wells Fargo architecture.
+**Implementation checkpoint:** through Slice 131. This document separates the implemented laptop POC from the proposed enterprise architecture. It is not an approved Wells Fargo architecture.
 
 **Revision 0.3:** Records the Joern-first scanner strategy, bounded nine-language profiles, optional advisory policies, Ollama, separate Git acquisition and offline archive scanning, durable provenance, and local OpenShift preparation. PostgreSQL orchestration, Redis coordination, GCS, hosted API, bank OCP execution and fleet qualification remain future work. The [implementation plan](../plans/implementation-plan.md) governs delivery order; [progress](../development/progress.md) and slice records retain acceptance evidence. Section 0 is the current checkpoint; production mechanisms in later sections are design requirements unless explicitly marked implemented.
 
@@ -35,7 +35,7 @@ The existing CLI may retain CodeQL defaults for compatibility: select Joern expl
 
 The [CWE coverage roadmap](../plans/cwe-coverage-roadmap.md) records Slice 127's assessment:
 three original bounded CWE families plus Slice 128 Python/Flask CWE-22 candidates.
-Slice 129 adds bounded Java/Spring path candidates; SSRF and SQL expansion remain next.
+Slice 129 adds bounded Java/Spring path candidates; Slice 130 adds bounded Flask SSRF candidates; Slice 131 adds bounded Python SQLite SQL-text candidates; automatic profile selection is next.
 CWE-22 advisory is not qualified.
 
 ### Current language and evidence scope
@@ -1121,3 +1121,24 @@ The planned benchmark artifact includes dataset/configuration versions, all 50 r
 - Portfolio tables import into an approved dashboard tool or a generic tabular consumer with documented keys and no manual text parsing.
 - Cross-domain access, malformed filters, source-derived markup and formula injection are rejected or safely handled.
 - A local target of p95 ≤2 seconds for an already-materialized single-repository summary is measured against a declared dataset and concurrent load; bulk exports run asynchronously. This is an engineering target to validate, not an achieved SLA.
+
+
+## Slice 132 — automatic selection delivered
+
+Main CLI scan commands now default to automatic language selection. Joern selects
+all bounded profiles per recognized language, with sequential mixed-language
+attempts and separate report IDs. Unsupported/missing-tool scopes remain explicit;
+no model calls are used for selection. See [automatic selection guide](../guides/automatic-scan-selection.md)
+for overrides, advisory requirements, retry semantics and extraction limitations.
+No migration or container entrypoint change. Next prioritize useful detection
+breadth from the CWE roadmap over CLI/extraction optimization.
+
+
+## Slice 133 — Java/Spring SSRF discovery
+
+Added bounded request-to-URL.openStream receiver discovery (CWE-918), separate
+profile/report identity and automatic Java selection. Destination policy and
+exploitability remain unverified; advisory is unsupported for this rule. See
+[operator guide](../guides/java-ssrf-discovery.md). No migration, model calls or
+published-image promotion. Next: useful JS/TS process-execution breadth, then
+reflected XSS; continue prioritizing functional coverage over refinement.

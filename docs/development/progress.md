@@ -1,4 +1,14 @@
-# Implementation progress through Slice 129
+# Implementation progress through Slice 131
+
+## Slice 131 — Python SQL breadth
+
+Bounded sqlite3 query-text flow adds CWE-89 candidates with parameter-binding negatives.
+See [Slice 131](slice-131.md). Next automatic language/profile selection.
+
+## Slice 130 — Python SSRF breadth
+
+Explicit Flask-to-requests.get discovery adds bounded CWE-918 candidates. See
+[Slice 130](slice-130.md). Next SQL breadth; no qualified SSRF advisory.
 
 ## Slice 129 — Java filesystem CWE-22
 
@@ -703,3 +713,24 @@ qualification without indefinitely blocking the remaining language priorities.
 Slice 58 starts JavaScript/TypeScript extraction-to-report support with separate
 source-only selections, a shared CodeQL extractor and distinct Express/eval fixture
 pairs. Semantic resolution and JS/TS triage remain unsupported; readiness stays incomplete.
+
+
+## Slice 132 — automatic selection delivered
+
+Main CLI scan commands now default to automatic language selection. Joern selects
+all bounded profiles per recognized language, with sequential mixed-language
+attempts and separate report IDs. Unsupported/missing-tool scopes remain explicit;
+no model calls are used for selection. See [automatic selection guide](../guides/automatic-scan-selection.md)
+for overrides, advisory requirements, retry semantics and extraction limitations.
+No migration or container entrypoint change. Next prioritize useful detection
+breadth from the CWE roadmap over CLI/extraction optimization.
+
+
+## Slice 133 — Java/Spring SSRF discovery
+
+Added bounded request-to-URL.openStream receiver discovery (CWE-918), separate
+profile/report identity and automatic Java selection. Destination policy and
+exploitability remain unverified; advisory is unsupported for this rule. See
+[operator guide](../guides/java-ssrf-discovery.md). No migration, model calls or
+published-image promotion. Next: useful JS/TS process-execution breadth, then
+reflected XSS; continue prioritizing functional coverage over refinement.

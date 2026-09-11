@@ -148,6 +148,8 @@ def test_cli_scan_advisory_full_path(store, audited_bundle, tmp_path):
             "auto",
             "--joern-home",
             str(tmp_path / "tools"),
+            "--joern-profile",
+            "default",
             "--advisory-config",
             str(config),
             "--review-policy",

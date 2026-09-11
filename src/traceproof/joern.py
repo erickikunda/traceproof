@@ -172,7 +172,13 @@ def to_sarif(raw, source, manifest, language="java", rule=RULE):
                     "ruleId": rule,
                     "message": {
                         "text": (
-                            "CWE-22: Spring input to Files.readAllBytes path; escape unverified."
+                            "CWE-89: Flask input to sqlite3 SQL text; exploitability unverified."
+                            if rule == "traceproof/joern-python-flask-sql-v1"
+                            else "CWE-918: Flask input to requests.get URL; destination unverified."
+                            if rule == "traceproof/joern-python-flask-ssrf-v1"
+                            else "CWE-918: Spring input to URL.openStream; destination unverified."
+                            if rule == "traceproof/joern-spring-get-url-stream-v1"
+                            else "CWE-22: Spring input to Files.readAllBytes; escape unverified."
                             if rule == "traceproof/joern-spring-get-file-path-v1"
                             else "CWE-22: Flask input to file path; directory escape unverified."
                             if rule == "traceproof/joern-python-flask-path-v1"
@@ -240,7 +246,10 @@ def discover(
     supported_profiles = {
         "python-flask-system-v1": {"python"},
         "python-flask-path-v1": {"python"},
+        "python-flask-ssrf-v1": {"python"},
+        "python-flask-sql-v1": {"python"},
         "java-spring-file-path-v1": {"java"},
+        "java-spring-url-stream-v1": {"java"},
         "express-request-eval-v1": {"javascript", "typescript"},
         "go-http-shell-v1": {"go"},
         "rust-env-shell-v1": {"rust"},
@@ -273,6 +282,12 @@ def discover(
         from traceproof.joern_flask import RULE as flask_rule
 
         rule = flask_rule
+    elif discovery_profile == "python-flask-sql-v1":
+        rule = "traceproof/joern-python-flask-sql-v1"
+    elif discovery_profile == "python-flask-ssrf-v1":
+        rule = "traceproof/joern-python-flask-ssrf-v1"
+    elif discovery_profile == "java-spring-url-stream-v1":
+        rule = "traceproof/joern-spring-get-url-stream-v1"
     elif discovery_profile == "java-spring-file-path-v1":
         rule = "traceproof/joern-spring-get-file-path-v1"
     elif discovery_profile == "python-flask-path-v1":
@@ -375,6 +390,14 @@ def discover(
             ],
             "omitted_file_count": len(manifest.files) - len(prepared),
         }
+        if discovery_profile == "java-spring-url-stream-v1":
+            report["cwe_scope"] = ["CWE-918"]
+            report["limitations"] = [
+                "Spring GET String RequestParam to exact URL.openStream receiver only.",
+                "URL constructor propagation is modeled; runtime access is unverified.",
+                "Redirects, DNS, destination policy and egress unverified; advisory unsupported.",
+                "Other HTTP clients and source bindings omitted; no clean verdict.",
+            ]
         if discovery_profile == "java-spring-file-path-v1":
             report["cwe_scope"] = ["CWE-22"]
             report["limitations"] = [
@@ -400,6 +423,22 @@ def discover(
                 "Ambiguous graph endpoints withheld; synthetic intermediate nodes retained.",
                 "Discovery only; no qualified triage, complete coverage or clean verdict.",
                 "Trusted tools required; command does not enforce OS network isolation.",
+            ]
+        if discovery_profile == "python-flask-sql-v1":
+            report["cwe_scope"] = ["CWE-89"]
+            report["limitations"] = [
+                "Flask input to sqlite3.connect(literal).execute positional SQL text only.",
+                "Bound values are not SQL text; cursor variables and other drivers unsupported.",
+                "SQL syntax, runtime identity and sanitizer effectiveness unverified.",
+                "Discovery only; advisory unsupported; incomplete coverage and no clean verdict.",
+            ]
+        if discovery_profile == "python-flask-ssrf-v1":
+            report["cwe_scope"] = ["CWE-918"]
+            report["limitations"] = [
+                "Flask args/form.get to imported requests.get positional URL only.",
+                "Destination restrictions, redirects, DNS and runtime egress unverified.",
+                "Single-line calls; optional positive literal timeout only; aliases supported.",
+                "Discovery only; advisory unsupported; incomplete coverage and no clean verdict.",
             ]
         if discovery_profile == "python-flask-path-v1":
             report["limitations"] = [
@@ -520,7 +559,12 @@ def discover(
                 (source / "Cargo.toml").write_bytes(cargo)
             endpoint_args = []
             endpoint_digest = None
-            if discovery_profile in {"python-flask-system-v1", "python-flask-path-v1"}:
+            if discovery_profile in {
+                "python-flask-system-v1",
+                "python-flask-path-v1",
+                "python-flask-ssrf-v1",
+                "python-flask-sql-v1",
+            }:
                 from traceproof.joern_flask import parse_isolated
 
                 audit = []
@@ -528,6 +572,20 @@ def discover(
                     Path(f.path).name in {"flask.py", "os.py"}
                     or "flask" in Path(f.path).parts[:-1]
                     or "os" in Path(f.path).parts[:-1]
+                    or (
+                        discovery_profile == "python-flask-ssrf-v1"
+                        and (
+                            Path(f.path).name == "requests.py"
+                            or "requests" in Path(f.path).parts[:-1]
+                        )
+                    )
+                    or (
+                        discovery_profile == "python-flask-sql-v1"
+                        and (
+                            Path(f.path).name == "sqlite3.py"
+                            or "sqlite3" in Path(f.path).parts[:-1]
+                        )
+                    )
                     for f in selected
                 )
                 for record in selected:
@@ -539,6 +597,10 @@ def discover(
                             **(
                                 {"file_paths": True}
                                 if discovery_profile == "python-flask-path-v1"
+                                else {"http_urls": True}
+                                if discovery_profile == "python-flask-ssrf-v1"
+                                else {"sql_queries": True}
+                                if discovery_profile == "python-flask-sql-v1"
                                 else {}
                             ),
                         )
@@ -563,7 +625,13 @@ def discover(
             query.write_bytes(
                 files("traceproof")
                 .joinpath(
-                    "queries/joern-java-path.sc"
+                    "queries/joern-python-flask-sql.sc"
+                    if discovery_profile == "python-flask-sql-v1"
+                    else "queries/joern-python-flask-ssrf.sc"
+                    if discovery_profile == "python-flask-ssrf-v1"
+                    else "queries/joern-java-ssrf.sc"
+                    if discovery_profile == "java-spring-url-stream-v1"
+                    else "queries/joern-java-path.sc"
                     if discovery_profile == "java-spring-file-path-v1"
                     else "queries/joern-rust-env-shell.sc"
                     if discovery_profile == "rust-env-shell-v1"

@@ -4,9 +4,9 @@ Assessed against the current repository after Slice 126. The priority is useful 
 breadth and functional completeness, not infrastructure refinement. SQLite/single-worker
 remains the POC runtime. The assessment itself introduced no detector; Slice 128 subsequently implements the bounded Python/Flask CWE-22 profile described below.
 
-## What is supported today
+## Original baseline at Slice 127
 
-**Nine language selections currently cover bounded examples in three CWE families.**
+**At Slice 127, nine language selections covered bounded examples in three CWE families.**
 Language/frontend support, a reachable data-flow path, advisory acceptance and a confirmed
 vulnerability are different capabilities. No portfolio precision/recall has been measured.
 
@@ -49,6 +49,14 @@ proven directory escape. See [operator guide](../guides/python-path-discovery.md
 Slice 129 adds Java/Spring java-spring-file-path-v1 using exact Files.readAllBytes(Path)
 selection and bounded Path.of propagation. It remains discovery-only; see the
 [Java guide](../guides/java-path-discovery.md). Next SSRF, then SQL breadth.
+
+Slice 130 adds Python/Flask python-flask-ssrf-v1, CWE-918, for bounded requests.get URL
+flow. This is a fifth bounded CWE family; destination access and SSRF advisory remain
+unverified/unsupported. See [SSRF guide](../guides/python-ssrf-discovery.md). Next SQL breadth.
+
+Slice 131 adds Python/Flask python-flask-sql-v1 for immediate sqlite3.connect(...).execute
+query text, with a parameterized negative. Cursor variables and other drivers remain gaps;
+see [SQL guide](../guides/python-sql-discovery.md). Next deterministic profile selection.
 
 ## Selection rationale
 
@@ -135,3 +143,11 @@ CWE terminology references: [CWE-22](https://cwe.mitre.org/data/definitions/22.h
 [CWE-89](https://cwe.mitre.org/data/definitions/89.html),
 [CWE-918](https://cwe.mitre.org/data/definitions/918.html). These classify weakness concepts;
 they do not establish which APIs our implementation detects.
+
+## Slice 133 — Java SSRF expansion
+
+Java/Spring `java-spring-url-stream-v1` adds CWE-918 request-to-URL.openStream
+receiver candidates and joins automatic selection. Five bounded CWE families remain;
+this expands language/API scope, not the family count. See the
+[guide](../guides/java-ssrf-discovery.md). Next prioritize process-execution breadth
+in JS/TS, then reflected XSS, subject to native frontend evidence.

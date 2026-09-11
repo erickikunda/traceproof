@@ -37,7 +37,15 @@ and recovery-first sequences and the next-step note in Slice 126. Bank OCP dev a
 remains a required, externally deferred gate; the 50-repository benchmark remains pending
 availability in an authorized environment.
 
-## Current checkpoint after Slice 129
+## Automatic selection delivered in Slice 132
+
+Main scan CLI commands now default to automatic language selection and Joern profile
+selection. All bounded profiles run for each recognized language, avoiding uncertain
+framework heuristics. Reports remain per profile; errors/unsupported scope are explicit.
+Explicit overrides are preserved. Optional LLM wrapper discovery remains later work.
+See [operator guide](../guides/automatic-scan-selection.md) for compatibility details.
+
+## Current checkpoint after Slice 133
 
 Git/PVC/GCS intake now has explicit archive handoff and durable provenance. Git private
 HTTPS and HTTP CONNECT transport have local native acceptance; GCS has a live optional SDK
@@ -48,8 +56,8 @@ Slice 124 refreshes C#/Rust images with projection 14 vulnerable/fixed GCS hando
 Slice 125 completes all seven general-language fixture pairs and the nine-language saved matrix.
 Slice 126 provides the local acceptance entrypoint with explicit retained/fresh evidence modes.
 Slice 128 adds bounded Python/Flask path-traversal candidates and native fixture acceptance.
-Slice 129 adds bounded Java/Spring Files.readAllBytes path candidates. Next Slice 130
-adds Python/Flask SSRF candidates, then SQL expansion.
+Slice 129 adds bounded Java/Spring Files.readAllBytes path candidates. Slice 130 adds Python/Flask requests.get SSRF candidates. Slice 131 adds bounded Python sqlite3 query-text discovery. Slice 132 implements
+deterministic language/profile selection and explicit mixed-language scope/overrides.
 See [CWE coverage roadmap](cwe-coverage-roadmap.md) for per-profile gaps and acceptance gates.
 Keep SQLite/single-worker for the POC and defer PostgreSQL/distributed work to pilot.
 The standing delivery priority above supersedes older next-step notes. See [current readiness](../development/slice-123.md) and the
@@ -1269,3 +1277,24 @@ offline scanner handoff pass. Original mixed-batch failures remain explicit afte
 the success subset. No scanner tools or credentials are copied into acquisition. Next bounded
 operator-controlled enterprise CA/proxy/auth configuration; private live bank validation,
 GCS, actual OCP and representative quality/fleet gates remain open.
+
+
+## Slice 132 — automatic selection delivered
+
+Main CLI scan commands now default to automatic language selection. Joern selects
+all bounded profiles per recognized language, with sequential mixed-language
+attempts and separate report IDs. Unsupported/missing-tool scopes remain explicit;
+no model calls are used for selection. See [automatic selection guide](../guides/automatic-scan-selection.md)
+for overrides, advisory requirements, retry semantics and extraction limitations.
+No migration or container entrypoint change. Next prioritize useful detection
+breadth from the CWE roadmap over CLI/extraction optimization.
+
+
+## Slice 133 — Java/Spring SSRF discovery
+
+Added bounded request-to-URL.openStream receiver discovery (CWE-918), separate
+profile/report identity and automatic Java selection. Destination policy and
+exploitability remain unverified; advisory is unsupported for this rule. See
+[operator guide](../guides/java-ssrf-discovery.md). No migration, model calls or
+published-image promotion. Next: useful JS/TS process-execution breadth, then
+reflected XSS; continue prioritizing functional coverage over refinement.
