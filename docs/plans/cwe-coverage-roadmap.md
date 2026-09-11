@@ -151,3 +151,10 @@ receiver candidates and joins automatic selection. Five bounded CWE families rem
 this expands language/API scope, not the family count. See the
 [guide](../guides/java-ssrf-discovery.md). Next prioritize process-execution breadth
 in JS/TS, then reflected XSS, subject to native frontend evidence.
+
+## Slice 134 — JavaScript/TypeScript command execution
+
+`express-request-exec-v1` adds CWE-78 request-to-child_process.exec command text
+for both languages. Automatic selection retains separate eval/exec reports. This
+expands language/API breadth within the existing five CWE families; advisory is
+unsupported. See [guide](../guides/express-command-discovery.md). Next reflected XSS.

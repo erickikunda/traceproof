@@ -188,6 +188,8 @@ def to_sarif(raw, source, manifest, language="java", rule=RULE):
                             if rule.endswith("-argv-system-v1")
                             else "Go HTTP form input to shell command text; discovery only."
                             if rule == "traceproof/joern-go-http-shell-v1"
+                            else "CWE-78: Express input to child_process.exec; discovery only."
+                            if rule.endswith("-express-exec-v1")
                             else "Express request property to builtin eval; discovery only."
                             if rule.endswith("-express-eval-v1")
                             else "Flask request input to os.system; discovery only."
@@ -250,6 +252,7 @@ def discover(
         "python-flask-sql-v1": {"python"},
         "java-spring-file-path-v1": {"java"},
         "java-spring-url-stream-v1": {"java"},
+        "express-request-exec-v1": {"javascript", "typescript"},
         "express-request-eval-v1": {"javascript", "typescript"},
         "go-http-shell-v1": {"go"},
         "rust-env-shell-v1": {"rust"},
@@ -292,6 +295,8 @@ def discover(
         rule = "traceproof/joern-spring-get-file-path-v1"
     elif discovery_profile == "python-flask-path-v1":
         rule = "traceproof/joern-python-flask-path-v1"
+    elif discovery_profile == "express-request-exec-v1":
+        rule = f"traceproof/joern-{language}-express-exec-v1"
     elif discovery_profile == "express-request-eval-v1":
         rule = f"traceproof/joern-{language}-express-eval-v1"
     if discovery_profile == "go-http-shell-v1":
@@ -479,6 +484,15 @@ def discover(
                 "Discovery only; no qualified triage, complete coverage or clean verdict.",
                 "Go downloads disabled; command does not enforce OS network isolation.",
             ]
+        if discovery_profile == "express-request-exec-v1":
+            report["cwe_scope"] = ["CWE-78"]
+            report["limitations"] = [
+                "Express get/post inline callbacks and query/body/params field reads only.",
+                "Resolved child_process:exec first argument; other execution APIs omitted.",
+                "Graph resolution does not prove runtime identity or HTTP exposure.",
+                "Shell command candidate; guards unverified; advisory unsupported.",
+                "Routers, middleware, computed fields and JSX/TSX omitted; no clean verdict.",
+            ]
         if discovery_profile == "express-request-eval-v1":
             report["limitations"] = [
                 "Express graph signatures for get/post and inline callback argument 2 only.",
@@ -639,6 +653,8 @@ def discover(
                     if discovery_profile == "c-family-argv-system-v1"
                     else "queries/joern-go-http-shell.sc"
                     if discovery_profile == "go-http-shell-v1"
+                    else f"queries/joern-{language}-express-exec.sc"
+                    if discovery_profile == "express-request-exec-v1"
                     else f"queries/joern-{language}-express-eval.sc"
                     if discovery_profile == "express-request-eval-v1"
                     else "queries/joern-python-flask-path.sc"

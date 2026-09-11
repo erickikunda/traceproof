@@ -94,3 +94,9 @@ def test_cli_omitted_language_and_profile_dispatch_auto(monkeypatch, tmp_path):
     assert json.loads(result.output)["status"] == "incomplete"
     assert received["language"] == "auto"
     assert received["joern_profile"] == "auto"
+
+
+@pytest.mark.parametrize("language,suffix", [("javascript", "js"), ("typescript", "ts")])
+def test_express_selection_includes_eval_and_command(language, suffix):
+    _, plan = joern_selection.selection(manifest(f"app.{suffix}"))
+    assert plan == [(language, "express-request-eval-v1"), (language, "express-request-exec-v1")]

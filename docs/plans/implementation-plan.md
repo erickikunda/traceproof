@@ -45,7 +45,7 @@ framework heuristics. Reports remain per profile; errors/unsupported scope are e
 Explicit overrides are preserved. Optional LLM wrapper discovery remains later work.
 See [operator guide](../guides/automatic-scan-selection.md) for compatibility details.
 
-## Current checkpoint after Slice 133
+## Current checkpoint after Slice 134
 
 Git/PVC/GCS intake now has explicit archive handoff and durable provenance. Git private
 HTTPS and HTTP CONNECT transport have local native acceptance; GCS has a live optional SDK
@@ -1298,3 +1298,12 @@ exploitability remain unverified; advisory is unsupported for this rule. See
 [operator guide](../guides/java-ssrf-discovery.md). No migration, model calls or
 published-image promotion. Next: useful JS/TS process-execution breadth, then
 reflected XSS; continue prioritizing functional coverage over refinement.
+
+
+## Slice 134 — Express command-execution discovery
+
+Added `express-request-exec-v1` for JavaScript and TypeScript request-property flow
+into child_process.exec command text (CWE-78). Automatic selection includes eval
+and exec as separate attempts/reports. Advisory remains unsupported for the new
+rules. See [operator guide](../guides/express-command-discovery.md). No migration
+or published-image promotion. Next prioritize bounded reflected XSS discovery.
