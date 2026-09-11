@@ -46,6 +46,10 @@ vulnerable/fixed, cross-file, disconnected, shadowed and guard-uncertain fixture
 This is a fourth bounded CWE family, with discovery only and no qualified advisory or
 proven directory escape. See [operator guide](../guides/python-path-discovery.md).
 
+Slice 129 adds Java/Spring java-spring-file-path-v1 using exact Files.readAllBytes(Path)
+selection and bounded Path.of propagation. It remains discovery-only; see the
+[Java guide](../guides/java-path-discovery.md). Next SSRF, then SQL breadth.
+
 ## Selection rationale
 
 Priorities below are engineering judgments based on the requested enterprise use cases

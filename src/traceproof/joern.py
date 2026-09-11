@@ -172,7 +172,9 @@ def to_sarif(raw, source, manifest, language="java", rule=RULE):
                     "ruleId": rule,
                     "message": {
                         "text": (
-                            "CWE-22: Flask input to file path; directory escape unverified."
+                            "CWE-22: Spring input to Files.readAllBytes path; escape unverified."
+                            if rule == "traceproof/joern-spring-get-file-path-v1"
+                            else "CWE-22: Flask input to file path; directory escape unverified."
                             if rule == "traceproof/joern-python-flask-path-v1"
                             else "Environment value to shell command text; discovery only."
                             if rule == "traceproof/joern-rust-env-shell-v1"
@@ -238,6 +240,7 @@ def discover(
     supported_profiles = {
         "python-flask-system-v1": {"python"},
         "python-flask-path-v1": {"python"},
+        "java-spring-file-path-v1": {"java"},
         "express-request-eval-v1": {"javascript", "typescript"},
         "go-http-shell-v1": {"go"},
         "rust-env-shell-v1": {"rust"},
@@ -270,6 +273,8 @@ def discover(
         from traceproof.joern_flask import RULE as flask_rule
 
         rule = flask_rule
+    elif discovery_profile == "java-spring-file-path-v1":
+        rule = "traceproof/joern-spring-get-file-path-v1"
     elif discovery_profile == "python-flask-path-v1":
         rule = "traceproof/joern-python-flask-path-v1"
     elif discovery_profile == "express-request-eval-v1":
@@ -370,6 +375,14 @@ def discover(
             ],
             "omitted_file_count": len(manifest.files) - len(prepared),
         }
+        if discovery_profile == "java-spring-file-path-v1":
+            report["cwe_scope"] = ["CWE-22"]
+            report["limitations"] = [
+                "Spring GET String RequestParam to Files.readAllBytes(Path) only.",
+                "Modeled Path propagation is not proof of directory escape or runtime identity.",
+                "Confinement, guards and deployment access unverified; advisory unsupported.",
+                "Discovery only; incomplete coverage and no clean verdict.",
+            ]
         if language == "python":
             report["limitations"] = [
                 "Experimental lookup(input) parameter to call named system argument profile only.",
@@ -550,7 +563,9 @@ def discover(
             query.write_bytes(
                 files("traceproof")
                 .joinpath(
-                    "queries/joern-rust-env-shell.sc"
+                    "queries/joern-java-path.sc"
+                    if discovery_profile == "java-spring-file-path-v1"
+                    else "queries/joern-rust-env-shell.sc"
                     if discovery_profile == "rust-env-shell-v1"
                     else f"queries/joern-{language}-argv-system.sc"
                     if discovery_profile == "c-family-argv-system-v1"

@@ -1,7 +1,7 @@
 # LLM-assisted vulnerability discovery platform
 
 **System design, version 0.3 — 11 September 2026**
-**Implementation checkpoint:** through Slice 128. This document separates the implemented laptop POC from the proposed enterprise architecture. It is not an approved Wells Fargo architecture.
+**Implementation checkpoint:** through Slice 129. This document separates the implemented laptop POC from the proposed enterprise architecture. It is not an approved Wells Fargo architecture.
 
 **Revision 0.3:** Records the Joern-first scanner strategy, bounded nine-language profiles, optional advisory policies, Ollama, separate Git acquisition and offline archive scanning, durable provenance, and local OpenShift preparation. PostgreSQL orchestration, Redis coordination, GCS, hosted API, bank OCP execution and fleet qualification remain future work. The [implementation plan](../plans/implementation-plan.md) governs delivery order; [progress](../development/progress.md) and slice records retain acceptance evidence. Section 0 is the current checkpoint; production mechanisms in later sections are design requirements unless explicitly marked implemented.
 
@@ -35,7 +35,8 @@ The existing CLI may retain CodeQL defaults for compatibility: select Joern expl
 
 The [CWE coverage roadmap](../plans/cwe-coverage-roadmap.md) records Slice 127's assessment:
 three original bounded CWE families plus Slice 128 Python/Flask CWE-22 candidates.
-Java path traversal, SSRF and SQL expansion remain next; CWE-22 advisory is not qualified.
+Slice 129 adds bounded Java/Spring path candidates; SSRF and SQL expansion remain next.
+CWE-22 advisory is not qualified.
 
 ### Current language and evidence scope
 

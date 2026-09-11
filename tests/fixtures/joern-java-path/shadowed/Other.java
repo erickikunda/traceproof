@@ -1,0 +1,1 @@
+class Other { static byte[] readAllBytes(java.nio.file.Path path) { return new byte[0]; } }

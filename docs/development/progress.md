@@ -1,4 +1,9 @@
-# Implementation progress through Slice 128
+# Implementation progress through Slice 129
+
+## Slice 129 — Java filesystem CWE-22
+
+Explicit Spring GET-to-Files.readAllBytes discovery adds Java path coverage without
+changing default SQL behavior. See [Slice 129](slice-129.md). Next bounded SSRF.
 
 ## Slice 128 — First CWE breadth addition
 

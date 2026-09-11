@@ -37,7 +37,7 @@ and recovery-first sequences and the next-step note in Slice 126. Bank OCP dev a
 remains a required, externally deferred gate; the 50-repository benchmark remains pending
 availability in an authorized environment.
 
-## Current checkpoint after Slice 128
+## Current checkpoint after Slice 129
 
 Git/PVC/GCS intake now has explicit archive handoff and durable provenance. Git private
 HTTPS and HTTP CONNECT transport have local native acceptance; GCS has a live optional SDK
@@ -48,7 +48,8 @@ Slice 124 refreshes C#/Rust images with projection 14 vulnerable/fixed GCS hando
 Slice 125 completes all seven general-language fixture pairs and the nine-language saved matrix.
 Slice 126 provides the local acceptance entrypoint with explicit retained/fresh evidence modes.
 Slice 128 adds bounded Python/Flask path-traversal candidates and native fixture acceptance.
-Next Slice 129 implements Java/Spring path candidates, then SSRF and SQL expansion.
+Slice 129 adds bounded Java/Spring Files.readAllBytes path candidates. Next Slice 130
+adds Python/Flask SSRF candidates, then SQL expansion.
 See [CWE coverage roadmap](cwe-coverage-roadmap.md) for per-profile gaps and acceptance gates.
 Keep SQLite/single-worker for the POC and defer PostgreSQL/distributed work to pilot.
 The standing delivery priority above supersedes older next-step notes. See [current readiness](../development/slice-123.md) and the
