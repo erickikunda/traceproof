@@ -226,6 +226,396 @@ SARIF does not include later TraceProof model/operator decisions. Consult the ma
 report for readiness: partial or zero-alert output does not establish a secure repository.
 See [Slice 27](../development/slice-27.md) for the retrieval contract.
 
+## Export a snapshot file inventory (CycloneDX)
+
+```bash
+uv run traceproof get-sbom REPO_ID SNAPSHOT_ID > inventory.cdx.json
+uv run traceproof get-sbom REPO_ID SNAPSHOT_ID --verify > inventory.cdx.json
+```
+
+The snapshot identifier appears in a published report's `snapshot_id`. Output is CycloneDX
+1.6 JSON with one `file` component per recorded manifest entry, carrying that entry's
+SHA-256 and size. The command verifies repository scope and refuses rather than emit a
+partial document past the 20,000-component or 8 MiB bound.
+
+**This is a file inventory, not a dependency bill of materials.** TraceProof does not parse
+`package.json`, `pom.xml`, `go.mod`, `Cargo.toml`, `*.csproj` or any lockfile belonging to a
+scanned repository, so the document contains no package identities, no Package URLs, no
+resolved transitive dependencies and no license inventory. It carries no `vulnerabilities`
+array: it establishes no vulnerability position, and an empty inventory of a given ecosystem
+means no parser exists for it, never that the ecosystem is absent. Do not submit it where a
+supply-chain attestation or a package SBOM is required.
+
+Without `--verify` the document re-encodes the manifest recorded at intake. `--verify`
+re-reads and re-hashes the stored snapshot first and records
+`traceproof:manifest_verification: reverified`; it costs a full pass over the tree and fails
+if the retained artifact has changed or been pruned. Output is deterministic — no publication
+timestamp is included and the serial number derives from the snapshot identity — so an
+unchanged snapshot always exports identical bytes.
+
+File paths reveal repository structure; review before sharing. Errors go to stderr with
+exit 1; check exit status because shell redirection can leave an empty file on failure.
+See the [SBOM and OSV export roadmap](../plans/sbom-osv-export.md) for why package-level
+SBOM and OSV output require new pipeline stages rather than a new encoder.
+
+### Declared npm packages
+
+```bash
+uv run traceproof get-sbom REPO_ID SNAPSHOT_ID --packages > inventory.cdx.json
+```
+
+`--packages` additionally reads `package-lock.json`, `npm-shrinkwrap.json` and `package.json`
+(and `pom.xml`, below) from the verified snapshot tree and adds one `library` component per declared package, with a
+Package URL. Each file is re-hashed against its manifest record before being parsed; a
+mismatch, an unreadable file, a non-JSON body or an oversized file is skipped and counted in
+`traceproof:dependency_files_skipped` rather than silently dropped.
+
+A lockfile yields `traceproof:resolution: pinned` with a concrete version. `package.json`
+yields `declared_range`: the component carries **no** version, only a
+`traceproof:version_constraint`, because a range is not a component identity. Both records can
+appear for the same package and are kept distinct. `dev`, `optional` and `peer` declarations
+are included and marked in `traceproof:declared_scopes` rather than dropped.
+
+What this still does not establish: no transitive closure is resolved, because that needs a
+build and a registry and TraceProof runs offline; `traceproof:transitive_dependencies` stays
+`not_resolved`. A lockfile records what npm resolved when the lock was written, not what is
+installed or deployed. npm `integrity` is recorded as a property, not as a CycloneDX hash,
+because the tarball it describes was never fetched or verified. Manifests under
+`node_modules/` are installed copies rather than declarations; they are counted in
+`traceproof:excluded_declarations_ignored` and remain in the file inventory only. Ecosystems other
+than npm, Maven and Go are not parsed at all, so an empty inventory never means a repository has no
+dependencies — only that no parser exists for it yet.
+
+### Declared Maven dependencies
+
+`--packages` also reads `pom.xml`. Maven has **no lockfile**, so nothing it declares is ever
+`pinned`: a stated version is `declared_version`, since nearest-wins mediation can still
+override it at build time.
+
+| `traceproof:version_source` | What the POM established |
+|---|---|
+| `literal` | the dependency's own `<version>` |
+| `properties` | a `${...}` substituted from this file's `<properties>`, `<version>` or `<parent>` |
+| `dependency_management` | a `<dependencyManagement>` entry in the same file |
+| `inherited_or_managed_elsewhere` | nothing — the component carries no version |
+
+Version ranges (`[1.7,2.0)`) become `declared_range` and carry a constraint, not a version.
+
+Parent POMs are **never followed**, even when the parent sits in the same snapshot, so
+`traceproof:inheritance_resolved` is always `false`. A version inherited from a parent, defined
+by a property declared elsewhere, or managed by an imported BOM stays `unresolved_version` — the
+component appears with no version rather than a guessed one. Imported BOMs, poms carrying a
+`<parent>`, and profile dependencies are counted in `traceproof:ecosystem_notes`. Profile
+dependencies are conditional on activation and are never emitted as components. Poms under
+`target/` are build output and counted as ignored.
+
+Any `<!DOCTYPE` or `<!ENTITY` declaration causes the file to be refused before parsing and
+counted as `maven:doctype_refused`. A real `pom.xml` needs no DTD, and Python's XML parser
+expands internal entities, so refusing is the conservative reading rather than a limitation.
+
+### Declared Go modules
+
+`--packages` also reads `go.mod`. `go.sum` is **not** read: it covers the whole module graph
+rather than what a build resolves, so treating it as an inventory would over-report.
+
+The directive that matters most is `replace`, because it changes what is actually built:
+
+| go.mod | Reported |
+|---|---|
+| `require github.com/a/b v1.0.0` | `declared_version`, `v1.0.0` |
+| `replace github.com/a/b => github.com/c/d v2.0.0` | `a/b` becomes `replaced` with **no version**; `c/d@v2.0.0` is emitted |
+| `replace github.com/a/b => ./local` | `a/b` becomes `replaced`; no registry component |
+| `replace github.com/a/b v1.0.0 => ...` | applies only when `v1.0.0` is the required version |
+| `exclude github.com/a/b v0.1.0` | counted in `traceproof:ecosystem_notes`, never emitted |
+
+A `replaced` component carries no version and is therefore **never matched against advisories**.
+That is deliberate: if the replacement is a patched fork, matching the original's version would
+report a vulnerability the build does not have.
+
+`// indirect` requirements are marked `indirect` in `traceproof:declared_scopes` rather than
+dropped, so Go shows transitive modules that npm manifests and Maven POMs do not. This is not
+closure resolution — the Go tool recorded those entries and TraceProof only read them, so
+`traceproof:inheritance_resolved` stays `false`.
+
+Go versions carry a `v` prefix while OSV Go records use plain semantic versions; ordering strips
+the prefix and exact version lists are tried both ways, so `v1.9.1` matches a record written as
+`1.9.1`. `go.mod` files under `vendor/` and `testdata/` are counted as ignored.
+
+Go import evidence under `--usage` is **exact**, unlike Maven's: an import path is the module path
+or a package below it, guaranteed by the Go toolchain, so `github.com/gin-gonic/gin/binding`
+matches module `github.com/gin-gonic/gin` and `github.com/a/bc` does not match `github.com/a/b`.
+A Go `not_observed` is therefore stronger evidence than a Maven one — but still not evidence of
+non-use, since build tags, generated code and indirect dependencies leave no import.
+
+## Acquire the OSV export (networked, separate container)
+
+Acquisition is the **only** networked OSV step and runs in its own container; matching never opens
+a socket.
+
+```bash
+uv build
+docker build -f containers/Containerfile.osv-acquisition -t traceproof:osv-acquisition-linux-poc .
+uv run python scripts/validate_osv_acquisition.py \
+  --image traceproof:osv-acquisition-linux-poc work/osv-qualification
+```
+
+Add `--platform linux/amd64` to `docker build` for an x86_64 cluster; the pinned base digest is a
+multi-arch index and resolves per architecture. Both builds are recorded in
+`containers/osv-acquisition-image.json`, and comparing two full exports found zero
+architecture-attributable differences — but the amd64 image has only been exercised under
+emulation, never on native hardware.
+
+Two exports taken at different times will **not** share an `inventory_sha256`, because the
+upstream export changes continuously: a ten-hour gap between qualification runs added one
+advisory and revised another, out of 245,373. Comparing digests across machines compares
+acquisition times, not architectures. Use `--expected-sha256` where a reproducible input is
+required.
+
+The validator drives the image from the host with the same hardened runtime the Git acquisition
+uses (read-only root, dropped capabilities, no new privileges, bounded CPU/memory/PIDs). It
+checks that an unallowed host is refused without creating an output directory, that unpinned
+acquisition requires the opt-in, that a wrong pinned digest is refused, and that the acquired
+export then loads with `--network none`. Add `--ecosystem` to select what to fetch; the default
+is Go and Maven. To acquire directly rather than qualify:
+
+```bash
+docker run --rm --network bridge --read-only --cap-drop ALL \
+  --tmpfs /work:rw,size=2g --tmpfs /tmp:rw,size=2g \
+  --mount type=bind,source="$PWD/work/export",target=/export \
+  traceproof:osv-acquisition-linux-poc \
+  https://osv-vulnerabilities.storage.googleapis.com /export/osv \
+  --ecosystem Go --ecosystem Maven \
+  --allowed-host osv-vulnerabilities.storage.googleapis.com --allow-unpinned
+```
+
+### Size the export to what you scan
+
+Measured against the live export during qualification:
+
+| Ecosystems | Archive download | Records | Expanded | Offline load + index | Peak RSS |
+|---|---|---|---|---|---|
+| Go + Maven | 21 MiB | 16,363 | 51 MiB | ~3 s | ~120 MiB |
+| Go + Maven + npm | 226 MiB | 245,373 | 431 MiB | ~50 s | ~1.7 GiB |
+
+npm alone carries 229,010 of those records. Without a cache that cost is paid on **every**
+`get-osv` or `get-sbom --database`, because the profile is re-hashed and the index rebuilt each
+run. Fetch only the ecosystems you actually scan; a Java-only estate has no reason to carry npm.
+Allow at least 4 GiB to a container matching against a full three-ecosystem export.
+
+### Caching the index, and what it gives up
+
+```bash
+uv run traceproof get-osv REPO_ID SNAPSHOT_ID /absolute/osv-profile.json --cache
+uv run traceproof get-osv REPO_ID SNAPSHOT_ID /absolute/osv-profile.json --cache --refresh-cache
+```
+
+`--cache` writes a derived index under `<state-dir>/osv-cache/`, keyed by the profile's own
+digest, and reuses it on later runs. Measured against the three-ecosystem export: **52.8 s
+without a cache, 10.5 s on a cache hit**, with a 56 MiB cache file. The first `--cache` run is
+slower than none at all (71.9 s) because it both verifies and writes.
+
+**The saving is the verification.** The uncached path re-hashes all 245,373 record files to prove
+the database still matches the `inventory_sha256` its profile pins; a cache hit skips that
+entirely and serves the contents recorded when the cache was written. A record modified after the
+cache was built is therefore **not detected** — the uncached path refuses that database outright,
+while a cache hit serves the previously approved contents. That is why caching is opt-in.
+
+Every document records which path ran, in `traceproof:osv_database_verification`:
+
+| Value | Meaning |
+|---|---|
+| `reverified` | every record was re-hashed against the pinned inventory this run |
+| `cached` | a derived index was reused; records were not re-read |
+
+A cache is accepted only when it names the same `inventory_sha256` and record count the profile
+pins, so pointing at a different or updated export rebuilds automatically. A corrupt, truncated,
+symlinked or schema-mismatched cache is ignored and a verified rebuild runs instead; a cache that
+cannot be written never fails the scan. Use `--refresh-cache` to force full verification and
+rewrite. Treat the cache directory as local state with the same trust as the database itself, and
+prefer `--refresh-cache` or no cache at all when that trust is what you are testing.
+
+The output directory must not already exist — leftover records would otherwise enter the pinned
+inventory. On success it holds `osv-profile.json` (what `get-osv` and `get-sbom --database`
+consume), `osv-acquisition-receipt.json`, and read-only `records/`. Hand the directory to the
+offline scanner the same way acquired repositories are handed over.
+
+The source must be credential-free HTTPS on an explicitly allowed host, and redirects are refused
+outright because a redirect could leave the validated host. An unexpected archive member — nested
+paths, non-JSON files, hidden names — **aborts the acquisition** rather than being skipped, since
+a silently incomplete database would later be reported as fully evaluated.
+
+### Pinned versus observed freshness
+
+Git acquisition pins a commit and GCS pins a generation. The OSV export has no stable published
+digest and changes continuously, so it cannot be pinned the same way:
+
+| Mode | How | Recorded as |
+|---|---|---|
+| Approved in advance | `--expected-sha256 npm=<sha256>` per ecosystem | `operator_pinned` |
+| Observed at fetch time | `--allow-unpinned` | `observed_only` |
+
+`--allow-unpinned` is required rather than implied, so an unapproved fetch is a deliberate choice.
+Either way the resulting export is internally pinned by `inventory_sha256`, so matching is
+deterministic; what differs is whether the input was approved beforehand. The receipt records
+which applied per archive, and its limitations state that freshness is the moment of acquisition
+and that unrequested ecosystems are **absent, not empty**.
+
+Acquisition establishes no vulnerability position and performs no matching. It makes no model
+calls.
+
+## Match declared packages against a pinned OSV export
+
+```bash
+uv run traceproof get-osv REPO_ID SNAPSHOT_ID /absolute/osv-profile.json > osv-results.json
+uv run traceproof get-sbom REPO_ID SNAPSHOT_ID --packages --database /absolute/osv-profile.json
+```
+
+`get-osv` emits an OSV-Scanner-**shaped** `results.json` grouped by the file that declared each
+package; it is not an OSV-Scanner run, and a `traceproof` block carries the coverage that a
+scanner result has no field for. `get-sbom --database` instead adds a CycloneDX `vulnerabilities`
+array to the inventory. Both refuse unless `--packages` supplied the components.
+
+The database is **operator-supplied and pinned**; TraceProof fetches nothing and updates nothing.
+The profile names a records directory and one `inventory_sha256` over its canonical inventory:
+
+```json
+{
+  "version": "1",
+  "source": "https://osv-vulnerabilities.storage.googleapis.com/",
+  "exported_at": "2026-09-01T00:00:00Z",
+  "ecosystems": ["npm", "Maven"],
+  "records_directory": "records",
+  "record_count": 2,
+  "inventory_sha256": "<sha256 of the canonical {path: sha256} map>"
+}
+```
+
+A changed, added or removed record fails the check and no results are produced. Withdrawn
+advisories are loaded, counted and never matched.
+
+### What a match means, and what it does not
+
+A match is a **candidate**. It says a declared version fell inside an advisory's affected range,
+and nothing more: no reachability, no call path, no evidence the vulnerable code is used or the
+component is deployed. In CycloneDX the analysis state is always `in_triage` — never
+`exploitable`, never `not_affected`.
+
+Three bases produce a match: exact membership of an advisory's `versions` list, a `SEMVER` range
+under semantic-version precedence, and an `ECOSYSTEM` range on a Maven package under Maven's
+`ComparableVersion` ordering. An ordering is bound to a range type and an ecosystem — it is never
+inferred from how a version string happens to look, so a `SEMVER`-typed range is still refused
+over a version like `5.3.9.RELEASE`. Anything without an implemented ordering is a recorded gap,
+not a verdict:
+
+| Gap | Why |
+|---|---|
+| `range_type_ECOSYSTEM_<ecosystem>` | no ordering is implemented for that ecosystem |
+| `range_type_GIT_<ecosystem>` | commit ranges are not evaluated |
+| `version_not_semver` | a `SEMVER` range met a version with no semantic-version ordering |
+| `semver_range_bound_unordered` | the advisory's own bounds do not parse |
+| `component_state_no_version` | the component never had a resolved version |
+| `component_state_ecosystem_not_in_database` | the export carries no advisories for that ecosystem |
+| `component_state_database_incomplete` | the export held records the loader could not read |
+
+Maven ordering is a faithful port of `ComparableVersion`, validated against the ordering and
+equivalence vectors in Maven's own test suite: `5.3.9` sorts below `5.3.10`, `1.0-SNAPSHOT` below
+`1.0`, and `3.1.0.RELEASE` equals `3.1.0`. Maven also still matches on exact version lists, which
+GHSA-derived records generally carry.
+
+`traceproof:osv_component_states` is the field to read before concluding anything:
+
+- `evaluated_no_match` — the database was fully consulted for this component, and it covered that
+  ecosystem and held no unreadable records
+
+Read `traceproof:osv_records_unread` alongside these. If it is not `0`, the export held records
+the loader could not parse, `traceproof:osv_components_fully_evaluated` is `0`, and **no**
+component was evaluated against a complete database — including the ones reporting matches.
+- `partially_evaluated` — something about it could not be evaluated
+- `not_evaluated` — no resolved version, or an ecosystem the export does not cover
+- `matched` — at least one candidate
+
+**Only `evaluated_no_match` supports any negative statement.** A Maven repository whose versions
+come from parent POMs will still be largely `not_evaluated` — ordering fixes range evaluation, not
+missing versions — and an empty result there says close to nothing. An empty result never means a
+repository is free of known vulnerabilities.
+
+## Import evidence for declared packages
+
+```bash
+uv run traceproof get-sbom REPO_ID SNAPSHOT_ID --packages --usage
+uv run traceproof get-osv REPO_ID SNAPSHOT_ID /absolute/osv-profile.json --usage
+```
+
+`--usage` scans first-party source for imports of each declared package and records a state per
+component. **This is import evidence, not reachability analysis.**
+
+| State | Meaning |
+|---|---|
+| `import_observed` | first-party source names this package in an import or require |
+| `not_observed` | no import was found — **not** evidence that the package is unused |
+| `not_evaluated` | no source of that language was read |
+
+The asymmetry is the point. `import_observed` raises priority. `not_observed` clears nothing:
+transitive use, dynamic `require`, reflection, framework wiring, service loaders and
+configuration-driven instantiation all leave no import in first-party source. Check
+`traceproof:usage_files_skipped` before reading anything into a `not_observed` — a skipped file
+may hold the very import that would have changed it.
+
+A vulnerability's CycloneDX `analysis.state` stays `in_triage` whatever the usage state. Usage
+prioritizes work; it never adjudicates a candidate.
+
+### What the scan does and does not read
+
+Detection is **lexical, not parsed** (`traceproof:usage_detection_method`), so a specifier inside
+a comment or string can be reported. That is the conservative direction: over-reporting says
+investigate, under-reporting would say clear. `node_modules/`, `target/`, `build/`, `dist/`,
+`out/` and `vendor/` are excluded as not first-party, and `*.min.js`/`*.bundle.js` are excluded
+because a bundle inlines its dependencies and would report every one of them as imported.
+
+For Maven, an import is matched against the dependency's groupId prefix. That correspondence is a
+**convention, not a rule** — `junit:junit` publishes `org.junit`, so a project using JUnit reports
+`not_observed`. Treat Maven `not_observed` as carrying almost no information.
+
+No call graph is resolved (`traceproof:usage_call_graph_resolved: false`) and no vulnerable symbol
+is matched (`traceproof:usage_vulnerable_symbol_matching: none`). OSV records for npm and Maven
+carry version ranges, not affected functions, and third-party code is not in the snapshot at all,
+so there is nothing for a call path to reach.
+
+### Go symbol evidence
+
+When a Go match comes from an advisory that carries `ecosystem_specific.imports` — which the Go
+vulnerability database publishes and no other parsed ecosystem does — `--usage` adds a second,
+finer state per vulnerability:
+
+| `traceproof:go_symbol_evidence` | Meaning |
+|---|---|
+| `symbol_referenced` | source imports the vulnerable package and names one of the advisory's symbols |
+| `package_imported` | the vulnerable package is imported; no named symbol was referenced |
+| `package_not_imported` | the module is used, but that package path is not imported |
+| `no_symbol_data` | the advisory carries no import data |
+| `not_evaluated` | no Go source was read |
+
+`symbol_referenced` also lists what was found in `traceproof:go_symbols_referenced`.
+
+`package_not_imported` is the strongest negative this tool produces and is **still not a safety
+conclusion**. An imported package can call the vulnerable one internally, a transitive dependency
+can import it, and generated or build-tagged code may be absent from the snapshot. The CycloneDX
+analysis state stays `in_triage` for every state above.
+
+The scan is lexical. It resolves the identifier an import binds — exactly when aliased,
+conventionally otherwise, since a package's declared name need not match its path — then searches
+for `identifier.Symbol`. A method symbol like `Decoder.Decode` is searched by its receiver type,
+because a call site cannot be resolved lexically, so `package_imported` versus `symbol_referenced`
+is a priority signal rather than a proof of use. Blank imports (`_`) bind no name. Dot imports
+(`.`) put symbols in scope unqualified and are counted in
+`traceproof:go_dot_imports_unresolvable` rather than guessed at. Platform constraints
+(`goos`/`goarch`) are recorded but never applied, since the build target is unknown —
+`traceproof:go_platform_filtering` is always `none`.
+
+No call graph is resolved. `govulncheck` answers the reachability question by building the whole
+program including dependencies; TraceProof has neither the dependencies nor the build, so it
+reports references rather than reachability.
+
 ## Retrieve reports for an import batch
 
 After `scan-import`, inspect report availability or export a dashboard input:

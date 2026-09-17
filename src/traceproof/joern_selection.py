@@ -21,7 +21,12 @@ PROFILES = {
         "java-spring-xml-entities-v1",
         "java-spring-runtime-shell-v1",
     ),
-    "csharp": (None, "csharp-query-commandtext-v1", "csharp-query-file-read-v1"),
+    "csharp": (
+        None,
+        "csharp-query-commandtext-v1",
+        "csharp-query-file-read-v1",
+        "csharp-query-shell-start-v1",
+    ),
     "javascript": ("express-request-eval-v1", "express-request-exec-v1", "express-html-send-v1"),
     "typescript": ("express-request-eval-v1", "express-request-exec-v1", "express-html-send-v1"),
     "go": ("go-http-shell-v1",),

@@ -1,4 +1,116 @@
-# Implementation progress through Slice 131
+# Implementation progress through Slice 158
+
+## Slice 158 — Second review pass on the SBOM/OSV chain
+
+Nested advisory validation, bounded accumulation and honest evaluation accounting close four
+further review findings. See [Slice 158](slice-158.md). Next native amd64 and OCP acceptance;
+an incomplete database now reports zero fully evaluated components.
+
+## Slice 157 — Review findings across the SBOM/OSV chain
+
+Nine reviewed defects fixed, three of which let a component be reported cleanly when it had not
+been evaluated. See [Slice 157](slice-157.md). Next native amd64 and OCP acceptance; some
+previously clean results now correctly report gaps.
+
+## Slice 156 — Maven range-only advisories end to end
+
+Live range-only Maven advisories exercised the ComparableVersion path end to end, including two
+cases a lexical comparison gets wrong. See [Slice 156](slice-156.md). Next native amd64 and OCP
+acceptance; a range match is not exploitability.
+
+## Slice 155 — End-to-end scan against the live database
+
+A real scan over a synthetic repository exercised the whole chain and found two defects the unit
+suite could not reach. See [Slice 155](slice-155.md). Next native amd64 and OCP acceptance; no
+scanner backend ran and nothing establishes exploitability.
+
+## Slice 154 — Full OSV export on linux/amd64
+
+The npm-inclusive export qualified on amd64, with the inventory digest difference traced to
+upstream drift rather than architecture. See [Slice 154](slice-154.md). Next native amd64 and
+OCP acceptance; emulated timings are not native figures.
+
+## Slice 153 — OSV acquisition image on linux/amd64
+
+The acquisition image builds and qualifies on amd64 under emulation, with a byte-identical
+pinned inventory across architectures. See [Slice 153](slice-153.md). Next native amd64 and OCP
+acceptance; emulation is not native execution.
+
+## Slice 152 — Opt-in OSV index caching
+
+A derived index cuts a three-ecosystem match from 52.8 to 10.5 seconds by skipping record
+re-verification, which is stated per document and opt-in. See [Slice 152](slice-152.md). Next
+OCP and registry acceptance; caching changes performance, never candidates.
+
+## Slice 151 — OSV acquisition container qualification
+
+The acquisition image was built and run against the live export, exposing three limits set an
+order of magnitude too low. See [Slice 151](slice-151.md). Next index caching to remove the
+per-run load cost; no OCP or registry acceptance.
+
+## Slice 150 — Go package and symbol evidence
+
+Go advisories carrying symbol data are classified against first-party references, giving a finer
+priority signal that still clears nothing. See [Slice 150](slice-150.md). Next OSV container
+qualification; no call graph is resolved.
+
+## Slice 149 — Bounded go.mod dependency discovery
+
+Go modules join the dependency stage with replaced requirements made unmatchable and exact
+import evidence. See [Slice 149](slice-149.md). Next OSV container qualification; go.sum is
+unread and no symbol matching exists.
+
+## Slice 148 — Import evidence for declared dependencies
+
+A bounded lexical import scan prioritizes dependency candidates without ever clearing one; this
+is import evidence, not reachability. See [Slice 148](slice-148.md). Next OSV container
+qualification; no call graph and no vulnerable-symbol matching.
+
+## Slice 147 — Networked OSV export acquisition
+
+A separate networked container fetches and pins an OSV export that the offline matcher already
+verifies; real container qualification is outstanding. See [Slice 147](slice-147.md). Next
+container acceptance against the live export; no reachability.
+
+## Slice 146 — Maven version ordering for OSV ranges
+
+A faithful ComparableVersion port evaluates Maven ECOSYSTEM ranges, validated against Maven's
+own ordering vectors. See [Slice 146](slice-146.md). Next networked database acquisition;
+inheritance is still unresolved and no reachability is established.
+
+## Slice 145 — OSV matching against a pinned export
+
+Declared components match a pinned offline OSV export on exact versions and semantic-version
+ranges, with every unevaluated range recorded as a gap. See [Slice 145](slice-145.md). Next
+networked database acquisition; no reachability and no confirmed vulnerability.
+
+## Slice 144 — Bounded Maven pom.xml dependency discovery
+
+Maven declarations join the ecosystem-generalized dependency stage with entity declarations
+refused and inheritance recorded as unresolved. See [Slice 144](slice-144.md). Next tier 3
+OSV matching; no transitive resolution and no vulnerability position.
+
+## Slice 143 — Bounded npm dependency discovery
+
+Declared npm packages become snapshot-scoped candidate components with pinned/unpinned
+provenance and explicit coverage gaps. See [Slice 143](slice-143.md). Next a second
+ecosystem; no transitive resolution and no vulnerability position.
+
+## Slice 142 — Snapshot file inventory export
+
+Deterministic CycloneDX export of a snapshot manifest adds a file inventory with no package,
+license or vulnerability claim. See [Slice 142](slice-142.md). Next bounded dependency
+discovery; package SBOM and OSV matching remain unimplemented.
+
+
+## Slice 141 — C# explicit shell-start discovery
+
+Added `csharp-query-shell-start-v1` (CWE-78): mapped query input to fully qualified
+Process.Start argument syntax with literal sh/bash and -c prefix. Runtime binding
+and argument splitting remain unverified. Separate automatic-selection reports;
+no new advisory, migration or image promotion. See
+[guide](../guides/csharp-shell-discovery.md). Next broaden Go HTTP file-path discovery
+to improve language/API breadth beyond the existing shell profile.
 
 ## Slice 131 — Python SQL breadth
 

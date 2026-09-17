@@ -205,3 +205,10 @@ remain unverified. Eight CWE families remain. See
 System.IO.File.ReadAllText syntax. API signatures remain unresolved; source-defined
 System/IO/File types conservatively exclude this profile. Eight CWE families remain.
 See [guide](../guides/csharp-file-discovery.md). Next C# process-execution feasibility.
+
+## Slice 141 — C# shell-start breadth
+
+`csharp-query-shell-start-v1` adds CWE-78 for fully qualified Process.Start syntax,
+literal sh/bash and -c-prefixed argument text. Source facts are mapped; runtime
+API identity and argument interpretation remain unverified. Eight CWE families
+remain. See [guide](../guides/csharp-shell-discovery.md). Next Go HTTP file-path breadth.
