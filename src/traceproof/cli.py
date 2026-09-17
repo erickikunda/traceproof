@@ -251,6 +251,86 @@ def get_sarif_command(ctx: typer.Context, repo_id: str, attempt_id: str):
     perform(lambda: get_sarif(ctx.obj, repo_id, attempt_id))
 
 
+@app.command("get-sbom")
+def get_sbom_command(
+    ctx: typer.Context,
+    repo_id: str,
+    snapshot_id: str,
+    verify: bool = False,
+    packages: bool = False,
+    database: Path | None = None,
+    usage: bool = False,
+    cache: bool = False,
+    refresh_cache: bool = False,
+):
+    """Export a CycloneDX inventory; --packages adds candidates, --database adds OSV candidates."""
+    from traceproof.sbom_export import export_sbom
+
+    perform(
+        lambda: export_sbom(
+            ctx.obj, repo_id, snapshot_id, verify, packages, database, usage, cache, refresh_cache
+        )
+    )
+
+
+@app.command("acquire-osv")
+def acquire_osv_command(
+    ctx: typer.Context,
+    base_url: str,
+    output: Path,
+    ecosystem: Annotated[list[str], typer.Option()],
+    allowed_host: Annotated[list[str], typer.Option()],
+    expected_sha256: Annotated[list[str] | None, typer.Option()] = None,
+    allow_unpinned: bool = False,
+    ca_bundle: Path | None = None,
+    proxy: str | None = None,
+    timeout: Annotated[int, typer.Option(min=1, max=900)] = 300,
+):
+    """Fetch and pin an OSV export over HTTPS; this is the only networked OSV step."""
+    from traceproof.osv_acquisition import acquire_osv
+    from traceproof.osv_reader import OSVReader
+
+    def run():
+        digests = {}
+        for item in expected_sha256 or []:
+            name, separator, value = item.partition("=")
+            if not separator:
+                raise TraceProofError("Expected digests use ECOSYSTEM=SHA256")
+            digests[name] = value
+        return acquire_osv(
+            OSVReader(ca_bundle=ca_bundle, proxy=proxy, timeout=timeout),
+            base_url=base_url,
+            ecosystems=ecosystem,
+            allowed_hosts=allowed_host,
+            output=output,
+            expected_sha256=digests,
+            allow_unpinned=allow_unpinned,
+        )
+
+    perform(run)
+
+
+@app.command("get-osv")
+def get_osv_command(
+    ctx: typer.Context,
+    repo_id: str,
+    snapshot_id: str,
+    database: Path,
+    verify: bool = False,
+    usage: bool = False,
+    cache: bool = False,
+    refresh_cache: bool = False,
+):
+    """Match declared packages against a pinned OSV export; matches are candidates, not verdicts."""
+    from traceproof.osv_export import export_osv
+
+    perform(
+        lambda: export_osv(
+            ctx.obj, repo_id, snapshot_id, database, verify, usage, cache, refresh_cache
+        )
+    )
+
+
 @app.command("report-history")
 def report_history_command(
     ctx: typer.Context,

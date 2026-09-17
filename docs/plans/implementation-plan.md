@@ -45,7 +45,7 @@ framework heuristics. Reports remain per profile; errors/unsupported scope are e
 Explicit overrides are preserved. Optional LLM wrapper discovery remains later work.
 See [operator guide](../guides/automatic-scan-selection.md) for compatibility details.
 
-## Current checkpoint after Slice 140
+## Current checkpoint after Slice 141
 
 Git/PVC/GCS intake now has explicit archive handoff and durable provenance. Git private
 HTTPS and HTTP CONNECT transport have local native acceptance; GCS has a live optional SDK
@@ -1373,3 +1373,13 @@ The frontend does not resolve the API signature; runtime identity and directory
 escape remain unverified. Automatic selection retains separate reports. See
 [guide](../guides/csharp-file-discovery.md). No migration, new advisory or image
 promotion. Next assess bounded C# process execution with argument/option evidence.
+
+
+## Slice 141 — C# explicit shell-start discovery
+
+Added `csharp-query-shell-start-v1` (CWE-78): mapped query input to fully qualified
+Process.Start argument syntax with literal sh/bash and -c prefix. Runtime binding
+and argument splitting remain unverified. Separate automatic-selection reports;
+no new advisory, migration or image promotion. See
+[guide](../guides/csharp-shell-discovery.md). Next broaden Go HTTP file-path discovery
+to improve language/API breadth beyond the existing shell profile.

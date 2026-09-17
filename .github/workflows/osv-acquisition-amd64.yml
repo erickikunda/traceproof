@@ -1,0 +1,63 @@
+# Native x86_64 qualification for the OSV acquisition image. Local development runs on
+# arm64, and emulation is not evidence of native execution, so this runs on a real
+# amd64 runner and records the architecture it observed.
+name: OSV acquisition (native amd64)
+
+on:
+  workflow_dispatch:
+    inputs:
+      ecosystems:
+        description: Space-separated OSV ecosystems to acquire
+        default: Go Maven
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  qualify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Record the runner architecture
+        run: |
+          set -eux
+          uname -m
+          test "$(uname -m)" = "x86_64"
+          docker info --format '{{.Architecture}}'
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: false
+
+      - name: Build the wheel
+        run: uv build
+
+      - name: Build the acquisition image natively
+        run: |
+          docker build -f containers/Containerfile.osv-acquisition \
+            -t traceproof:osv-acquisition-native-amd64 .
+          docker image inspect traceproof:osv-acquisition-native-amd64 \
+            --format '{{.Os}}/{{.Architecture}} {{.Id}}'
+
+      - name: Qualify against the live export
+        run: |
+          selection=""
+          for name in ${{ inputs.ecosystems }}; do selection="$selection --ecosystem $name"; done
+          uv run python scripts/validate_osv_acquisition.py \
+            --image traceproof:osv-acquisition-native-amd64 \
+            --timeout 5400 $selection work/osv-qualification-native-amd64
+
+      - name: Run the unit suite on amd64
+        run: uv run pytest -q
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: osv-qualification-native-amd64
+          path: |
+            work/osv-qualification-native-amd64/qualification.json
+            work/osv-qualification-native-amd64/image-inputs.txt
+          if-no-files-found: warn

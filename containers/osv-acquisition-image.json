@@ -1,0 +1,95 @@
+{
+  "base_image": "registry.access.redhat.com/ubi9/python-312@sha256:b29b44b014b0fad4b6c047abad7cbe42b4107cfe349075318eea8ba6475cbd69 (multi-arch index)",
+  "cross_architecture_comparison": {
+    "architecture_attributable_differences": 0,
+    "byte_identical_common_records": 245372,
+    "common_records": 245373,
+    "note": "Inventory digests differ only because the live export changed between runs.",
+    "records_added_upstream_between_runs": [
+      "GHSA-vrf4-mx87-p53w"
+    ],
+    "records_revised_upstream_between_runs": [
+      "MAL-2026-16248"
+    ]
+  },
+  "entrypoint": [
+    "traceproof",
+    "acquire-osv"
+  ],
+  "full_export_validations": [
+    {
+      "architecture": "arm64",
+      "execution": "native host",
+      "observed": {
+        "duplicate_records_skipped": 79,
+        "expanded_bytes": 430526548,
+        "inventory_sha256": "fa59a4c40943169fdd8a399c6a0c4f82566a77d07a8a1091190d35c36c2c1e08",
+        "record_count": 245373
+      },
+      "path": "work/osv-qualification-full/qualification.json"
+    },
+    {
+      "architecture": "amd64",
+      "elapsed_seconds": {
+        "acquire": 238.2,
+        "offline_load": 212.3
+      },
+      "execution": "qemu emulation on an arm64 host",
+      "observed": {
+        "duplicate_records_skipped": 79,
+        "expanded_bytes": 430533538,
+        "inventory_sha256": "48dd51a498424f2cfe0f7fa1cab037e2298b770803f6fd3c8cdbc1c878071ab9",
+        "record_count": 245374
+      },
+      "path": "work/osv-qualification-amd64-full/qualification.json"
+    }
+  ],
+  "images": [
+    {
+      "architecture": "arm64",
+      "build_inputs": "828facb9fbba2f98ef2a579600204c431b8374b7701df001e0de4bab48793d9d  /tmp/traceproof-0.1.0-py3-none-any.whl\n59edc8148280b5021a505a745076b53b9f2fc1b265b68e704441aca9b7c4a75b  /tmp/requirements.lock\n",
+      "execution": "native host",
+      "image_id": "sha256:3d6cc49a982aab8a9a90100315192c2987db52f81648c1e034d05949cc034587",
+      "observed": {
+        "duplicate_records_skipped": 11,
+        "ecosystems": [
+          "Go",
+          "Maven"
+        ],
+        "expanded_bytes": 51025328,
+        "inventory_sha256": "2d34148a097fde07e7a3ccd6f61faeed1103826a33d0f63efc9652664045fc97",
+        "record_count": 16363
+      },
+      "os": "linux",
+      "validation": "work/osv-qualification/qualification.json"
+    },
+    {
+      "architecture": "amd64",
+      "build_inputs": "828facb9fbba2f98ef2a579600204c431b8374b7701df001e0de4bab48793d9d  /tmp/traceproof-0.1.0-py3-none-any.whl\n59edc8148280b5021a505a745076b53b9f2fc1b265b68e704441aca9b7c4a75b  /tmp/requirements.lock\n",
+      "execution": "qemu emulation on an arm64 host",
+      "image_id": "sha256:e3b5f088415fbfbb3a83bc418751f22d07a367e3acf82437afaaf030235a3696",
+      "observed": {
+        "duplicate_records_skipped": 11,
+        "ecosystems": [
+          "Go",
+          "Maven"
+        ],
+        "expanded_bytes": 51025328,
+        "inventory_sha256": "2d34148a097fde07e7a3ccd6f61faeed1103826a33d0f63efc9652664045fc97",
+        "record_count": 16363
+      },
+      "os": "linux",
+      "validation": "work/osv-qualification-amd64/qualification.json"
+    }
+  ],
+  "limitations": [
+    "The amd64 image was built and run under emulation, not on native amd64 hardware.",
+    "amd64 timings are emulated and are not a native performance figure.",
+    "Record counts reflect the live export at each run, not a fixed threshold.",
+    "No OCP, SCC, storage, network or registry acceptance is claimed."
+  ],
+  "ocp_qualified": false,
+  "packages": "ca-certificates (UBI 9 base; no scanner toolchain)",
+  "schema_version": "3",
+  "slice": 154
+}

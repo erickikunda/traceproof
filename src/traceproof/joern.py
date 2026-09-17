@@ -176,6 +176,8 @@ def to_sarif(raw, source, manifest, language="java", rule=RULE):
                             if rule == "traceproof/joern-python-flask-sql-v1"
                             else "CWE-918: Flask input to requests.get URL; destination unverified."
                             if rule == "traceproof/joern-python-flask-ssrf-v1"
+                            else "CWE-78: C# query input to Process.Start shell text; candidate."
+                            if rule == "traceproof/joern-csharp-query-shell-start-v1"
                             else "CWE-22: C# query input to File.ReadAllText; candidate."
                             if rule == "traceproof/joern-csharp-query-file-read-v1"
                             else "CWE-89: C# query-binding syntax to CommandText; candidate."
@@ -260,6 +262,7 @@ def discover(
     supported_profiles = {
         "csharp-query-commandtext-v1": {"csharp"},
         "csharp-query-file-read-v1": {"csharp"},
+        "csharp-query-shell-start-v1": {"csharp"},
         "python-flask-system-v1": {"python"},
         "python-flask-path-v1": {"python"},
         "python-flask-ssrf-v1": {"python"},
@@ -299,6 +302,8 @@ def discover(
         "c": "traceproof/joern-c-lookup-system-v1",
         "cpp": "traceproof/joern-cpp-lookup-system-v1",
     }[language]
+    if discovery_profile == "csharp-query-shell-start-v1":
+        rule = "traceproof/joern-csharp-query-shell-start-v1"
     if discovery_profile == "csharp-query-file-read-v1":
         rule = "traceproof/joern-csharp-query-file-read-v1"
     if discovery_profile == "csharp-query-commandtext-v1":
@@ -646,6 +651,15 @@ def discover(
                 "Other file APIs and query forms omitted; advisory unsupported.",
                 "Discovery only; no proven directory escape or clean verdict.",
             ]
+        if discovery_profile == "csharp-query-shell-start-v1":
+            report["cwe_scope"] = ["CWE-78"]
+            report["limitations"] = [
+                "Mapped query-source to fully qualified Process.Start shell argument syntax.",
+                "Literal sh/bash executable and argument expression beginning with literal -c.",
+                "Runtime API identity, argument splitting and exploitability unverified.",
+                "Local System/Diagnostics/Process types excluded; other process forms omitted.",
+                "Raw counts precede syntax filtering; advisory unsupported; no clean verdict.",
+            ]
         with store.transaction() as session:
             session.add(ScanAttempt(id=attempt_id, run_id=run_id, created_at=now(), report=report))
         candidates = []
@@ -758,6 +772,8 @@ def discover(
                     if discovery_profile == "python-flask-path-v1"
                     else "queries/joern-python-flask-system.sc"
                     if discovery_profile == "python-flask-system-v1"
+                    else "queries/joern-csharp-shell.sc"
+                    if discovery_profile == "csharp-query-shell-start-v1"
                     else "queries/joern-csharp-path.sc"
                     if discovery_profile == "csharp-query-file-read-v1"
                     else "queries/joern-csharp-query.sc"
@@ -832,7 +848,11 @@ def discover(
                     source,
                     selected,
                     require_query_source=discovery_profile
-                    in {"csharp-query-commandtext-v1", "csharp-query-file-read-v1"},
+                    in {
+                        "csharp-query-commandtext-v1",
+                        "csharp-query-file-read-v1",
+                        "csharp-query-shell-start-v1",
+                    },
                 )
                 (root / "source-mapping.json").write_text(json.dumps(mapping, indent=2))
                 report["source_mapping"] = {
