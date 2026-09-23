@@ -9,7 +9,7 @@ import argparse
 import json
 from pathlib import Path, PurePosixPath
 
-from traceproof.csharp_dependencies import inventory, load_profile
+from veriflow.csharp_dependencies import inventory, load_profile
 
 
 def main():

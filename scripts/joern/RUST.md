@@ -30,5 +30,5 @@ exits zero or leaves a graph artifact.
 
 The raw .rs-only attempt failed with 'no projects'. A Cargo manifest and toolchain were
 needed in this configuration. A graph file alone is insufficient evidence of successful
-preparation. This is a language feasibility test, not an enabled Rust TraceProof backend,
+preparation. This is a language feasibility test, not an enabled Rust VeriFlow backend,
 CWE coverage guarantee, restricted Linux test or bank OCP qualification.

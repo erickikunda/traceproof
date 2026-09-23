@@ -26,8 +26,8 @@ immutable reports remain unchanged. No migration or live model calls.
 ## Usage
 
 ```sh
-traceproof scan-run RUN_ID QUERY_PATH --language auto
-traceproof scan-run JAVA_RUN_ID JAVA_QUERY_PATH --language auto --java-profile source-only
+veriflow scan-run RUN_ID QUERY_PATH --language auto
+veriflow scan-run JAVA_RUN_ID JAVA_QUERY_PATH --language auto --java-profile source-only
 ```
 
 The repeatable Spring script accepts --auto-language for real CodeQL qualification.

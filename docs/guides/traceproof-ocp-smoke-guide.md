@@ -41,8 +41,8 @@ refreshed. Requalify images after application or toolchain changes.
 
 ```sh
 uv build
-docker build -f containers/Containerfile.ocp-smoke -t traceproof:ocp-smoke-linux-poc .
-uv run python scripts/validate_ocp_smoke.py --image traceproof:ocp-smoke-linux-poc --language python work/ocp-smoke-rehearsal
+docker build -f containers/Containerfile.ocp-smoke -t veriflow:ocp-smoke-linux-poc .
+uv run python scripts/validate_ocp_smoke.py --image veriflow:ocp-smoke-linux-poc --language python work/ocp-smoke-rehearsal
 ```
 
 Use a fresh output directory. The runner supplies synthetic vulnerable/fixed ZIP inputs,
@@ -57,10 +57,10 @@ disk-backed emptyDir; the rehearsal is not storage/capacity qualification.
 ## Specialized C# and Rust images (Slice 108)
 
 ```sh
-docker build -f containers/Containerfile.ocp-smoke-csharp -t traceproof:ocp-smoke-csharp-linux-poc .
-uv run python scripts/validate_ocp_smoke.py --image traceproof:ocp-smoke-csharp-linux-poc --language csharp work/ocp-csharp-rehearsal
-docker build -f containers/Containerfile.ocp-smoke-rust -t traceproof:ocp-smoke-rust-linux-poc .
-uv run python scripts/validate_ocp_smoke.py --image traceproof:ocp-smoke-rust-linux-poc --language rust work/ocp-rust-rehearsal
+docker build -f containers/Containerfile.ocp-smoke-csharp -t veriflow:ocp-smoke-csharp-linux-poc .
+uv run python scripts/validate_ocp_smoke.py --image veriflow:ocp-smoke-csharp-linux-poc --language csharp work/ocp-csharp-rehearsal
+docker build -f containers/Containerfile.ocp-smoke-rust -t veriflow:ocp-smoke-rust-linux-poc .
+uv run python scripts/validate_ocp_smoke.py --image veriflow:ocp-smoke-rust-linux-poc --language rust work/ocp-rust-rehearsal
 ```
 
 Run sequentially with fresh output directories. As of Slice 113 all three smoke variants
@@ -70,7 +70,7 @@ application behavior without rebuilding or widening the underlying language mode
 Run uv build first and requalify the resulting images. Rust preparation retains the strict
 dependency-free Cargo contract; no repository build hooks or runtime package downloads are added.
 
-C# supplies the fixed /opt/traceproof/csharp-repair directory to the shared scanner, which
+C# supplies the fixed /opt/veriflow/csharp-repair directory to the shared scanner, which
 checks repair identity. Rust supplies /opt/rust to the existing toolchain validator and
 retains UBI 10. C# remains the bounded repaired Lookup source profile; the smoke fixture
 uses ASP.NET Core, not qualification of every ASP.NET API. Both exports remain incomplete.
@@ -101,9 +101,9 @@ registry hostname; it is review material, not ready to deploy.
 
 ```sh
 uv run python scripts/render_ocp_smoke.py \
-  --namespace traceproof-dev --name traceproof-smoke --language python \
+  --namespace veriflow-dev --name veriflow-smoke --language python \
   --image "$APPROVED_IMAGE_WITH_SHA256_DIGEST" \
-  --input-pvc traceproof-input --reports-pvc traceproof-reports \
+  --input-pvc veriflow-input --reports-pvc veriflow-reports \
   --output work/ocp-smoke.json
 ```
 
@@ -130,8 +130,8 @@ then perform server-side validation before applying it to the approved namespace
 ```sh
 oc apply --dry-run=server -f work/ocp-smoke.json
 oc apply -f work/ocp-smoke.json
-oc -n traceproof-dev wait --for=condition=complete job/traceproof-smoke --timeout=620s
-oc -n traceproof-dev logs job/traceproof-smoke
+oc -n veriflow-dev wait --for=condition=complete job/veriflow-smoke --timeout=620s
+oc -n veriflow-dev logs job/veriflow-smoke
 ```
 
 A timeout may mean failed, pending, evicted or deadline-exceeded work. Inspect Job/Pod
@@ -185,7 +185,7 @@ credential-bearing triage. Actual OCP execution remains deferred as agreed.
 
 ## Mounted multi-row batches (Slice 111)
 
-The images now also contain /opt/traceproof/ocp_archive_batch.py. Select it explicitly through
+The images now also contain /opt/veriflow/ocp_archive_batch.py. Select it explicitly through
 `--batch-max-rows N` on scripts/render_ocp_smoke.py, with N from 1 to 10. Without this option,
 the original one-row smoke entrypoint remains selected. Batch mode uses the same image-specific
 language/profile selection; all repositories in a Job are scanned with that selected profile.
@@ -193,9 +193,9 @@ Separate batches by language/toolchain; there is no per-row automatic routing.
 
 ```sh
 uv run python scripts/render_ocp_smoke.py \
-  --namespace traceproof-dev --name traceproof-archive-batch --language c \
+  --namespace veriflow-dev --name veriflow-archive-batch --language c \
   --image "$APPROVED_IMAGE_WITH_SHA256_DIGEST" \
-  --input-pvc traceproof-input --reports-pvc traceproof-reports \
+  --input-pvc veriflow-input --reports-pvc veriflow-reports \
   --batch-max-rows 3 --output work/ocp-archive-batch.json
 ```
 
@@ -244,9 +244,9 @@ is possible. Preserve earlier exports before cleanup.
 Local batch rehearsal (fresh output directory, run images sequentially):
 
 ```sh
-uv run python scripts/validate_ocp_archive_batch.py --image traceproof:ocp-smoke-linux-poc --language c work/batch-c
-uv run python scripts/validate_ocp_archive_batch.py --image traceproof:ocp-smoke-csharp-linux-poc --language csharp work/batch-csharp
-uv run python scripts/validate_ocp_archive_batch.py --image traceproof:ocp-smoke-rust-linux-poc --language rust work/batch-rust
+uv run python scripts/validate_ocp_archive_batch.py --image veriflow:ocp-smoke-linux-poc --language c work/batch-c
+uv run python scripts/validate_ocp_archive_batch.py --image veriflow:ocp-smoke-csharp-linux-poc --language csharp work/batch-csharp
+uv run python scripts/validate_ocp_archive_batch.py --image veriflow:ocp-smoke-rust-linux-poc --language rust work/batch-rust
 ```
 
 Each rehearsal scans a vulnerable/fixed two-row batch, then a three-row batch with a missing
@@ -263,7 +263,7 @@ archive and both paths must be beneath the input root. The image does not re-fet
 Plain archive CSVs continue to work and publish null acquisition_provenance.
 
 The build performs pip check and records SHA-256 values for the installed input wheel and
-requirements.lock at /opt/traceproof/application-inputs.sha256. The local qualification
+requirements.lock at /opt/veriflow/application-inputs.sha256. The local qualification
 inventory is containers/ocp-smoke-images.json. Its identities describe the exact tested
 artifacts, not arbitrary future tags. This is a build-input inventory, not a full SBOM or
 signed supply-chain attestation. Mirroring to a bank registry requires checking destination

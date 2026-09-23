@@ -24,7 +24,7 @@ validation, AMD64 support, distributed durability or bank throughput has been qu
 OOM/deadline termination may prevent final exports. The image retains the tested Slice 104
 base wheel; new application changes require rebuilding/requalifying that base. No migration.
 
-See [deployment/operator instructions](../guides/traceproof-ocp-smoke-guide.md). Next representative
+See [deployment/operator instructions](../guides/veriflow-ocp-smoke-guide.md). Next representative
 mounted-input integration across supported profiles, before wider CLI refinement; actual
 bank OCP, live gateway, ground-truth and fleet acceptance remain open.
 

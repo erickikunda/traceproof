@@ -1,8 +1,8 @@
 # Slice 14: explicit report selection and freshness
 
-`traceproof resolve-report REPO_ID --selection latest-attempt` returns a JSON selection envelope containing the current admitted run/attempt state and its published report, if available. It never silently falls back.
+`veriflow resolve-report REPO_ID --selection latest-attempt` returns a JSON selection envelope containing the current admitted run/attempt state and its published report, if available. It never silently falls back.
 
-`traceproof resolve-report REPO_ID --selection latest-completed` selects the most recent published report whose recorded `static_review_readiness.state` is `ready_for_review`. Completion means the existing Python parsing/static execution gate only; it does not mean security completeness or a clean repository. Legacy reports lacking that gate are ineligible.
+`veriflow resolve-report REPO_ID --selection latest-completed` selects the most recent published report whose recorded `static_review_readiness.state` is `ready_for_review`. Completion means the existing Python parsing/static execution gate only; it does not mean security completeness or a clean repository. Legacy reports lacking that gate are ineligible.
 
 The envelope includes `selected_report_id`, `selected_is_latest_attempt`, latest run/attempt IDs and status, warnings, and the immutable report itself. A missing eligible publication produces a null report and an explicit warning. A newer failed, incomplete or unpublished attempt remains visible even when an older review-ready report is selected. Consumers should retain this envelope with dashboard exports rather than presenting the embedded historical report as current. Use the selected ID with `get-report --report-id` to retrieve existing HTML/Markdown/CSV representations.
 

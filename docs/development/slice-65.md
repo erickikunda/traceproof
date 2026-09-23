@@ -6,7 +6,7 @@ Replaced fixture method/parameter-name selection with graph-backed selectors:
 - argument 1 of the exact graph method signature
   `java.sql.Statement.executeQuery:java.sql.ResultSet(java.lang.String)`.
 
-The versioned native rule is `traceproof/joern-spring-get-jdbc-sql-v1`, and the adapter
+The versioned native rule is `veriflow/joern-spring-get-jdbc-sql-v1`, and the adapter
 profile is experimental-2. Retained flow construction and source binding are unchanged.
 The command and feasibility runner use the same packaged query. Existing reports and
 bundles are immutable; new rules never inherit CodeQL qualification.

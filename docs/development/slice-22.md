@@ -1,8 +1,8 @@
 # Slice 22: local operator preflight
 
 ```bash
-uv run traceproof doctor
-uv run traceproof doctor --query /absolute/approved.ql
+uv run veriflow doctor
+uv run veriflow doctor --query /absolute/approved.ql
 ```
 
 `doctor` inspects the supported Python version, recorded SQLite migration versus the

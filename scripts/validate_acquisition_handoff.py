@@ -83,7 +83,7 @@ def main():
             "-ec",
             "test ! -e /opt/joern-cli; test ! -e /opt/codeql-bundle; "
             "test ! -e /opt/jdk; test ! -e /opt/rust; git --version; "
-            "cat /opt/traceproof/application-inputs.sha256",
+            "cat /opt/veriflow/application-inputs.sha256",
         ],
         capture_output=True,
         text=True,
@@ -124,9 +124,9 @@ def main():
         offline
         + [
             "--entrypoint",
-            "/opt/traceproof-venv/bin/python",
+            "/opt/veriflow-venv/bin/python",
             scan_image["Id"],
-            "/opt/traceproof/runtime_probe.py",
+            "/opt/veriflow/runtime_probe.py",
         ],
         capture_output=True,
         text=True,
@@ -140,9 +140,9 @@ def main():
             "-e",
             "TRACEPROOF_EXECUTION_ID=offline-scan",
             "--entrypoint",
-            "/opt/traceproof-venv/bin/python",
+            "/opt/veriflow-venv/bin/python",
             scan_image["Id"],
-            "/opt/traceproof/ocp_archive_batch.py",
+            "/opt/veriflow/ocp_archive_batch.py",
             "--input",
             "/handoff/batch",
             "--language",

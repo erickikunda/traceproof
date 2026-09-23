@@ -32,7 +32,7 @@ def bundle(namespace, name, image, input_pvc, reports_pvc, language="c", batch_m
         raise ValueError("A registry image pinned by SHA-256 digest is required")
     if input_pvc == reports_pvc:
         raise ValueError("Use separate input and report PVCs")
-    labels = {"app.kubernetes.io/name": "traceproof-smoke", "traceproof-job": name}
+    labels = {"app.kubernetes.io/name": "veriflow-smoke", "veriflow-job": name}
     metadata = {"name": name, "namespace": namespace}
     return {
         "apiVersion": "v1",
@@ -90,10 +90,10 @@ def bundle(namespace, name, image, input_pvc, reports_pvc, language="c", batch_m
                                         else ["--max-rows", str(batch_max_rows)]
                                     ),
                                     "command": [
-                                        "/opt/traceproof-venv/bin/python",
-                                        "/opt/traceproof/ocp_smoke.py"
+                                        "/opt/veriflow-venv/bin/python",
+                                        "/opt/veriflow/ocp_smoke.py"
                                         if batch_max_rows is None
-                                        else "/opt/traceproof/ocp_archive_batch.py",
+                                        else "/opt/veriflow/ocp_archive_batch.py",
                                     ],
                                     "env": [
                                         {

@@ -4,14 +4,14 @@ import pytest
 from test_reports import scanned as scanned
 from test_triage import evidence_fixture as evidence_fixture
 
-from traceproof.codeql_scanner import execute
-from traceproof.scanner import ExecutionRequest
+from veriflow.codeql_scanner import execute
+from veriflow.scanner import ExecutionRequest
 
 
 @pytest.mark.parametrize("available", [False, True])
 def test_missing_or_unlaunchable_scanner(tmp_path, monkeypatch, available):
     monkeypatch.setattr(
-        "traceproof.codeql_scanner.shutil.which",
+        "veriflow.codeql_scanner.shutil.which",
         lambda _: str(tmp_path / "missing-executable") if available else None,
     )
     result = execute(ExecutionRequest(tmp_path / "db", tmp_path / "rules.ql", tmp_path, 1, 2, 2048))
@@ -23,18 +23,18 @@ def test_missing_or_unlaunchable_scanner(tmp_path, monkeypatch, available):
 
 
 def test_unknown_backend_rejected_before_store_access():
-    from traceproof.domain import TraceProofError
-    from traceproof.pipeline import scan_run
-    from traceproof.scanning import analyze
+    from veriflow.domain import VeriFlowError
+    from veriflow.pipeline import scan_run
+    from veriflow.scanning import analyze
 
     for operation in (scan_run, analyze):
-        with pytest.raises(TraceProofError, match="not implemented"):
+        with pytest.raises(VeriFlowError, match="not implemented"):
             operation(None, "unused", "unused", engine="unimplemented")
 
 
 def test_different_engine_does_not_skip_codeql(store, scanned, tmp_path, monkeypatch):
-    from traceproof import pipeline
-    from traceproof.persistence import ScanAttempt
+    from veriflow import pipeline
+    from veriflow.persistence import ScanAttempt
 
     with store.transaction() as session:
         attempt = session.get(ScanAttempt, scanned[2])
@@ -51,7 +51,7 @@ def test_different_engine_does_not_skip_codeql(store, scanned, tmp_path, monkeyp
 def test_codeql_rule_name_cannot_qualify_other_engine(engine):
     from types import SimpleNamespace
 
-    from traceproof.claims import assess_evidence, requirements
+    from veriflow.claims import assess_evidence, requirements
 
     bundle = {"rule_id": "py/code-injection", "status": "ready", "engine_id": engine}
     assert requirements(bundle["rule_id"], engine)["supported"] is False
@@ -62,7 +62,7 @@ def test_codeql_rule_name_cannot_qualify_other_engine(engine):
 
 
 def test_new_bundle_without_identity_is_not_legacy():
-    from traceproof.claims import bundle_engine
+    from veriflow.claims import bundle_engine
 
     assert bundle_engine({"builder_version": "5"}) == "codeql"
     assert bundle_engine({"builder_version": "6"}) == "unknown"

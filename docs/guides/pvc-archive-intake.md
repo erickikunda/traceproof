@@ -1,7 +1,7 @@
 # Operator-staged PVC archive batches
 
 This input path already works through the existing CSV/archive intake. The operator copies
-the CSV and source archives to a PVC; TraceProof reads them through its mounted input folder.
+the CSV and source archives to a PVC; VeriFlow reads them through its mounted input folder.
 No Git connectivity or credentials are needed.
 
 ## Naming convention
@@ -45,11 +45,11 @@ operation. Mount input read-only in the application. Use the established local/e
 state arrangement; do not place shared SQLite state on the input PVC.
 
 ```sh
-traceproof --state-dir /work/state init
-traceproof --state-dir /work/state import-csv /input/batch-001/archives.csv \
+veriflow --state-dir /work/state init
+veriflow --state-dir /work/state import-csv /input/batch-001/archives.csv \
   --input-root /input/batch-001 --key batch-001
-traceproof --state-dir /work/state worker IMPORT_ID
-traceproof --state-dir /work/state import-status IMPORT_ID
+veriflow --state-dir /work/state worker IMPORT_ID
+veriflow --state-dir /work/state import-status IMPORT_ID
 ```
 
 Use the returned import ID. Intake snapshots the archives; it does not itself perform a

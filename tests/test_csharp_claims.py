@@ -2,9 +2,9 @@ from pathlib import Path
 
 import pytest
 
-from traceproof.claims import assess_evidence
-from traceproof.csharp_parser import parse
-from traceproof.models import Decision
+from veriflow.claims import assess_evidence
+from veriflow.csharp_parser import parse
+from veriflow.models import Decision
 
 
 def fixture(suite="csharp-core"):
@@ -127,7 +127,7 @@ def test_parser_failure_and_timeout_fail_closed(monkeypatch):
     import subprocess
     from types import SimpleNamespace
 
-    from traceproof import csharp_claims
+    from veriflow import csharp_claims
 
     bundle, decision = fixture()
     monkeypatch.setattr(
@@ -143,7 +143,7 @@ def test_parser_failure_and_timeout_fail_closed(monkeypatch):
 
 
 def test_comparison_marks_evidence_policy_change():
-    from traceproof.comparison import compatibility
+    from veriflow.comparison import compatibility
 
     base = dict(
         language="csharp",

@@ -29,7 +29,7 @@ Java already present is scanned without proving it matches the intended build.
 ## Validation and usage
 
 ```sh
-traceproof scan-run RUN_ID QUERY_PATH --language java --java-profile source-only
+veriflow scan-run RUN_ID QUERY_PATH --language java --java-profile source-only
 uv run python scripts/validate_spring.py QUERY_PATH work/maven-acceptance --java-profile source-only --project-layout maven
 uv run python scripts/validate_spring.py QUERY_PATH work/gradle-acceptance --java-profile source-only --project-layout gradle
 ```

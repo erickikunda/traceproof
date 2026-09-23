@@ -1,9 +1,9 @@
 # Slice 33: import history and dispatch-state discovery
 
 ```bash
-uv run traceproof import-history --limit 20
-uv run traceproof import-history --state paused --limit 20
-uv run traceproof import-history --state cancelled --offset 20 --limit 20
+uv run veriflow import-history --limit 20
+uv run veriflow import-history --state paused --limit 20
+uv run veriflow import-history --state cancelled --offset 20 --limit 20
 ```
 
 Returns newest imports first, with ID as a deterministic timestamp tie-breaker. Optional

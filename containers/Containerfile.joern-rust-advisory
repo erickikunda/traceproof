@@ -1,11 +1,11 @@
 # Local offline qualification layer; runner records immutable image identity.
-ARG JOERN_BASE=traceproof:joern-rust-linux-poc
+ARG JOERN_BASE=veriflow:joern-rust-linux-poc
 FROM ${JOERN_BASE}
 USER 0
 COPY containers/requirements.lock /tmp/requirements.lock
-RUN /opt/traceproof-venv/bin/pip install --no-cache-dir --require-hashes --only-binary=:all: -r /tmp/requirements.lock
-COPY dist/traceproof-0.1.0-py3-none-any.whl /tmp/traceproof-0.1.0-py3-none-any.whl
-RUN /opt/traceproof-venv/bin/pip install --no-index --no-deps --force-reinstall /tmp/traceproof-0.1.0-py3-none-any.whl
-COPY scripts/validate_joern_rust_advisory.py /opt/traceproof/scripts/
-COPY tests/fixtures/joern-rust-env /opt/traceproof/tests/fixtures/joern-rust-env
+RUN /opt/veriflow-venv/bin/pip install --no-cache-dir --require-hashes --only-binary=:all: -r /tmp/requirements.lock
+COPY dist/veriflow-0.1.0-py3-none-any.whl /tmp/veriflow-0.1.0-py3-none-any.whl
+RUN /opt/veriflow-venv/bin/pip install --no-index --no-deps --force-reinstall /tmp/veriflow-0.1.0-py3-none-any.whl
+COPY scripts/validate_joern_rust_advisory.py /opt/veriflow/scripts/
+COPY tests/fixtures/joern-rust-env /opt/veriflow/tests/fixtures/joern-rust-env
 USER 1001:0

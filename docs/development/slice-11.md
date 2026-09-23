@@ -7,8 +7,8 @@ precision, or evaluate the bank's 50-repository corpus.
 ## Inputs and execution
 
 ```bash
-uv run traceproof benchmark-schema > schemas.json
-uv run traceproof --state-dir /absolute/state benchmark-evaluate \
+uv run veriflow benchmark-schema > schemas.json
+uv run veriflow --state-dir /absolute/state benchmark-evaluate \
   /absolute/manifest.json /absolute/labels.json /absolute/evaluation-plan.json
 ```
 

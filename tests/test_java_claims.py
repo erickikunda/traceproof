@@ -1,8 +1,8 @@
 from copy import deepcopy
 from pathlib import Path
 
-from traceproof.claims import assess_evidence
-from traceproof.models import Decision
+from veriflow.claims import assess_evidence
+from veriflow.models import Decision
 
 
 def fixture():
@@ -116,7 +116,7 @@ def test_complete_expansion_enables_larger_java_file():
 
 
 def test_expansion_gaps_conflicts_and_wrong_hash_fail():
-    from traceproof.java_claims import complete_context
+    from veriflow.java_claims import complete_context
 
     for change in ["gap", "conflict", "hash", "count", "foreign"]:
         bundle, decision = expanded_fixture()

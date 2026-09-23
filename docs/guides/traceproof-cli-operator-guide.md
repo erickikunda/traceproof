@@ -1,4 +1,4 @@
-# TraceProof CLI user and operator guide
+# VeriFlow CLI user and operator guide
 
 **Scope:** laptop POC through Slice 46, SQLite schema 0009. Commands are run from the repository checkout on Linux/macOS using Python 3.12+. This guide describes implemented behavior. Git/GCS acquisition, HTTP API hosting, distributed workers, authenticated reviewers and OpenShift deployment are future work.
 
@@ -18,7 +18,7 @@ calls. See [Slice 36](../development/slice-36.md) for exact limitations.
 ## Inspect retained storage
 
 ```bash
-uv run traceproof storage-audit --max-entries 1000 --max-nodes 100000
+uv run veriflow storage-audit --max-entries 1000 --max-nodes 100000
 ```
 
 Run while workers are idle. The command takes the worker lock and reports artifact IDs,
@@ -34,9 +34,9 @@ file but does not modify stored results. See [Slice 35](../development/slice-35.
 ## Find a CodeQL extraction attempt
 
 ```bash
-uv run traceproof extraction-history REPO_ID --limit 20
-uv run traceproof extraction-history REPO_ID --run-id RUN_ID
-uv run traceproof codeql-status EXTRACTION_ATTEMPT_ID
+uv run veriflow extraction-history REPO_ID --limit 20
+uv run veriflow extraction-history REPO_ID --run-id RUN_ID
+uv run veriflow codeql-status EXTRACTION_ATTEMPT_ID
 ```
 
 Use this history when extraction failed before a query attempt existed, or when you lost
@@ -52,11 +52,11 @@ IDs for further actions. See [Slice 34](../development/slice-34.md).
 ## Find a previous import
 
 ```bash
-uv run traceproof import-history --limit 20
-uv run traceproof import-history --state paused --limit 20
-uv run traceproof status IMPORT_ID
-uv run traceproof import-control-status IMPORT_ID
-uv run traceproof import-reports IMPORT_ID
+uv run veriflow import-history --limit 20
+uv run veriflow import-history --state paused --limit 20
+uv run veriflow status IMPORT_ID
+uv run veriflow import-control-status IMPORT_ID
+uv run veriflow import-reports IMPORT_ID
 ```
 
 History returns newest batches first with their IDs, latest dispatch state/revision and
@@ -69,8 +69,8 @@ See [Slice 33](../development/slice-33.md) for the projection contract.
 ## Cancel remaining import dispatch
 
 ```bash
-uv run traceproof import-control-status IMPORT_ID
-uv run traceproof import-control IMPORT_ID cancelled cancel-1 "No longer needed" --expected-revision 0
+uv run veriflow import-control-status IMPORT_ID
+uv run veriflow import-control IMPORT_ID cancelled cancel-1 "No longer needed" --expected-revision 0
 ```
 
 Use the revision returned by status. Cancellation is terminal for this import: it cannot
@@ -86,14 +86,14 @@ Keep using this or a newer application version once cancellations exist. No migr
 
 ## Pause and resume import dispatch
 
-With writers quiesced, apply migration 0009 using `traceproof init`. Existing imports
+With writers quiesced, apply migration 0009 using `veriflow init`. Existing imports
 remain active at revision 0. Then use the revision returned by status:
 
 ```bash
-uv run traceproof import-control-status IMPORT_ID
-uv run traceproof import-control IMPORT_ID paused pause-1 "Maintenance" --expected-revision 0
-uv run traceproof import-control IMPORT_ID active resume-1 "Ready" --expected-revision 1
-uv run traceproof worker IMPORT_ID
+uv run veriflow import-control-status IMPORT_ID
+uv run veriflow import-control IMPORT_ID paused pause-1 "Maintenance" --expected-revision 0
+uv run veriflow import-control IMPORT_ID active resume-1 "Ready" --expected-revision 1
+uv run veriflow worker IMPORT_ID
 ```
 
 A pause takes effect at the next intake or batch-scan row boundary. Work already admitted
@@ -113,10 +113,10 @@ not blocked by import pause. See [Slice 31](../development/slice-31.md) for the 
 For synthetic local Ollama testing, with an approved model configuration:
 
 ```bash
-uv run traceproof triage-budget RUN_ID 0 --max-requests 20
-uv run traceproof triage-attempt REPO_ID ATTEMPT_ID examples/triage-ollama-config.json local-pass-1 --limit 5
-uv run traceproof triage-report RUN_ID
-uv run traceproof publish-report REPO_ID --run-id RUN_ID --attempt-id ATTEMPT_ID
+uv run veriflow triage-budget RUN_ID 0 --max-requests 20
+uv run veriflow triage-attempt REPO_ID ATTEMPT_ID examples/triage-ollama-config.json local-pass-1 --limit 5
+uv run veriflow triage-report RUN_ID
+uv run veriflow publish-report REPO_ID --run-id RUN_ID --attempt-id ATTEMPT_ID
 ```
 
 The zero monetary budget above is for zero-priced local inference; priced models require
@@ -136,8 +136,8 @@ See [Slice 30](../development/slice-30.md) for retry and stop semantics.
 ## Share a benchmark scorecard
 
 ```bash
-uv run traceproof benchmark-history DATASET_ID
-uv run traceproof benchmark-get DATASET_ID SCORECARD_ID --format html > scorecard.html
+uv run veriflow benchmark-history DATASET_ID
+uv run veriflow benchmark-get DATASET_ID SCORECARD_ID --format html > scorecard.html
 ```
 
 Open the exported HTML in a browser. It requires no server, JavaScript or external assets.
@@ -156,17 +156,17 @@ format works on `benchmark-evaluate`, which does evaluate its supplied inputs. S
 `scan-run` and `codeql-analyze` accept a trusted local `.qls` file in the same
 positional argument as a single `.ql` query. Replace the example paths below with
 existing, operator-approved suites compatible with the selected language and installed
-CodeQL query packs. These are placeholders, not files shipped by TraceProof.
+CodeQL query packs. These are placeholders, not files shipped by VeriFlow.
 
 ```bash
 # Scan an already-ingested Python run with a suite.
-uv run traceproof scan-run RUN_ID /absolute/approved-python-suite.qls --language python --query-timeout 600
+uv run veriflow scan-run RUN_ID /absolute/approved-python-suite.qls --language python --query-timeout 600
 
 # Scan an already-ingested Java run with a suite and a provisioned dependency profile.
-uv run traceproof scan-run RUN_ID /absolute/approved-java-suite.qls --language java --java-profile source-only --java-dependency-profile /absolute/java-profile.json --query-timeout 600
+uv run veriflow scan-run RUN_ID /absolute/approved-java-suite.qls --language java --java-profile source-only --java-dependency-profile /absolute/java-profile.json --query-timeout 600
 
 # Alternatively, analyze an existing successful extraction with a compatible suite.
-uv run traceproof codeql-analyze EXTRACTION_ID /absolute/approved-suite.qls --timeout 600
+uv run veriflow codeql-analyze EXTRACTION_ID /absolute/approved-suite.qls --timeout 600
 ```
 
 Use the same state directory/global CLI options as for the intake or extraction.
@@ -174,7 +174,7 @@ The Java dependency profile is optional when the repository does not require it;
 choose the extraction profile and dependencies appropriate to the source.
 
 Supply the suite from trusted operator tooling, not the repository being scanned.
-TraceProof rejects query paths inside its scanned-artifact directory and passes the
+VeriFlow rejects query paths inside its scanned-artifact directory and passes the
 suite to CodeQL for resolution. Provision all referenced query packs and dependencies
 before an offline scan. For containers, bake them into the image or expose the suite
 and referenced files through an approved read-only mount at the path passed to the CLI.
@@ -182,7 +182,7 @@ The fixed container acceptance scripts still select their own fixture-specific q
 changing the application query argument does not expand that acceptance matrix.
 
 A broader suite can produce additional static candidates and reports. It does not
-expand TraceProof's qualified LLM evidence policies: unsupported rules remain available
+expand VeriFlow's qualified LLM evidence policies: unsupported rules remain available
 as candidates but are not sent for model triage. Check `evidence-policy RULE_ID` for the
 current rule policy. Coverage also depends on successful extraction and query completion.
 The recorded query hash identifies the supplied entry file; it is not a complete
@@ -192,7 +192,7 @@ operator-tooling dependencies separately for reproducibility.
 ## Tune CodeQL resources
 
 ```bash
-uv run traceproof scan-run RUN_ID /absolute/approved.ql --threads 1 --ram-mb 4096
+uv run veriflow scan-run RUN_ID /absolute/approved.ql --threads 1 --ram-mb 4096
 ```
 
 The same options work on `codeql-extract`, `codeql-analyze` and `scan-import`.
@@ -209,8 +209,8 @@ query attempts. See [Slice 28](../development/slice-28.md) for scope and validat
 ## Export original SARIF for a viewer
 
 ```bash
-uv run traceproof scan-history REPO_ID
-uv run traceproof get-sarif REPO_ID ATTEMPT_ID > results.sarif
+uv run veriflow scan-history REPO_ID
+uv run veriflow get-sarif REPO_ID ATTEMPT_ID > results.sarif
 ```
 
 Choose the exact query attempt, also available in a published report's `attempt_id`.
@@ -222,7 +222,7 @@ an empty file on failure. Use a new destination to avoid overwriting an existing
 
 Raw SARIF may expose source-related messages, flows, paths and diagnostics. Review it
 before sharing; use the summary CSV for routine dashboard consumption. The original
-SARIF does not include later TraceProof model/operator decisions. Consult the matching
+SARIF does not include later VeriFlow model/operator decisions. Consult the matching
 report for readiness: partial or zero-alert output does not establish a secure repository.
 See [Slice 27](../development/slice-27.md) for the retrieval contract.
 
@@ -231,10 +231,10 @@ See [Slice 27](../development/slice-27.md) for the retrieval contract.
 After `scan-import`, inspect report availability or export a dashboard input:
 
 ```bash
-uv run traceproof import-reports IMPORT_ID --limit 100
-uv run traceproof import-reports IMPORT_ID --offset 100 --limit 100
-uv run traceproof import-reports IMPORT_ID --limit 1000 --format csv > import-reports.csv
-uv run traceproof get-report REPO_ID --report-id REPORT_ID --format html > report.html
+uv run veriflow import-reports IMPORT_ID --limit 100
+uv run veriflow import-reports IMPORT_ID --offset 100 --limit 100
+uv run veriflow import-reports IMPORT_ID --limit 1000 --format csv > import-reports.csv
+uv run veriflow get-report REPO_ID --report-id REPORT_ID --format html > report.html
 ```
 
 Rows stay tied to the runs admitted in that import. Status distinguishes intake not ready,
@@ -252,21 +252,21 @@ command makes no model calls and includes no source snippets. See the
 
 ## Start here
 
-TraceProof captures source, indexes Python, runs an approved local CodeQL query, and publishes reviewable candidates. Models can advise on those candidates; they cannot confirm vulnerabilities or suppress them. Operator assertions are recorded separately. A successful command, zero candidates, or `ready_for_review` does not establish that a repository is secure.
+VeriFlow captures source, indexes Python, runs an approved local CodeQL query, and publishes reviewable candidates. Models can advise on those candidates; they cannot confirm vulnerabilities or suppress them. Operator assertions are recorded separately. A successful command, zero candidates, or `ready_for_review` does not establish that a repository is secure.
 
 Install the locked development environment and initialize local storage:
 
 ```bash
 uv sync --locked
-uv run traceproof --help
-uv run traceproof init
-uv run traceproof get-report --help
+uv run veriflow --help
+uv run veriflow init
+uv run veriflow get-report --help
 ```
 
-Use `uv run traceproof` in the examples below. An activated project virtual environment also provides `traceproof`. Commands accept `--help`; the global `--state-dir` option goes **before** the command. Its default is `.traceproof` relative to the current directory. Keep using the same state directory throughout a workflow:
+Use `uv run veriflow` in the examples below. An activated project virtual environment also provides `veriflow`. Commands accept `--help`; the global `--state-dir` option goes **before** the command. Its default is `.veriflow` relative to the current directory. Keep using the same state directory throughout a workflow:
 
 ```bash
-uv run traceproof --state-dir /absolute/local/state init
+uv run veriflow --state-dir /absolute/local/state init
 ```
 
 `init` creates or upgrades the database; it is not a reset command. Current migrations are applied explicitly, not on every read. Keep state on trusted local disk, not shared network storage. Source archives, raw tool outputs and evidence can be sensitive. The local OS account is the access boundary; repository ownership checks are not multi-user authentication.
@@ -292,9 +292,9 @@ Commands normally print JSON. Request/storage errors produce a nonzero exit code
 To recover run or query-attempt IDs, including work without a published report:
 
 ```bash
-uv run traceproof run-history REPO_ID --limit 100
-uv run traceproof scan-history REPO_ID --limit 100
-uv run traceproof scan-history REPO_ID --run-id RUN_ID --offset 0 --limit 100
+uv run veriflow run-history REPO_ID --limit 100
+uv run veriflow scan-history REPO_ID --limit 100
+uv run veriflow scan-history REPO_ID --run-id RUN_ID --offset 0 --limit 100
 ```
 
 Follow `next_offset` until null. Pages contain at most 1000 rows, sorted by newest run admission and then newest attempt within each run. New work can shift offset pages between requests; this is not a frozen export. Failed attempts remain visible, unknown counts are null, and a run with no query attempt has no scan-history rows. Extraction attempts are separate: use `extraction-history` to find IDs for `codeql-status`. Use `report-history` for published summary IDs.
@@ -305,14 +305,14 @@ The included generator creates a small benign archive. It does not execute the s
 
 ```bash
 uv run python examples/create_archive.py --output work/guide-input
-uv run traceproof import-csv work/guide-input/repos.csv --input-root "$PWD/work/guide-input" --key guide-import-1
-uv run traceproof worker IMPORT_ID --max-items 1
-uv run traceproof import-status IMPORT_ID
-uv run traceproof run-status RUN_ID
-uv run traceproof verify-snapshot SNAPSHOT_ID
-uv run traceproof index-run RUN_ID
-uv run traceproof query-index RUN_ID --kind symbols
-uv run traceproof repo-report synthetic-demo --run-id RUN_ID --format markdown
+uv run veriflow import-csv work/guide-input/repos.csv --input-root "$PWD/work/guide-input" --key guide-import-1
+uv run veriflow worker IMPORT_ID --max-items 1
+uv run veriflow import-status IMPORT_ID
+uv run veriflow run-status RUN_ID
+uv run veriflow verify-snapshot SNAPSHOT_ID
+uv run veriflow index-run RUN_ID
+uv run veriflow query-index RUN_ID --kind symbols
+uv run veriflow repo-report synthetic-demo --run-id RUN_ID --format markdown
 ```
 
 Expected checkpoints: the row is admitted, worker captures a snapshot, the run becomes `snapshotted`, and the Python index becomes ready. `repo-report` is **index coverage**, not the published vulnerability summary. Re-running indexing resumes checkpoints or reuses the same completed snapshot/parser index after source verification.
@@ -323,7 +323,7 @@ Finish writing archives before admission. Supply `sha256` to pin original archiv
 
 ## Run CodeQL and inspect candidates
 
-Before scanning, run `uv run traceproof doctor --query /absolute/approved.ql` for local
+Before scanning, run `uv run veriflow doctor --query /absolute/approved.ql` for local
 prerequisite diagnostics and suggested fixes. `blocked` exits 1; omitting the query can
 return `incomplete` with exit 0. This command neither runs CodeQL nor changes the schema.
 It checks availability, not query compilation, sufficient capacity or enterprise approval.
@@ -332,7 +332,7 @@ See [preflight details](../development/slice-22.md).
 For an already captured run, the source-only stages can be executed together:
 
 ```bash
-uv run traceproof scan-run RUN_ID /absolute/approved.ql --extraction-timeout 300 --query-timeout 600
+uv run veriflow scan-run RUN_ID /absolute/approved.ql --extraction-timeout 300 --query-timeout 600
 ```
 
 This indexes, checks readiness, extracts, queries and publishes the exact attempt. It
@@ -350,19 +350,19 @@ Expected row errors do not block later rows, but infrastructure errors stop the 
 Per-run results are durable; save the JSON batch summary yourself. See
 [batch scanning](../development/slice-25.md).
 
-CodeQL must be on PATH, with an approved query and its dependencies installed locally. TraceProof does not download packs during analysis. Local acceptance has used CodeQL 2.27.0 and `codeql/python-queries` 1.8.10; the enterprise must supply its approved versions and usage entitlement.
+CodeQL must be on PATH, with an approved query and its dependencies installed locally. VeriFlow does not download packs during analysis. Local acceptance has used CodeQL 2.27.0 and `codeql/python-queries` 1.8.10; the enterprise must supply its approved versions and usage entitlement.
 
 ```bash
-uv run traceproof codeql-extract RUN_ID --timeout 300
-uv run traceproof codeql-status EXTRACTION_ID
-uv run traceproof codeql-analyze EXTRACTION_ID /absolute/CodeInjection.ql --timeout 600
-uv run traceproof scan-report REPO_ID --run-id RUN_ID
+uv run veriflow codeql-extract RUN_ID --timeout 300
+uv run veriflow codeql-status EXTRACTION_ID
+uv run veriflow codeql-analyze EXTRACTION_ID /absolute/CodeInjection.ql --timeout 600
+uv run veriflow scan-report REPO_ID --run-id RUN_ID
 ```
 
 Extraction uses Python build mode `none`. Inspect extraction success before analysis. Query failure, timeout and invalid SARIF are durable outcomes. The benign first walkthrough may have no candidates. For a reproducible vulnerable/fixed/incomplete demonstration, use a **new** output directory and an installed `CodeInjection.ql` entry:
 
 ```bash
-uv run traceproof acceptance-run work/guide-acceptance /absolute/CodeInjection.ql --timeout 300
+uv run veriflow acceptance-run work/guide-acceptance /absolute/CodeInjection.ql --timeout 300
 ```
 
 This creates isolated state under `work/guide-acceptance/state`, synthetic input archives, reports in five formats and `acceptance.json`. It checks that the seeded case has a candidate, its fixed counterpart does not, and an invalid Python fixture remains incomplete. It makes no model calls. The runner gates analysis on indexing; individual CLI stages remain separately callable, so operators must inspect gates themselves.
@@ -374,12 +374,12 @@ To inspect this state, add `--state-dir work/guide-acceptance/state` before ever
 For a candidate returned by a scan:
 
 ```bash
-uv run traceproof build-bundle ATTEMPT_ID CANDIDATE_FINGERPRINT
-uv run traceproof bundle-status BUNDLE_ID
-uv run traceproof evidence-policy py/code-injection
-uv run traceproof triage-budget RUN_ID 100000
-uv run traceproof triage BUNDLE_ID examples/triage-replay-config.json guide-triage-1 --replay examples/triage-replay-response.json
-uv run traceproof triage-report RUN_ID
+uv run veriflow build-bundle ATTEMPT_ID CANDIDATE_FINGERPRINT
+uv run veriflow bundle-status BUNDLE_ID
+uv run veriflow evidence-policy py/code-injection
+uv run veriflow triage-budget RUN_ID 100000
+uv run veriflow triage BUNDLE_ID examples/triage-replay-config.json guide-triage-1 --replay examples/triage-replay-response.json
+uv run veriflow triage-report RUN_ID
 ```
 
 The supplied replay is offline, uses fictional rates/usage and abstains. `100000` micro-USD equals $0.10 in the ledger, not a replay charge. The run budget cannot be changed once set. Partial bundles, unsupported rules and exhausted budgets prevent provider invocation. Reusing the same triage key with identical inputs retrieves the recorded result; a different request needs a different key and may consume budget.
@@ -402,8 +402,8 @@ For local POC inference, run an Ollama daemon with a locally installed completio
 edit `examples/triage-ollama-config.json` to select it, then use:
 
 ```bash
-uv run traceproof triage-budget RUN_ID 100000
-uv run traceproof triage BUNDLE_ID examples/triage-ollama-config.json local-triage-1
+uv run veriflow triage-budget RUN_ID 100000
+uv run veriflow triage BUNDLE_ID examples/triage-ollama-config.json local-triage-1
 ```
 
 No API key or `--replay` is needed. The endpoint is numeric loopback only, source/classification
@@ -434,15 +434,15 @@ Unknown usage, interrupted requests and ambiguous provider failures retain reser
 ## Publish, select and share a report
 
 ```bash
-uv run traceproof publish-report REPO_ID
-uv run traceproof report-history REPO_ID
-uv run traceproof resolve-report REPO_ID --selection latest-attempt
-uv run traceproof resolve-report REPO_ID --selection latest-completed
-uv run traceproof get-report REPO_ID --report-id REPORT_ID --format html > report.html
-uv run traceproof get-report REPO_ID --report-id REPORT_ID --format markdown > report.md
-uv run traceproof get-report REPO_ID --report-id REPORT_ID > report.json
-uv run traceproof get-report REPO_ID --report-id REPORT_ID --format scan-csv > scan.csv
-uv run traceproof get-report REPO_ID --report-id REPORT_ID --format candidates-csv > candidates.csv
+uv run veriflow publish-report REPO_ID
+uv run veriflow report-history REPO_ID
+uv run veriflow resolve-report REPO_ID --selection latest-attempt
+uv run veriflow resolve-report REPO_ID --selection latest-completed
+uv run veriflow get-report REPO_ID --report-id REPORT_ID --format html > report.html
+uv run veriflow get-report REPO_ID --report-id REPORT_ID --format markdown > report.md
+uv run veriflow get-report REPO_ID --report-id REPORT_ID > report.json
+uv run veriflow get-report REPO_ID --report-id REPORT_ID --format scan-csv > scan.csv
+uv run veriflow get-report REPO_ID --report-id REPORT_ID --format candidates-csv > candidates.csv
 ```
 
 Publication reads stored state without invoking analysis. New triage/review state needs a new publication to appear in summaries; identical inputs reuse the same report. Exact report IDs stay immutable. Use `publish-report --run-id RUN_ID --attempt-id ATTEMPT_ID` for historical work.
@@ -479,8 +479,8 @@ First inspect `review-history REPO_ID ATTEMPT_ID CANDIDATE_FINGERPRINT` and the 
 ```
 
 ```bash
-uv run traceproof record-review REPO_ID ATTEMPT_ID CANDIDATE_FINGERPRINT review.json guide-review-1
-uv run traceproof publish-report REPO_ID
+uv run veriflow record-review REPO_ID ATTEMPT_ID CANDIDATE_FINGERPRINT review.json guide-review-1
+uv run veriflow publish-report REPO_ID
 ```
 
 Allowed states are `confirmed`, `false_positive`, `needs_review`, `deferred`. Definitive assertions require a ready bundle and valid evidence citations. Review keys are idempotent; a stale revision requires reading history before intentionally making another assertion. History is append-only, reviewer identity is self-declared, and these assertions do not set independent verification or measured precision.
@@ -511,10 +511,10 @@ are unchanged. See [per-class metrics](../development/slice-18.md).
 To save an evaluation for later retrieval, run `init` for migration 0007, then:
 
 ```bash
-uv run traceproof benchmark-publish MANIFEST LABELS PLAN
-uv run traceproof benchmark-history DATASET_ID --limit 100
-uv run traceproof benchmark-get DATASET_ID SCORECARD_ID --format markdown
-uv run traceproof benchmark-get DATASET_ID SCORECARD_ID --format weaknesses-csv
+uv run veriflow benchmark-publish MANIFEST LABELS PLAN
+uv run veriflow benchmark-history DATASET_ID --limit 100
+uv run veriflow benchmark-get DATASET_ID SCORECARD_ID --format markdown
+uv run veriflow benchmark-get DATASET_ID SCORECARD_ID --format weaknesses-csv
 ```
 
 Publication reuses identical scorecards and stores changed evaluations as separate IDs.
@@ -544,7 +544,7 @@ files are needed. See [benchmark comparison](../development/slice-20.md).
 | Unknown/exhausted triage budget | Inspect `triage-report`; no automatic refund or budget increase exists |
 | Disk filling | Stop new work and inspect storage. Automatic artifact cleanup is not implemented; do not delete referenced artifacts |
 
-For a local backup, stop all TraceProof writers, copy the whole state directory (including SQLite sidecar files and artifacts), and keep tool/query/configuration provenance separately. Do not copy only the database during active writes. Restore to another local directory, run `init` as appropriate, verify snapshots and retrieve exact reports before relying on it. This is local operational guidance, not a production backup/restore qualification.
+For a local backup, stop all VeriFlow writers, copy the whole state directory (including SQLite sidecar files and artifacts), and keep tool/query/configuration provenance separately. Do not copy only the database during active writes. Restore to another local directory, run `init` as appropriate, verify snapshots and retrieve exact reports before relying on it. This is local operational guidance, not a production backup/restore qualification.
 
 No explicit pause/cancel controls exist yet. `worker --max-items` bounds intake work; rerunning resumes supported checkpoints. There is no background all-stage scheduler: running `worker` captures archives, not the entire security pipeline. Do not infer 1,000-repository/day capacity from this POC.
 
@@ -738,8 +738,8 @@ and report the other language as unselected. Consolidated mixed-language scans r
 future work.
 
 ```bash
-uv run traceproof scan-run RUN_ID /absolute/approved-CodeInjection.ql --language javascript
-uv run traceproof scan-run RUN_ID /absolute/approved-CodeInjection.ql --language typescript
+uv run veriflow scan-run RUN_ID /absolute/approved-CodeInjection.ql --language javascript
+uv run veriflow scan-run RUN_ID /absolute/approved-CodeInjection.ql --language typescript
 ```
 
 The fixture-qualified query is javascript-queries 2.4.5's

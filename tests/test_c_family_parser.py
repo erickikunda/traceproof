@@ -1,6 +1,6 @@
 import pytest
 
-from traceproof import c_family_parser as parser
+from veriflow import c_family_parser as parser
 
 SOURCE = b"""#include <stdlib.h>
 int main(int count, char **arguments) {

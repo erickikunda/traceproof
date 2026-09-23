@@ -1,6 +1,6 @@
 # Slice 35: bounded retained-storage audit
 
-`traceproof storage-audit` inventories present entries under `artifacts`, `codeql` and
+`veriflow storage-audit` inventories present entries under `artifacts`, `codeql` and
 `scans`. It compares recognized snapshot/attempt IDs with database records and reports
 referenced, unreferenced, staging or unrecognized status. This is a review aid, not a
 deletion recommendation: recovery may reuse an artifact published before a database commit.

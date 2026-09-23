@@ -12,7 +12,7 @@ report publication with expected 1/0 candidates. The existing Python suite remai
 part of image acceptance. Runs retain arbitrary UID, read-only root, dropped
 capabilities, no-new-privileges and no external network. Reports remain incomplete.
 
-UBI shell activation previously selected /opt/app-root/bin/python instead of TraceProof's
+UBI shell activation previously selected /opt/app-root/bin/python instead of VeriFlow's
 venv. The image now disables BASH_ENV activation and the runner uses the explicit venv
 interpreter for scripts and package inventory. Report/structured fixture exports now
 run on ordinary acceptance failures as well as successes; they do not convert failure
@@ -51,7 +51,7 @@ for the dependency-profile implementation.
 421 regression tests and lint/format checks passed. Final image build succeeded.
 Python: all three cases passed (19.312 seconds). Java: both cases passed (36.09 seconds).
 Spring: failed the vulnerable candidate-count check; this remains an open acceptance
-gate, not an all-green suite. The package inventories include the actual TraceProof
+gate, not an all-green suite. The package inventories include the actual VeriFlow
 installation. Final image ID:
 `sha256:2148e38fee5e586e4e703b8e617d472176e82b83a331b3a9f3203925ae745061`.
 These synthetic timings are not throughput estimates.

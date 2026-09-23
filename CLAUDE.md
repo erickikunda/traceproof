@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-TraceProof is a local, single-operator CLI (Typer + SQLAlchemy/SQLite + local artifact store)
+VeriFlow is a local, single-operator CLI (Typer + SQLAlchemy/SQLite + local artifact store)
 that turns source archives into **evidence-backed vulnerability *candidates*** — never verdicts.
 Everything in the codebase is organized around that distinction: discovery emits candidates,
 deterministic gates decide what an LLM may even see, and reports are immutable and must keep
@@ -21,11 +21,11 @@ uv run ruff format --check .
 uv build                            # wheel into dist/, required before container builds
 ```
 
-CLI is `uv run traceproof <command>` (entry point `traceproof.cli:app`). `--state-dir` is a
-**global** option and goes before the subcommand. `traceproof init` creates/upgrades the SQLite
+CLI is `uv run veriflow <command>` (entry point `veriflow.cli:app`). `--state-dir` is a
+**global** option and goes before the subcommand. `veriflow init` creates/upgrades the SQLite
 schema via Alembic (currently `0009`); run it after adding a migration.
 
-`traceproof doctor` reports local prerequisites without running any tool.
+`veriflow doctor` reports local prerequisites without running any tool.
 
 ### Native / container validation
 
@@ -34,12 +34,12 @@ restricted Linux containers, one `scripts/validate_*.py` per profile, driven by:
 
 ```bash
 uv build
-docker build --network=none -f containers/Containerfile.joern-csharp -t traceproof:joern-csharp-linux-poc .
-uv run python scripts/validate_container.py work/<new-output-dir> --suite joern-csharp --image traceproof:joern-csharp-linux-poc
+docker build --network=none -f containers/Containerfile.joern-csharp -t veriflow:joern-csharp-linux-poc .
+uv run python scripts/validate_container.py work/<new-output-dir> --suite joern-csharp --image veriflow:joern-csharp-linux-poc
 ```
 
 Output directories must not already exist. `scripts/validate_*.py` run *inside* the container
-(they hardcode `/work` and `/repo` or `/opt/traceproof` paths) — don't run them on the host.
+(they hardcode `/work` and `/repo` or `/opt/veriflow` paths) — don't run them on the host.
 See `docs/guides/container-operator-guide.md` for the full suite/image matrix.
 
 `work/` is gitignored scratch for logs, acceptance output and downloaded toolchains.
@@ -74,17 +74,17 @@ Pipeline stages, each durable and independently retrievable by ID:
    an older report. Formats: JSON / Markdown / HTML / scan-csv / candidates-csv / SARIF.
 
 `persistence.py` holds every ORM model and the Alembic runner; `domain.py` defines
-`TraceProofError`, the only exception the CLI renders as a clean `{"error": ...}` exit 1.
+`VeriFlowError`, the only exception the CLI renders as a clean `{"error": ...}` exit 1.
 `exclusive_worker` is an OS file lock — deliberately *not* a distributed lease.
 
 ### Adding a Joern discovery profile
 
 The repeatable shape (see commit "Add bounded C# file-path discovery" for a worked example):
 
-- `src/traceproof/queries/joern-<lang>-<pattern>.sc` — the bounded CPG query.
-- `src/traceproof/joern.py` — register the profile name in `discover`'s `supported_profiles`,
+- `src/veriflow/queries/joern-<lang>-<pattern>.sc` — the bounded CPG query.
+- `src/veriflow/joern.py` — register the profile name in `discover`'s `supported_profiles`,
   map it to its `.sc` file, and add its CWE scope / candidate message.
-- `src/traceproof/joern_selection.py` — add it to `PROFILES[language]` for `--language auto`.
+- `src/veriflow/joern_selection.py` — add it to `PROFILES[language]` for `--language auto`.
 - `tests/fixtures/joern-<lang>-<pattern>/<case>/` — vulnerable, fixed, crossfile, disconnected,
   shadowed, unbound-source, guard-unknown … each case asserts an exact candidate count.
 - `scripts/validate_joern_<lang>_<pattern>.py` — native acceptance over those fixtures.

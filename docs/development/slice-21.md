@@ -1,7 +1,7 @@
 # Slice 21: one-command source-only scan
 
 ```bash
-uv run traceproof scan-run RUN_ID /absolute/approved.ql --extraction-timeout 300 --query-timeout 600
+uv run veriflow scan-run RUN_ID /absolute/approved.ql --extraction-timeout 300 --query-timeout 600
 ```
 
 For an already captured run, this command validates the operator query entry, builds or

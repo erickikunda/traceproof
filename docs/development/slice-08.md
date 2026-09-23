@@ -8,8 +8,8 @@ finding families, resolution, reopening, or identity across line moves.
 ## Workflow
 
 ```bash
-uv run traceproof compare-reports REPO_ID BASELINE_REPORT_ID CURRENT_REPORT_ID
-uv run traceproof compare-reports REPO_ID BASELINE_REPORT_ID CURRENT_REPORT_ID --format markdown
+uv run veriflow compare-reports REPO_ID BASELINE_REPORT_ID CURRENT_REPORT_ID
+uv run veriflow compare-reports REPO_ID BASELINE_REPORT_ID CURRENT_REPORT_ID --format markdown
 ```
 
 Both inputs are exact published report IDs. Retrieval verifies ownership and each

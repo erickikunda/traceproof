@@ -8,7 +8,7 @@ connect the feature call, newDocumentBuilder and parse receiver. A feature call 
 an unrelated factory is insufficient.
 
 ```sh
-traceproof --state-dir /path/to/state scan-run RUN_ID --engine joern \
+veriflow --state-dir /path/to/state scan-run RUN_ID --engine joern \
   --language java --joern-home /path/to/joern-cli \
   --joern-profile java-spring-xml-entities-v1
 ```

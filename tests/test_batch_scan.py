@@ -7,10 +7,10 @@ from test_reports import scanned as scanned
 from test_triage import evidence_fixture as evidence_fixture
 from typer.testing import CliRunner
 
-from traceproof import batch_scan, pipeline
-from traceproof.cli import app
-from traceproof.domain import TraceProofError
-from traceproof.intake import submit
+from veriflow import batch_scan, pipeline
+from veriflow.cli import app
+from veriflow.domain import VeriFlowError
+from veriflow.intake import submit
 
 
 def test_mixed_rows_pagination_and_explicit_rescan(store, archive, manifest, tmp_path, monkeypatch):
@@ -35,7 +35,7 @@ def test_mixed_rows_pagination_and_explicit_rescan(store, archive, manifest, tmp
         calls.append(kwargs["skip_existing"])
         assert kwargs["threads"] == 2 and kwargs["ram_mb"] == 2048
         if len(calls) == 1:
-            raise TraceProofError("Synthetic row failure")
+            raise VeriFlowError("Synthetic row failure")
         return {"status": "ready_for_review", "report_id": "report"}
 
     monkeypatch.setattr(batch_scan, "scan_run", scan)
@@ -74,5 +74,5 @@ def test_uncaptured_rows_and_invalid_pages(store, archive, manifest, tmp_path, m
     query.write_text("// synthetic")
     monkeypatch.setattr(batch_scan, "scan_run", lambda *a, **kw: pytest.fail("Uncaptured input"))
     assert batch_scan.scan_import(store, batch, query)["counts"] == {"skipped_intake_not_ready": 1}
-    with pytest.raises(TraceProofError, match="pagination"):
+    with pytest.raises(VeriFlowError, match="pagination"):
         batch_scan.scan_import(store, batch, query, limit=0)

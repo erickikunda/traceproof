@@ -9,15 +9,15 @@ from test_joern_claims import review_decision
 from test_slice03 import captured_source as captured_source
 from test_triage import policy
 
-from traceproof import joern, pipeline
-from traceproof.bundles import build_bundle
-from traceproof.claims import assess_evidence
-from traceproof.domain import TraceProofError
-from traceproof.joern_claims import RULE_POLICIES, assess_review_evidence, review_preflight
-from traceproof.reports import get_report
-from traceproof.scan_advisory import AdvisoryOptions
-from traceproof.scanning import scan_report
-from traceproof.triage import set_budget, triage
+from veriflow import joern, pipeline
+from veriflow.bundles import build_bundle
+from veriflow.claims import assess_evidence
+from veriflow.domain import VeriFlowError
+from veriflow.joern_claims import RULE_POLICIES, assess_review_evidence, review_preflight
+from veriflow.reports import get_report
+from veriflow.scan_advisory import AdvisoryOptions
+from veriflow.scanning import scan_report
+from veriflow.triage import set_budget, triage
 
 
 @pytest.fixture(params=["c", "cpp"])
@@ -32,7 +32,7 @@ def argv_bundle(request, store, captured_source, tmp_path, monkeypatch):
     home = tmp_path / "tools"
     (home / "lib").mkdir(parents=True)
     (home / "lib" / f"io.joern.joern-cli-{joern.VERSION}.jar").touch()
-    rule = f"traceproof/joern-{language}-argv-system-v1"
+    rule = f"veriflow/joern-{language}-argv-system-v1"
 
     def fake(command, root, stage, timeout):
         if stage == "analyze":
@@ -131,7 +131,7 @@ def test_cost_and_idempotency(store, argv_bundle, monkeypatch, stop):
     if stop == "evidence":
         altered = deepcopy(b)
         altered.pop("joern_native_audit")
-        monkeypatch.setattr("traceproof.triage.get_bundle", lambda *args: altered)
+        monkeypatch.setattr("veriflow.triage.get_bundle", lambda *args: altered)
     result = triage(store, b["bundle_id"], policy(), adapter, "argv", review_policy=selected(b))
     assert (
         result["state"]
@@ -151,7 +151,7 @@ def test_cost_and_idempotency(store, argv_bundle, monkeypatch, stop):
 def test_main_workflow_and_report(store, argv_bundle, tmp_path):
     b = argv_bundle
     advisory = AdvisoryOptions(policy(), adapter_for(b), "argv-workflow", selected(b))
-    with pytest.raises(TraceProofError, match="profile"):
+    with pytest.raises(VeriFlowError, match="profile"):
         advisory.validate_scope("python", None)
     set_budget(store, b["run_id"], 100000)
     result = pipeline.scan_run(

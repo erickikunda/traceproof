@@ -14,7 +14,7 @@ fixture-specific, not framework discovery. No C# production backend is enabled.
 | Three-file Core-style chain | 0 | 0 | **Failed: vulnerable flow missed** |
 
 The probe intentionally exits nonzero for the failed expectation. This is a meaningful
-scanner qualification failure, not a failing TraceProof unit-test suite.
+scanner qualification failure, not a failing VeriFlow unit-test suite.
 
 Observed gaps in this pinned source-only configuration:
 1. Core FromQuery is absent from parameter annotation nodes; HttpGet is recorded without

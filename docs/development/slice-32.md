@@ -1,8 +1,8 @@
 # Slice 32: terminal import dispatch cancellation
 
 ```bash
-uv run traceproof import-control-status IMPORT_ID
-uv run traceproof import-control IMPORT_ID cancelled cancel-1 "No longer needed" --expected-revision 0
+uv run veriflow import-control-status IMPORT_ID
+uv run veriflow import-control IMPORT_ID cancelled cancel-1 "No longer needed" --expected-revision 0
 ```
 
 Use the current revision, which may differ from the example. `cancelled` is a terminal

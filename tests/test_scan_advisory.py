@@ -6,12 +6,12 @@ from test_joern_claims import audited_bundle as audited_bundle
 from test_slice03 import captured_source as captured_source
 from test_triage import policy
 
-from traceproof import pipeline
-from traceproof.domain import TraceProofError
-from traceproof.joern_claims import POLICY
-from traceproof.reports import get_report
-from traceproof.scan_advisory import AdvisoryOptions, load_advisory
-from traceproof.triage import set_budget
+from veriflow import pipeline
+from veriflow.domain import VeriFlowError
+from veriflow.joern_claims import POLICY
+from veriflow.reports import get_report
+from veriflow.scan_advisory import AdvisoryOptions, load_advisory
+from veriflow.triage import set_budget
 
 
 def options(bundle, **kwargs):
@@ -63,9 +63,9 @@ def test_stops_and_empty_page_still_publish(store, audited_bundle, tmp_path, mon
     if case == "scan_failure":
 
         def fail(*args, **kwargs):
-            raise TraceProofError("synthetic scanner failure")
+            raise VeriFlowError("synthetic scanner failure")
 
-        monkeypatch.setattr("traceproof.joern.stage", fail)
+        monkeypatch.setattr("veriflow.joern.stage", fail)
     result = pipeline.scan_run(
         store,
         b["run_id"],
@@ -87,7 +87,7 @@ def test_stops_and_empty_page_still_publish(store, audited_bundle, tmp_path, mon
 
 def test_missing_budget_and_wrong_engine_rejected(store, audited_bundle, tmp_path):
     b = audited_bundle
-    with pytest.raises(TraceProofError, match="budget"):
+    with pytest.raises(VeriFlowError, match="budget"):
         pipeline.scan_run(
             store,
             b["run_id"],
@@ -96,9 +96,9 @@ def test_missing_budget_and_wrong_engine_rejected(store, audited_bundle, tmp_pat
             joern_home=tmp_path / "tools",
             advisory=options(b),
         )
-    with pytest.raises(TraceProofError, match="engine joern"):
+    with pytest.raises(VeriFlowError, match="engine joern"):
         pipeline.scan_run(store, b["run_id"], advisory=options(b))
-    with pytest.raises(TraceProofError, match="java profile"):
+    with pytest.raises(VeriFlowError, match="java profile"):
         pipeline.scan_run(
             store,
             b["run_id"],
@@ -111,15 +111,15 @@ def test_missing_budget_and_wrong_engine_rejected(store, audited_bundle, tmp_pat
 
 @pytest.mark.parametrize("kwargs", [{"offset": -1}, {"limit": 0}, {"limit": 101}])
 def test_page_bounds(audited_bundle, kwargs):
-    with pytest.raises(TraceProofError, match="page"):
+    with pytest.raises(VeriFlowError, match="page"):
         options(audited_bundle, **kwargs)
 
 
 def test_cli_options_require_complete_opt_in():
     assert load_advisory(None, None, None, None) is None
-    with pytest.raises(TraceProofError, match="advisory-config"):
+    with pytest.raises(VeriFlowError, match="advisory-config"):
         load_advisory(None, POLICY, "key", None)
-    with pytest.raises(TraceProofError, match="review-policy"):
+    with pytest.raises(VeriFlowError, match="review-policy"):
         load_advisory(Path("unused"), None, "key", None)
 
 
@@ -128,7 +128,7 @@ def test_cli_scan_advisory_full_path(store, audited_bundle, tmp_path):
 
     from typer.testing import CliRunner
 
-    from traceproof.cli import app
+    from veriflow.cli import app
 
     b = audited_bundle
     set_budget(store, b["run_id"], 100000)

@@ -2,9 +2,9 @@ import subprocess
 
 import pytest
 
-from traceproof.domain import TraceProofError
-from traceproof.git_acquisition import Git, acquire
-from traceproof.git_transport import configure, transport_settings
+from veriflow.domain import VeriFlowError
+from veriflow.git_acquisition import Git, acquire
+from veriflow.git_transport import configure, transport_settings
 
 
 @pytest.mark.parametrize(
@@ -19,7 +19,7 @@ from traceproof.git_transport import configure, transport_settings
     ],
 )
 def test_invalid_proxy_is_sanitized(proxy):
-    with pytest.raises(TraceProofError) as error:
+    with pytest.raises(VeriFlowError) as error:
         transport_settings(proxy=proxy)
     assert "secret" not in str(error.value)
     assert proxy not in str(error.value)
@@ -28,7 +28,7 @@ def test_invalid_proxy_is_sanitized(proxy):
 def test_invalid_ca_fails_before_output(tmp_path):
     ca = tmp_path / "bad.pem"
     ca.write_text("not a certificate")
-    with pytest.raises(TraceProofError, match="CA bundle"):
+    with pytest.raises(VeriFlowError, match="CA bundle"):
         acquire(
             "https://example.invalid/a",
             "refs/heads/main",

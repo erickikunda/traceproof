@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--tag", default="traceproof:linux-poc")
+    parser.add_argument("--tag", default="veriflow:linux-poc")
     args = parser.parse_args()
     lock = json.loads((ROOT / "containers/toolchain.json").read_text())
     for name, algorithm in (("codeql", "sha256"), ("jdk", "sha256"), ("dotnet", "sha512")):

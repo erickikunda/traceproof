@@ -15,7 +15,7 @@ registry component, and `exclude` directives are counted rather than emitted.
 
 `// indirect` requirements are marked rather than dropped, so Go surfaces transitive modules that
 npm manifests and Maven POMs do not. That is not closure resolution — the Go tool recorded those
-entries and TraceProof only read them — so `transitive_resolved` stays false.
+entries and VeriFlow only read them — so `transitive_resolved` stays false.
 
 Go versions carry a `v` prefix while OSV Go records use plain semantic versions. Ordering strips
 the prefix and exact version lists are tried in both forms, so `v1.9.1` matches a record written

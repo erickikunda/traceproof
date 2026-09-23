@@ -13,7 +13,7 @@ and image build verifies them against containers/net48-inventory.json before pin
 the combined profile. The image includes 5,152 pinned SDK/reference files, including
 237 reference DLLs. Existing runtime pre/post hash checks apply to this profile.
 
-The generated profile is /opt/traceproof/csharp-dependencies/profile.json; the macOS
+The generated profile is /opt/veriflow/csharp-dependencies/profile.json; the macOS
 profile under work/slice46-dependencies is unchanged. UBI supplies ICU/OpenSSL native
 libraries through the pinned base image. No runtime package installation is needed.
 Build preparation uses network access; fixture execution denies external networking.

@@ -11,14 +11,14 @@ import json
 import zipfile
 from pathlib import Path
 
-from traceproof.artifacts import ArtifactStore
-from traceproof.bundles import build_bundle
-from traceproof.claims import assess_evidence
-from traceproof.intake import process, submit
-from traceproof.models import Decision
-from traceproof.persistence import Store, exclusive_worker
-from traceproof.pipeline import scan_run
-from traceproof.reports import get_report, render_report
+from veriflow.artifacts import ArtifactStore
+from veriflow.bundles import build_bundle
+from veriflow.claims import assess_evidence
+from veriflow.intake import process, submit
+from veriflow.models import Decision
+from veriflow.persistence import Store, exclusive_worker
+from veriflow.pipeline import scan_run
+from veriflow.reports import get_report, render_report
 
 
 def main(fixture="java"):

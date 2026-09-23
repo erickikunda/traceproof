@@ -4,10 +4,10 @@ import pytest
 from sqlalchemy import event
 from typer.testing import CliRunner
 
-from traceproof.cli import app
-from traceproof.domain import TraceProofError
-from traceproof.history import run_history, scan_history
-from traceproof.persistence import Repository, Run, ScanAttempt
+from veriflow.cli import app
+from veriflow.domain import VeriFlowError
+from veriflow.history import run_history, scan_history
+from veriflow.persistence import Repository, Run, ScanAttempt
 
 
 @pytest.fixture
@@ -82,17 +82,17 @@ def test_history_exposes_unpublished_work_and_preserves_unknowns(history_store):
 def test_scope_and_empty_pages(history_store):
     assert run_history(history_store, "empty")["items"] == []
     assert scan_history(history_store, "demo", offset=99)["items"] == []
-    with pytest.raises(TraceProofError, match="Repository not found"):
+    with pytest.raises(VeriFlowError, match="Repository not found"):
         run_history(history_store, "missing")
     for run in ["foreign", "missing"]:
-        with pytest.raises(TraceProofError, match="belong"):
+        with pytest.raises(VeriFlowError, match="belong"):
             scan_history(history_store, "demo", run_id=run)
 
 
 @pytest.mark.parametrize("offset,limit", [(-1, 100), (0, 0), (0, 1001), (True, 100)])
 def test_invalid_pagination(history_store, offset, limit):
     for operation in [run_history, scan_history]:
-        with pytest.raises(TraceProofError, match="pagination"):
+        with pytest.raises(VeriFlowError, match="pagination"):
             operation(history_store, "demo", offset=offset, limit=limit)
 
 

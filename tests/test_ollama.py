@@ -6,9 +6,9 @@ import pytest
 from pydantic import ValidationError
 from test_triage import evidence_fixture as evidence_fixture
 
-from traceproof import models
-from traceproof.bundles import build_bundle
-from traceproof.triage import set_budget, triage
+from veriflow import models
+from veriflow.bundles import build_bundle
+from veriflow.triage import set_budget, triage
 
 
 def policy(**changes):
@@ -87,7 +87,7 @@ def test_wire_and_response_contract():
     assert models.parse_ollama_response(json.dumps(doc)).status == "invalid_output"
     with pytest.raises(ValidationError):
         models.parse_ollama_response(response(eval_count=True))
-    with pytest.raises(models.TraceProofError, match="context budget"):
+    with pytest.raises(models.VeriFlowError, match="context budget"):
         models.request_body({"rule_id": "py/code-injection", "source": "x" * 40000}, policy())
 
 
@@ -130,11 +130,11 @@ def test_real_provider_ledger_optin_and_reuse(store, evidence_fixture):
             return models.parse_ollama_response(response())
 
     adapter = Adapter()
-    with pytest.raises(models.TraceProofError, match="disabled"):
+    with pytest.raises(models.VeriFlowError, match="disabled"):
         triage(
             store, bundle["bundle_id"], policy(allow_source_transmission=False), adapter, "disabled"
         )
-    with pytest.raises(models.TraceProofError, match="classification"):
+    with pytest.raises(models.VeriFlowError, match="classification"):
         triage(store, bundle["bundle_id"], policy(allowed_classifications=[]), adapter, "denied")
     first = triage(store, bundle["bundle_id"], policy(), adapter, "local-1")
     triage(store, bundle["bundle_id"], policy(), adapter, "local-1")

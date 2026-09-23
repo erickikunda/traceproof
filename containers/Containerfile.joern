@@ -2,10 +2,10 @@
 FROM registry.access.redhat.com/ubi9/python-312@sha256:b29b44b014b0fad4b6c047abad7cbe42b4107cfe349075318eea8ba6475cbd69 AS python-deps
 USER 0
 COPY containers/requirements.lock /tmp/requirements.lock
-RUN python3.12 -m venv /opt/traceproof-venv && \
-    /opt/traceproof-venv/bin/pip install --no-cache-dir --require-hashes --only-binary=:all: -r /tmp/requirements.lock
-COPY dist/traceproof-0.1.0-py3-none-any.whl /tmp/traceproof-0.1.0-py3-none-any.whl
-RUN /opt/traceproof-venv/bin/pip install --no-cache-dir --no-deps /tmp/traceproof-0.1.0-py3-none-any.whl
+RUN python3.12 -m venv /opt/veriflow-venv && \
+    /opt/veriflow-venv/bin/pip install --no-cache-dir --require-hashes --only-binary=:all: -r /tmp/requirements.lock
+COPY dist/veriflow-0.1.0-py3-none-any.whl /tmp/veriflow-0.1.0-py3-none-any.whl
+RUN /opt/veriflow-venv/bin/pip install --no-cache-dir --no-deps /tmp/veriflow-0.1.0-py3-none-any.whl
 
 FROM registry.access.redhat.com/ubi9/python-312@sha256:b29b44b014b0fad4b6c047abad7cbe42b4107cfe349075318eea8ba6475cbd69 AS tools
 USER 0
@@ -27,16 +27,16 @@ RUN chmod -R a+rX /opt/jdk /opt/joern-cli
 
 FROM registry.access.redhat.com/ubi9/python-312@sha256:b29b44b014b0fad4b6c047abad7cbe42b4107cfe349075318eea8ba6475cbd69
 USER 0
-COPY --from=python-deps /opt/traceproof-venv /opt/traceproof-venv
+COPY --from=python-deps /opt/veriflow-venv /opt/veriflow-venv
 COPY --from=tools /opt/jdk /opt/jdk
 COPY --from=tools /opt/joern-cli /opt/joern-cli
-COPY containers/runtime_probe.py containers/joern_acceptance.py /opt/traceproof/
-COPY tests/fixtures/joern-java /opt/traceproof/fixtures
+COPY containers/runtime_probe.py containers/joern_acceptance.py /opt/veriflow/
+COPY tests/fixtures/joern-java /opt/veriflow/fixtures
 RUN mkdir -p /work /reports && chmod 0770 /work /reports && chgrp 0 /work /reports
-ENV PATH="/opt/traceproof-venv/bin:/opt/jdk/bin:/usr/local/bin:/usr/bin:/bin" \
+ENV PATH="/opt/veriflow-venv/bin:/opt/jdk/bin:/usr/local/bin:/usr/bin:/bin" \
     JAVA_HOME=/opt/jdk BASH_ENV=/dev/null HOME=/work TMPDIR=/tmp \
     PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 WORKDIR /work
 USER 1001:0
-ENTRYPOINT ["traceproof"]
+ENTRYPOINT ["veriflow"]
 CMD ["--help"]

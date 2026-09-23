@@ -8,11 +8,11 @@ from test_reports import scanned as scanned
 from test_triage import evidence_fixture as evidence_fixture
 from typer.testing import CliRunner
 
-from traceproof.benchmark_comparison import compare_scorecards, render_comparison
-from traceproof.bundles import canonical
-from traceproof.cli import app
-from traceproof.domain import TraceProofError
-from traceproof.persistence import BenchmarkScorecard
+from veriflow.benchmark_comparison import compare_scorecards, render_comparison
+from veriflow.bundles import canonical
+from veriflow.cli import app
+from veriflow.domain import VeriFlowError
+from veriflow.persistence import BenchmarkScorecard
 
 
 @pytest.fixture
@@ -80,7 +80,7 @@ def test_same_id_cli_and_wrong_dataset(store, saved):
     comparison = json.loads(result.output)
     assert comparison["matched_label_delta"] == 0
     assert comparison["transition_counts"] == {"unchanged": 1}
-    with pytest.raises(TraceProofError, match="belong"):
+    with pytest.raises(VeriFlowError, match="belong"):
         compare_scorecards(store, "other", ident, ident)
 
 

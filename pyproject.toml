@@ -3,7 +3,7 @@ requires = ["hatchling>=1.27,<2"]
 build-backend = "hatchling.build"
 
 [project]
-name = "traceproof"
+name = "veriflow"
 version = "0.1.0"
 description = "Evidence-driven, LLM-assisted vulnerability discovery"
 readme = "README.md"
@@ -25,7 +25,8 @@ dependencies = [
 ]
 
 [project.scripts]
-traceproof = "traceproof.cli:app"
+veriflow = "veriflow.cli:app"
+traceproof = "veriflow.cli:app"
 
 [project.optional-dependencies]
 gcs = [
@@ -42,12 +43,11 @@ addopts = "-ra"
 [tool.ruff]
 target-version = "py312"
 line-length = 100
+extend-exclude = ["tests/fixtures"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
 
 [tool.ruff.lint.per-file-ignores]
-"src/traceproof/cli.py" = ["B008"]
-"tests/fixtures/joern-flask/shadow-*/*.py" = ["F401", "F811"]
-"tests/fixtures/joern-flask/fixed/*.py" = ["F841"]
-"tests/fixtures/joern-flask/disconnected/*.py" = ["F841"]
+"src/veriflow/cli.py" = ["B008"]
+"tests/fixtures/joern-flask*/**" = ["E501", "F401", "F811", "F841", "I001"]

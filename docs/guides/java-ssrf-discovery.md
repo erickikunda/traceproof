@@ -7,7 +7,7 @@ cross-file helper are covered by bounded native fixtures. Automatic Joern select
 includes this profile alongside Java SQL and file-path checks.
 
 ```sh
-traceproof --state-dir /path/to/state scan-run RUN_ID --engine joern --language java \
+veriflow --state-dir /path/to/state scan-run RUN_ID --engine joern --language java \
   --joern-home /path/to/joern-cli --joern-profile java-spring-url-stream-v1
 ```
 
@@ -17,7 +17,7 @@ candidate source locations. Use `get-report REPO_ID --report-id REPORT_ID --form
 for a readable report, or `json`, `scan-csv` and `candidates-csv` for integration.
 
 These are discovery-only SSRF candidates. The Spring SQL advisory policy does not
-qualify them. No network request or repository code is executed by TraceProof.
+qualify them. No network request or repository code is executed by VeriFlow.
 URL control does not prove access to forbidden destinations. Redirects, DNS,
 protocol handlers, destination allowlists, credentials, deployment egress and
 runtime reachability remain unverified. A startsWith("https://") guard does not

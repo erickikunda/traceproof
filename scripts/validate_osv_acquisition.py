@@ -82,7 +82,7 @@ def main():
             image["Id"],
             "-ec",
             "test ! -e /opt/joern-cli; test ! -e /opt/codeql-bundle; test ! -e /opt/jdk; "
-            "cat /opt/traceproof/application-inputs.sha256",
+            "cat /opt/veriflow/application-inputs.sha256",
         ],
         capture_output=True,
         text=True,
@@ -165,7 +165,7 @@ def main():
             "python",
             image["Id"],
             "-c",
-            "import json;from traceproof.osv_database import load_profile,build_index;"
+            "import json;from veriflow.osv_database import load_profile,build_index;"
             "p=load_profile('/export/osv/osv-profile.json');i,l=build_index(p);"
             "print(json.dumps({'packages':len(i),**l}))",
         ],

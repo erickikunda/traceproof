@@ -5,9 +5,9 @@ import zipfile
 
 import pytest
 
-from traceproof.domain import TraceProofError
-from traceproof.osv_acquisition import acquire_osv
-from traceproof.osv_database import build_index, load_profile
+from veriflow.domain import VeriFlowError
+from veriflow.osv_acquisition import acquire_osv
+from veriflow.osv_database import build_index, load_profile
 
 HOSTS = ["osv-vulnerabilities.storage.googleapis.com"]
 SOURCE = "https://osv-vulnerabilities.storage.googleapis.com"
@@ -39,7 +39,7 @@ class FakeReader:
         self.urls.append(url)
         ecosystem = url.rsplit("/", 2)[-2]
         if ecosystem not in self.archives:
-            raise TraceProofError("OSV archive fetch failed (HTTPError)")
+            raise VeriFlowError("OSV archive fetch failed (HTTPError)")
         return self.archives[ecosystem]
 
 
@@ -77,7 +77,7 @@ def test_records_are_read_only_and_profile_is_pinned(acquire, tmp_path):
     assert written.stat().st_mode & 0o777 == 0o400
     written.chmod(0o600)
     written.write_text('{"id": "GHSA-tampered"}')
-    with pytest.raises(TraceProofError, match="integrity mismatch"):
+    with pytest.raises(VeriFlowError, match="integrity mismatch"):
         load_profile(result["profile"])
 
 
@@ -105,7 +105,7 @@ def test_shared_advisory_is_written_once(acquire):
 def test_disagreeing_archives_are_refused(acquire):
     first = record("GHSA-shared")
     second = {**record("GHSA-shared"), "summary": "different"}
-    with pytest.raises(TraceProofError, match="disagree"):
+    with pytest.raises(VeriFlowError, match="disagree"):
         acquire({"npm": archive([first]), "Maven": archive([second])})
 
 
@@ -120,36 +120,36 @@ def test_disagreeing_archives_are_refused(acquire):
 )
 def test_unexpected_member_aborts_rather_than_skips(acquire, member):
     # A silently incomplete database would later read as a fully evaluated one.
-    with pytest.raises(TraceProofError, match="flat JSON record"):
+    with pytest.raises(VeriFlowError, match="flat JSON record"):
         acquire({"npm": archive([record("GHSA-a")], **member)})
 
 
 def test_oversized_record_is_refused(acquire, monkeypatch):
-    monkeypatch.setattr("traceproof.osv_acquisition.MAX_RECORD_BYTES", 10)
-    with pytest.raises(TraceProofError, match="per-record byte limit"):
+    monkeypatch.setattr("veriflow.osv_acquisition.MAX_RECORD_BYTES", 10)
+    with pytest.raises(VeriFlowError, match="per-record byte limit"):
         acquire({"npm": archive([record("GHSA-a")])})
 
 
 def test_record_limit_is_refused(acquire, monkeypatch):
-    monkeypatch.setattr("traceproof.osv_acquisition.MAX_RECORDS", 1)
-    with pytest.raises(TraceProofError, match="record limit"):
+    monkeypatch.setattr("veriflow.osv_acquisition.MAX_RECORDS", 1)
+    with pytest.raises(VeriFlowError, match="record limit"):
         acquire({"npm": archive([record("GHSA-a"), record("GHSA-b")])})
 
 
 def test_expanded_byte_limit_is_refused(acquire, monkeypatch):
-    monkeypatch.setattr("traceproof.osv_acquisition.MAX_EXPANDED_BYTES", 5)
-    with pytest.raises(TraceProofError, match="expanded byte limit"):
+    monkeypatch.setattr("veriflow.osv_acquisition.MAX_EXPANDED_BYTES", 5)
+    with pytest.raises(VeriFlowError, match="expanded byte limit"):
         acquire({"npm": archive([record("GHSA-a")])})
 
 
 def test_compression_ratio_is_refused(acquire, monkeypatch):
-    monkeypatch.setattr("traceproof.osv_acquisition.MAX_COMPRESSION_RATIO", 1)
-    with pytest.raises(TraceProofError, match="compression ratio"):
+    monkeypatch.setattr("veriflow.osv_acquisition.MAX_COMPRESSION_RATIO", 1)
+    with pytest.raises(VeriFlowError, match="compression ratio"):
         acquire({"npm": archive([{**record("GHSA-a"), "summary": "x" * 20000}])})
 
 
 def test_corrupt_archive_is_refused(acquire):
-    with pytest.raises(TraceProofError, match="expansion failed"):
+    with pytest.raises(VeriFlowError, match="expansion failed"):
         acquire({"npm": b"not a zip file"})
 
 
@@ -159,12 +159,12 @@ def test_expected_digest_is_enforced(acquire, tmp_path):
     _, result = acquire({"npm": raw}, expected_sha256={"npm": digest}, allow_unpinned=False)
     assert result["archives"][0]["pinning"] == "operator_pinned"
     assert result["archives"][0]["archive_sha256"] == digest
-    with pytest.raises(TraceProofError, match="expected digest"):
+    with pytest.raises(VeriFlowError, match="expected digest"):
         acquire({"npm": raw}, output="other", expected_sha256={"npm": "0" * 64})
 
 
 def test_unpinned_acquisition_requires_an_opt_in(acquire):
-    with pytest.raises(TraceProofError, match="explicit opt-in"):
+    with pytest.raises(VeriFlowError, match="explicit opt-in"):
         acquire({"npm": archive([record("GHSA-a")])}, allow_unpinned=False)
 
 
@@ -187,12 +187,12 @@ def test_unpinned_acquisition_is_labelled_and_stated(acquire):
     ],
 )
 def test_source_must_be_credential_free_https_on_an_allowed_host(acquire, url):
-    with pytest.raises(TraceProofError, match="allowed host"):
+    with pytest.raises(VeriFlowError, match="allowed host"):
         acquire({"npm": archive([record("GHSA-a")])}, base_url=url)
 
 
 def test_unsupported_ecosystem_is_refused(acquire, tmp_path):
-    with pytest.raises(TraceProofError, match="ecosystems TraceProof can evaluate"):
+    with pytest.raises(VeriFlowError, match="ecosystems TraceProof can evaluate"):
         acquire_osv(
             FakeReader({}),
             base_url=SOURCE,
@@ -205,7 +205,7 @@ def test_unsupported_ecosystem_is_refused(acquire, tmp_path):
 
 def test_existing_output_directory_is_refused(acquire, tmp_path):
     (tmp_path / "export").mkdir()
-    with pytest.raises(TraceProofError, match="must not already exist"):
+    with pytest.raises(VeriFlowError, match="must not already exist"):
         acquire({"npm": archive([record("GHSA-a")])})
 
 

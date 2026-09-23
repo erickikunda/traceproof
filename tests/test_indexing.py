@@ -8,14 +8,14 @@ from conftest import row
 from sqlalchemy import func, select
 from typer.testing import CliRunner
 
-from traceproof import indexing
-from traceproof.artifacts import ArtifactStore
-from traceproof.cli import app
-from traceproof.codeql import extract, extraction_status
-from traceproof.domain import TraceProofError
-from traceproof.intake import process, run_status, submit
-from traceproof.persistence import IndexedFile, SourceIndex, exclusive_worker
-from traceproof.python_parser import MAX_BYTES, parse
+from veriflow import indexing
+from veriflow.artifacts import ArtifactStore
+from veriflow.cli import app
+from veriflow.codeql import extract, extraction_status
+from veriflow.domain import VeriFlowError
+from veriflow.intake import process, run_status, submit
+from veriflow.persistence import IndexedFile, SourceIndex, exclusive_worker
+from veriflow.python_parser import MAX_BYTES, parse
 
 
 def captured(store, archive, manifest):
@@ -110,8 +110,8 @@ def test_process_death_checkpoint_resumes_without_partial_publication(store, arc
     program = """
 import os, sys
 from pathlib import Path
-from traceproof import indexing
-from traceproof.persistence import Store, exclusive_worker
+from veriflow import indexing
+from veriflow.persistence import Store, exclusive_worker
 store = Store(Path(sys.argv[1]))
 indexing.parse_isolated = lambda _: os._exit(42)
 with exclusive_worker(store.root):
@@ -121,7 +121,7 @@ with exclusive_worker(store.root):
     assert child.returncode == 42
     with store.transaction() as session:
         assert session.scalar(select(func.count()).select_from(IndexedFile)) == 1
-    with pytest.raises(TraceProofError, match="No published"):
+    with pytest.raises(VeriFlowError, match="No published"):
         indexing.coverage_report(store, run_id)
     report = indexing.build_index(store, run_id)
     assert report["python_index_gate"] == "ready"
@@ -133,13 +133,13 @@ def test_integrity_and_latest_report_do_not_fallback(store, archive, manifest):
     run_id = captured(store, archive, manifest)
     report = indexing.build_index(store, run_id)
     submit(store, manifest([row(archive)]), archive.parent, "new-run")
-    with pytest.raises(TraceProofError, match="no captured"):
+    with pytest.raises(VeriFlowError, match="no captured"):
         indexing.repository_report(store, "example")
     assert indexing.repository_report(store, "example", run_id) == report
     path = ArtifactStore(store.root).path(report["snapshot_id"]) / "tree/project/app.py"
     path.chmod(0o600)
     path.write_text("changed")
-    with pytest.raises(TraceProofError):
+    with pytest.raises(VeriFlowError):
         indexing.build_index(store, run_id)
     # Read-only materialized historical report requires no source reads.
     assert indexing.coverage_report(store, run_id) == report
@@ -155,7 +155,7 @@ def test_source_is_not_executed(store, archive, manifest, tmp_path):
 
 def test_codeql_unavailable_is_durable(store, archive, manifest, monkeypatch):
     run_id = captured(store, archive, manifest)
-    monkeypatch.setattr("traceproof.codeql.shutil.which", lambda _: None)
+    monkeypatch.setattr("veriflow.codeql.shutil.which", lambda _: None)
     result = extract(store, run_id)
     assert result["status"] == "unavailable"
     assert not result["security_analysis_performed"]
@@ -194,7 +194,7 @@ sys.exit(7 if {mode!r} == 'failure' else 0)
 """)
     executable.chmod(0o700)
     monkeypatch.setenv("TEST_SECRET", "never-pass-to-extractor")
-    monkeypatch.setattr("traceproof.codeql.shutil.which", lambda _: str(executable))
+    monkeypatch.setattr("veriflow.codeql.shutil.which", lambda _: str(executable))
     result = extract(store, run_id, timeout=1)
     assert result["status"] == expected
     assert result["codeql_version"] == "test"
@@ -211,7 +211,7 @@ def test_migrate_existing_intake_database(store, archive, manifest):
     # Seed intake data with the current application before recreating the old schema.
     run_id = captured(store, archive, manifest)
     config = Config()
-    config.set_main_option("script_location", str(files("traceproof") / "migrations"))
+    config.set_main_option("script_location", str(files("veriflow") / "migrations"))
     with store.engine.begin() as connection:
         config.attributes["connection"] = connection
         command.downgrade(config, "0001")

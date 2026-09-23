@@ -5,11 +5,11 @@ import zipfile
 import pytest
 from typer.testing import CliRunner
 
-from traceproof import git_acquisition as acquisition
-from traceproof.artifacts import ArtifactStore
-from traceproof.cli import app
-from traceproof.domain import TraceProofError
-from traceproof.intake import process, submit
+from veriflow import git_acquisition as acquisition
+from veriflow.artifacts import ArtifactStore
+from veriflow.cli import app
+from veriflow.domain import VeriFlowError
+from veriflow.intake import process, submit
 
 
 @pytest.mark.parametrize(
@@ -27,7 +27,7 @@ from traceproof.intake import process, submit
     ],
 )
 def test_invalid_source_rejected_before_output(tmp_path, url, revision, hosts):
-    with pytest.raises(TraceProofError):
+    with pytest.raises(VeriFlowError):
         acquisition.acquire(url, revision, hosts, tmp_path / "out", "example", "poc", "synthetic")
     assert not (tmp_path / "out").exists()
 
@@ -106,7 +106,7 @@ def test_real_git_raw_export_and_existing_intake(tmp_path, source_repo, store, m
     batch = submit(store, output / "input.csv", output, "git-acquired")
     imported = process(store, ArtifactStore(store.root), batch)
     assert imported["items"][0]["state"] == "snapshotted"
-    with pytest.raises(TraceProofError, match="already exists"):
+    with pytest.raises(VeriFlowError, match="already exists"):
         run(output)
     assert json.loads((output / "acquisition.json").read_text()) == result
     (root / "app.py").write_text('print("next")\n')
@@ -130,7 +130,7 @@ def test_unsupported_content_never_publishes_csv(tmp_path, source_repo, monkeypa
         git("add", ".")
     git("commit", "--allow-empty", "-qm", "unsupported")
     output = tmp_path / "out"
-    with pytest.raises(TraceProofError):
+    with pytest.raises(VeriFlowError):
         run(output)
     assert not (output / "input.csv").exists()
     assert not (output / "source.zip").exists()
@@ -162,7 +162,7 @@ def test_command_timeout_terminates_child(tmp_path):
 
     worker = acquisition.Git(tmp_path, 1)
     worker.command = [sys.executable, "-c", "import time; time.sleep(10)"]
-    with pytest.raises(TraceProofError, match="limit"):
+    with pytest.raises(VeriFlowError, match="limit"):
         worker.call()
 
 
@@ -171,5 +171,5 @@ def test_command_output_limit(tmp_path):
 
     worker = acquisition.Git(tmp_path, 5)
     worker.command = [sys.executable, "-c", 'print("x" * 10000)']
-    with pytest.raises(TraceProofError, match="limit"):
+    with pytest.raises(VeriFlowError, match="limit"):
         worker.call(limit=100)

@@ -7,7 +7,7 @@ cross-file helper have bounded native fixtures. Existing default JDBC SQL discov
 unchanged; this does not run both profiles automatically.
 
 ```sh
-traceproof --state-dir /path/to/state scan-run RUN_ID --engine joern --language java \
+veriflow --state-dir /path/to/state scan-run RUN_ID --engine joern --language java \
   --joern-home /path/to/joern-cli --joern-profile java-spring-file-path-v1
 ```
 

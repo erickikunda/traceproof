@@ -6,7 +6,7 @@ reviewer authentication, suppression expiry or rule-gap tracking.
 
 ## Local operator workflow
 
-Apply migration 0006 with `traceproof init`. Inspect the candidate's evidence and current
+Apply migration 0006 with `veriflow init`. Inspect the candidate's evidence and current
 review revision, then prepare a request:
 
 ```json
@@ -24,9 +24,9 @@ Replace the placeholder digest with a real bundle ID. `expected_revision=0` mean
 review. Subsequent requests must name the revision returned by `review-history`.
 
 ```bash
-uv run traceproof review-history REPO_ID ATTEMPT_ID FINGERPRINT
-uv run traceproof record-review REPO_ID ATTEMPT_ID FINGERPRINT /absolute/review.json review-1
-uv run traceproof publish-report REPO_ID --run-id RUN_ID --attempt-id ATTEMPT_ID
+uv run veriflow review-history REPO_ID ATTEMPT_ID FINGERPRINT
+uv run veriflow record-review REPO_ID ATTEMPT_ID FINGERPRINT /absolute/review.json review-1
+uv run veriflow publish-report REPO_ID --run-id RUN_ID --attempt-id ATTEMPT_ID
 ```
 
 States are `confirmed`, `false_positive`, `needs_review` and `deferred`. Any new valid

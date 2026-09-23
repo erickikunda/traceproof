@@ -4,9 +4,9 @@ import json
 import shutil
 from pathlib import Path
 
-from traceproof.csharp_dependencies import inventory, load_profile
+from veriflow.csharp_dependencies import inventory, load_profile
 
-root = Path("/opt/traceproof/csharp-dependencies")
+root = Path("/opt/veriflow/csharp-dependencies")
 references = root / "core-references"
 references.mkdir()
 for pack in ("Microsoft.NETCore.App.Ref", "Microsoft.AspNetCore.App.Ref"):

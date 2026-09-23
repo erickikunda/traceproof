@@ -1,4 +1,4 @@
-# TraceProof CLI user and operator guide
+# VeriFlow CLI user and operator guide
 
 **Scope:** laptop POC through Slice 46, SQLite schema 0009. Commands are run from the repository checkout on Linux/macOS using Python 3.12+. This guide describes implemented behavior. Git/GCS acquisition, HTTP API hosting, distributed workers, authenticated reviewers and OpenShift deployment are future work.
 
@@ -18,7 +18,7 @@ calls. See [Slice 36](../development/slice-36.md) for exact limitations.
 ## Inspect retained storage
 
 ```bash
-uv run traceproof storage-audit --max-entries 1000 --max-nodes 100000
+uv run veriflow storage-audit --max-entries 1000 --max-nodes 100000
 ```
 
 Run while workers are idle. The command takes the worker lock and reports artifact IDs,
@@ -34,9 +34,9 @@ file but does not modify stored results. See [Slice 35](../development/slice-35.
 ## Find a CodeQL extraction attempt
 
 ```bash
-uv run traceproof extraction-history REPO_ID --limit 20
-uv run traceproof extraction-history REPO_ID --run-id RUN_ID
-uv run traceproof codeql-status EXTRACTION_ATTEMPT_ID
+uv run veriflow extraction-history REPO_ID --limit 20
+uv run veriflow extraction-history REPO_ID --run-id RUN_ID
+uv run veriflow codeql-status EXTRACTION_ATTEMPT_ID
 ```
 
 Use this history when extraction failed before a query attempt existed, or when you lost
@@ -52,11 +52,11 @@ IDs for further actions. See [Slice 34](../development/slice-34.md).
 ## Find a previous import
 
 ```bash
-uv run traceproof import-history --limit 20
-uv run traceproof import-history --state paused --limit 20
-uv run traceproof status IMPORT_ID
-uv run traceproof import-control-status IMPORT_ID
-uv run traceproof import-reports IMPORT_ID
+uv run veriflow import-history --limit 20
+uv run veriflow import-history --state paused --limit 20
+uv run veriflow status IMPORT_ID
+uv run veriflow import-control-status IMPORT_ID
+uv run veriflow import-reports IMPORT_ID
 ```
 
 History returns newest batches first with their IDs, latest dispatch state/revision and
@@ -69,8 +69,8 @@ See [Slice 33](../development/slice-33.md) for the projection contract.
 ## Cancel remaining import dispatch
 
 ```bash
-uv run traceproof import-control-status IMPORT_ID
-uv run traceproof import-control IMPORT_ID cancelled cancel-1 "No longer needed" --expected-revision 0
+uv run veriflow import-control-status IMPORT_ID
+uv run veriflow import-control IMPORT_ID cancelled cancel-1 "No longer needed" --expected-revision 0
 ```
 
 Use the revision returned by status. Cancellation is terminal for this import: it cannot
@@ -86,14 +86,14 @@ Keep using this or a newer application version once cancellations exist. No migr
 
 ## Pause and resume import dispatch
 
-With writers quiesced, apply migration 0009 using `traceproof init`. Existing imports
+With writers quiesced, apply migration 0009 using `veriflow init`. Existing imports
 remain active at revision 0. Then use the revision returned by status:
 
 ```bash
-uv run traceproof import-control-status IMPORT_ID
-uv run traceproof import-control IMPORT_ID paused pause-1 "Maintenance" --expected-revision 0
-uv run traceproof import-control IMPORT_ID active resume-1 "Ready" --expected-revision 1
-uv run traceproof worker IMPORT_ID
+uv run veriflow import-control-status IMPORT_ID
+uv run veriflow import-control IMPORT_ID paused pause-1 "Maintenance" --expected-revision 0
+uv run veriflow import-control IMPORT_ID active resume-1 "Ready" --expected-revision 1
+uv run veriflow worker IMPORT_ID
 ```
 
 A pause takes effect at the next intake or batch-scan row boundary. Work already admitted
@@ -113,10 +113,10 @@ not blocked by import pause. See [Slice 31](../development/slice-31.md) for the 
 For synthetic local Ollama testing, with an approved model configuration:
 
 ```bash
-uv run traceproof triage-budget RUN_ID 0 --max-requests 20
-uv run traceproof triage-attempt REPO_ID ATTEMPT_ID examples/triage-ollama-config.json local-pass-1 --limit 5
-uv run traceproof triage-report RUN_ID
-uv run traceproof publish-report REPO_ID --run-id RUN_ID --attempt-id ATTEMPT_ID
+uv run veriflow triage-budget RUN_ID 0 --max-requests 20
+uv run veriflow triage-attempt REPO_ID ATTEMPT_ID examples/triage-ollama-config.json local-pass-1 --limit 5
+uv run veriflow triage-report RUN_ID
+uv run veriflow publish-report REPO_ID --run-id RUN_ID --attempt-id ATTEMPT_ID
 ```
 
 The zero monetary budget above is for zero-priced local inference; priced models require
@@ -136,8 +136,8 @@ See [Slice 30](../development/slice-30.md) for retry and stop semantics.
 ## Share a benchmark scorecard
 
 ```bash
-uv run traceproof benchmark-history DATASET_ID
-uv run traceproof benchmark-get DATASET_ID SCORECARD_ID --format html > scorecard.html
+uv run veriflow benchmark-history DATASET_ID
+uv run veriflow benchmark-get DATASET_ID SCORECARD_ID --format html > scorecard.html
 ```
 
 Open the exported HTML in a browser. It requires no server, JavaScript or external assets.
@@ -156,17 +156,17 @@ format works on `benchmark-evaluate`, which does evaluate its supplied inputs. S
 `scan-run` and `codeql-analyze` accept a trusted local `.qls` file in the same
 positional argument as a single `.ql` query. Replace the example paths below with
 existing, operator-approved suites compatible with the selected language and installed
-CodeQL query packs. These are placeholders, not files shipped by TraceProof.
+CodeQL query packs. These are placeholders, not files shipped by VeriFlow.
 
 ```bash
 # Scan an already-ingested Python run with a suite.
-uv run traceproof scan-run RUN_ID /absolute/approved-python-suite.qls --language python --query-timeout 600
+uv run veriflow scan-run RUN_ID /absolute/approved-python-suite.qls --language python --query-timeout 600
 
 # Scan an already-ingested Java run with a suite and a provisioned dependency profile.
-uv run traceproof scan-run RUN_ID /absolute/approved-java-suite.qls --language java --java-profile source-only --java-dependency-profile /absolute/java-profile.json --query-timeout 600
+uv run veriflow scan-run RUN_ID /absolute/approved-java-suite.qls --language java --java-profile source-only --java-dependency-profile /absolute/java-profile.json --query-timeout 600
 
 # Alternatively, analyze an existing successful extraction with a compatible suite.
-uv run traceproof codeql-analyze EXTRACTION_ID /absolute/approved-suite.qls --timeout 600
+uv run veriflow codeql-analyze EXTRACTION_ID /absolute/approved-suite.qls --timeout 600
 ```
 
 Use the same state directory/global CLI options as for the intake or extraction.
@@ -174,7 +174,7 @@ The Java dependency profile is optional when the repository does not require it;
 choose the extraction profile and dependencies appropriate to the source.
 
 Supply the suite from trusted operator tooling, not the repository being scanned.
-TraceProof rejects query paths inside its scanned-artifact directory and passes the
+VeriFlow rejects query paths inside its scanned-artifact directory and passes the
 suite to CodeQL for resolution. Provision all referenced query packs and dependencies
 before an offline scan. For containers, bake them into the image or expose the suite
 and referenced files through an approved read-only mount at the path passed to the CLI.
@@ -182,7 +182,7 @@ The fixed container acceptance scripts still select their own fixture-specific q
 changing the application query argument does not expand that acceptance matrix.
 
 A broader suite can produce additional static candidates and reports. It does not
-expand TraceProof's qualified LLM evidence policies: unsupported rules remain available
+expand VeriFlow's qualified LLM evidence policies: unsupported rules remain available
 as candidates but are not sent for model triage. Check `evidence-policy RULE_ID` for the
 current rule policy. Coverage also depends on successful extraction and query completion.
 The recorded query hash identifies the supplied entry file; it is not a complete
@@ -192,7 +192,7 @@ operator-tooling dependencies separately for reproducibility.
 ## Tune CodeQL resources
 
 ```bash
-uv run traceproof scan-run RUN_ID /absolute/approved.ql --threads 1 --ram-mb 4096
+uv run veriflow scan-run RUN_ID /absolute/approved.ql --threads 1 --ram-mb 4096
 ```
 
 The same options work on `codeql-extract`, `codeql-analyze` and `scan-import`.
@@ -209,8 +209,8 @@ query attempts. See [Slice 28](../development/slice-28.md) for scope and validat
 ## Export original SARIF for a viewer
 
 ```bash
-uv run traceproof scan-history REPO_ID
-uv run traceproof get-sarif REPO_ID ATTEMPT_ID > results.sarif
+uv run veriflow scan-history REPO_ID
+uv run veriflow get-sarif REPO_ID ATTEMPT_ID > results.sarif
 ```
 
 Choose the exact query attempt, also available in a published report's `attempt_id`.
@@ -222,15 +222,15 @@ an empty file on failure. Use a new destination to avoid overwriting an existing
 
 Raw SARIF may expose source-related messages, flows, paths and diagnostics. Review it
 before sharing; use the summary CSV for routine dashboard consumption. The original
-SARIF does not include later TraceProof model/operator decisions. Consult the matching
+SARIF does not include later VeriFlow model/operator decisions. Consult the matching
 report for readiness: partial or zero-alert output does not establish a secure repository.
 See [Slice 27](../development/slice-27.md) for the retrieval contract.
 
 ## Export a snapshot file inventory (CycloneDX)
 
 ```bash
-uv run traceproof get-sbom REPO_ID SNAPSHOT_ID > inventory.cdx.json
-uv run traceproof get-sbom REPO_ID SNAPSHOT_ID --verify > inventory.cdx.json
+uv run veriflow get-sbom REPO_ID SNAPSHOT_ID > inventory.cdx.json
+uv run veriflow get-sbom REPO_ID SNAPSHOT_ID --verify > inventory.cdx.json
 ```
 
 The snapshot identifier appears in a published report's `snapshot_id`. Output is CycloneDX
@@ -238,7 +238,7 @@ The snapshot identifier appears in a published report's `snapshot_id`. Output is
 SHA-256 and size. The command verifies repository scope and refuses rather than emit a
 partial document past the 20,000-component or 8 MiB bound.
 
-**This is a file inventory, not a dependency bill of materials.** TraceProof does not parse
+**This is a file inventory, not a dependency bill of materials.** VeriFlow does not parse
 `package.json`, `pom.xml`, `go.mod`, `Cargo.toml`, `*.csproj` or any lockfile belonging to a
 scanned repository, so the document contains no package identities, no Package URLs, no
 resolved transitive dependencies and no license inventory. It carries no `vulnerabilities`
@@ -248,7 +248,7 @@ supply-chain attestation or a package SBOM is required.
 
 Without `--verify` the document re-encodes the manifest recorded at intake. `--verify`
 re-reads and re-hashes the stored snapshot first and records
-`traceproof:manifest_verification: reverified`; it costs a full pass over the tree and fails
+`veriflow:manifest_verification: reverified`; it costs a full pass over the tree and fails
 if the retained artifact has changed or been pruned. Output is deterministic — no publication
 timestamp is included and the serial number derives from the snapshot identity — so an
 unchanged snapshot always exports identical bytes.
@@ -261,28 +261,28 @@ SBOM and OSV output require new pipeline stages rather than a new encoder.
 ### Declared npm packages
 
 ```bash
-uv run traceproof get-sbom REPO_ID SNAPSHOT_ID --packages > inventory.cdx.json
+uv run veriflow get-sbom REPO_ID SNAPSHOT_ID --packages > inventory.cdx.json
 ```
 
 `--packages` additionally reads `package-lock.json`, `npm-shrinkwrap.json` and `package.json`
 (and `pom.xml`, below) from the verified snapshot tree and adds one `library` component per declared package, with a
 Package URL. Each file is re-hashed against its manifest record before being parsed; a
 mismatch, an unreadable file, a non-JSON body or an oversized file is skipped and counted in
-`traceproof:dependency_files_skipped` rather than silently dropped.
+`veriflow:dependency_files_skipped` rather than silently dropped.
 
-A lockfile yields `traceproof:resolution: pinned` with a concrete version. `package.json`
+A lockfile yields `veriflow:resolution: pinned` with a concrete version. `package.json`
 yields `declared_range`: the component carries **no** version, only a
-`traceproof:version_constraint`, because a range is not a component identity. Both records can
+`veriflow:version_constraint`, because a range is not a component identity. Both records can
 appear for the same package and are kept distinct. `dev`, `optional` and `peer` declarations
-are included and marked in `traceproof:declared_scopes` rather than dropped.
+are included and marked in `veriflow:declared_scopes` rather than dropped.
 
 What this still does not establish: no transitive closure is resolved, because that needs a
-build and a registry and TraceProof runs offline; `traceproof:transitive_dependencies` stays
+build and a registry and VeriFlow runs offline; `veriflow:transitive_dependencies` stays
 `not_resolved`. A lockfile records what npm resolved when the lock was written, not what is
 installed or deployed. npm `integrity` is recorded as a property, not as a CycloneDX hash,
 because the tarball it describes was never fetched or verified. Manifests under
 `node_modules/` are installed copies rather than declarations; they are counted in
-`traceproof:excluded_declarations_ignored` and remain in the file inventory only. Ecosystems other
+`veriflow:excluded_declarations_ignored` and remain in the file inventory only. Ecosystems other
 than npm, Maven and Go are not parsed at all, so an empty inventory never means a repository has no
 dependencies — only that no parser exists for it yet.
 
@@ -292,7 +292,7 @@ dependencies — only that no parser exists for it yet.
 `pinned`: a stated version is `declared_version`, since nearest-wins mediation can still
 override it at build time.
 
-| `traceproof:version_source` | What the POM established |
+| `veriflow:version_source` | What the POM established |
 |---|---|
 | `literal` | the dependency's own `<version>` |
 | `properties` | a `${...}` substituted from this file's `<properties>`, `<version>` or `<parent>` |
@@ -302,10 +302,10 @@ override it at build time.
 Version ranges (`[1.7,2.0)`) become `declared_range` and carry a constraint, not a version.
 
 Parent POMs are **never followed**, even when the parent sits in the same snapshot, so
-`traceproof:inheritance_resolved` is always `false`. A version inherited from a parent, defined
+`veriflow:inheritance_resolved` is always `false`. A version inherited from a parent, defined
 by a property declared elsewhere, or managed by an imported BOM stays `unresolved_version` — the
 component appears with no version rather than a guessed one. Imported BOMs, poms carrying a
-`<parent>`, and profile dependencies are counted in `traceproof:ecosystem_notes`. Profile
+`<parent>`, and profile dependencies are counted in `veriflow:ecosystem_notes`. Profile
 dependencies are conditional on activation and are never emitted as components. Poms under
 `target/` are build output and counted as ignored.
 
@@ -326,16 +326,16 @@ The directive that matters most is `replace`, because it changes what is actuall
 | `replace github.com/a/b => github.com/c/d v2.0.0` | `a/b` becomes `replaced` with **no version**; `c/d@v2.0.0` is emitted |
 | `replace github.com/a/b => ./local` | `a/b` becomes `replaced`; no registry component |
 | `replace github.com/a/b v1.0.0 => ...` | applies only when `v1.0.0` is the required version |
-| `exclude github.com/a/b v0.1.0` | counted in `traceproof:ecosystem_notes`, never emitted |
+| `exclude github.com/a/b v0.1.0` | counted in `veriflow:ecosystem_notes`, never emitted |
 
 A `replaced` component carries no version and is therefore **never matched against advisories**.
 That is deliberate: if the replacement is a patched fork, matching the original's version would
 report a vulnerability the build does not have.
 
-`// indirect` requirements are marked `indirect` in `traceproof:declared_scopes` rather than
+`// indirect` requirements are marked `indirect` in `veriflow:declared_scopes` rather than
 dropped, so Go shows transitive modules that npm manifests and Maven POMs do not. This is not
-closure resolution — the Go tool recorded those entries and TraceProof only read them, so
-`traceproof:inheritance_resolved` stays `false`.
+closure resolution — the Go tool recorded those entries and VeriFlow only read them, so
+`veriflow:inheritance_resolved` stays `false`.
 
 Go versions carry a `v` prefix while OSV Go records use plain semantic versions; ordering strips
 the prefix and exact version lists are tried both ways, so `v1.9.1` matches a record written as
@@ -354,9 +354,9 @@ a socket.
 
 ```bash
 uv build
-docker build -f containers/Containerfile.osv-acquisition -t traceproof:osv-acquisition-linux-poc .
+docker build -f containers/Containerfile.osv-acquisition -t veriflow:osv-acquisition-linux-poc .
 uv run python scripts/validate_osv_acquisition.py \
-  --image traceproof:osv-acquisition-linux-poc work/osv-qualification
+  --image veriflow:osv-acquisition-linux-poc work/osv-qualification
 ```
 
 Add `--platform linux/amd64` to `docker build` for an x86_64 cluster; the pinned base digest is a
@@ -382,7 +382,7 @@ is Go and Maven. To acquire directly rather than qualify:
 docker run --rm --network bridge --read-only --cap-drop ALL \
   --tmpfs /work:rw,size=2g --tmpfs /tmp:rw,size=2g \
   --mount type=bind,source="$PWD/work/export",target=/export \
-  traceproof:osv-acquisition-linux-poc \
+  veriflow:osv-acquisition-linux-poc \
   https://osv-vulnerabilities.storage.googleapis.com /export/osv \
   --ecosystem Go --ecosystem Maven \
   --allowed-host osv-vulnerabilities.storage.googleapis.com --allow-unpinned
@@ -405,8 +405,8 @@ Allow at least 4 GiB to a container matching against a full three-ecosystem expo
 ### Caching the index, and what it gives up
 
 ```bash
-uv run traceproof get-osv REPO_ID SNAPSHOT_ID /absolute/osv-profile.json --cache
-uv run traceproof get-osv REPO_ID SNAPSHOT_ID /absolute/osv-profile.json --cache --refresh-cache
+uv run veriflow get-osv REPO_ID SNAPSHOT_ID /absolute/osv-profile.json --cache
+uv run veriflow get-osv REPO_ID SNAPSHOT_ID /absolute/osv-profile.json --cache --refresh-cache
 ```
 
 `--cache` writes a derived index under `<state-dir>/osv-cache/`, keyed by the profile's own
@@ -420,7 +420,7 @@ entirely and serves the contents recorded when the cache was written. A record m
 cache was built is therefore **not detected** — the uncached path refuses that database outright,
 while a cache hit serves the previously approved contents. That is why caching is opt-in.
 
-Every document records which path ran, in `traceproof:osv_database_verification`:
+Every document records which path ran, in `veriflow:osv_database_verification`:
 
 | Value | Meaning |
 |---|---|
@@ -466,16 +466,16 @@ calls.
 ## Match declared packages against a pinned OSV export
 
 ```bash
-uv run traceproof get-osv REPO_ID SNAPSHOT_ID /absolute/osv-profile.json > osv-results.json
-uv run traceproof get-sbom REPO_ID SNAPSHOT_ID --packages --database /absolute/osv-profile.json
+uv run veriflow get-osv REPO_ID SNAPSHOT_ID /absolute/osv-profile.json > osv-results.json
+uv run veriflow get-sbom REPO_ID SNAPSHOT_ID --packages --database /absolute/osv-profile.json
 ```
 
 `get-osv` emits an OSV-Scanner-**shaped** `results.json` grouped by the file that declared each
-package; it is not an OSV-Scanner run, and a `traceproof` block carries the coverage that a
+package; it is not an OSV-Scanner run, and a `veriflow` block carries the coverage that a
 scanner result has no field for. `get-sbom --database` instead adds a CycloneDX `vulnerabilities`
 array to the inventory. Both refuse unless `--packages` supplied the components.
 
-The database is **operator-supplied and pinned**; TraceProof fetches nothing and updates nothing.
+The database is **operator-supplied and pinned**; VeriFlow fetches nothing and updates nothing.
 The profile names a records directory and one `inventory_sha256` over its canonical inventory:
 
 ```json
@@ -522,13 +522,13 @@ equivalence vectors in Maven's own test suite: `5.3.9` sorts below `5.3.10`, `1.
 `1.0`, and `3.1.0.RELEASE` equals `3.1.0`. Maven also still matches on exact version lists, which
 GHSA-derived records generally carry.
 
-`traceproof:osv_component_states` is the field to read before concluding anything:
+`veriflow:osv_component_states` is the field to read before concluding anything:
 
 - `evaluated_no_match` — the database was fully consulted for this component, and it covered that
   ecosystem and held no unreadable records
 
-Read `traceproof:osv_records_unread` alongside these. If it is not `0`, the export held records
-the loader could not parse, `traceproof:osv_components_fully_evaluated` is `0`, and **no**
+Read `veriflow:osv_records_unread` alongside these. If it is not `0`, the export held records
+the loader could not parse, `veriflow:osv_components_fully_evaluated` is `0`, and **no**
 component was evaluated against a complete database — including the ones reporting matches.
 - `partially_evaluated` — something about it could not be evaluated
 - `not_evaluated` — no resolved version, or an ecosystem the export does not cover
@@ -542,8 +542,8 @@ repository is free of known vulnerabilities.
 ## Import evidence for declared packages
 
 ```bash
-uv run traceproof get-sbom REPO_ID SNAPSHOT_ID --packages --usage
-uv run traceproof get-osv REPO_ID SNAPSHOT_ID /absolute/osv-profile.json --usage
+uv run veriflow get-sbom REPO_ID SNAPSHOT_ID --packages --usage
+uv run veriflow get-osv REPO_ID SNAPSHOT_ID /absolute/osv-profile.json --usage
 ```
 
 `--usage` scans first-party source for imports of each declared package and records a state per
@@ -558,7 +558,7 @@ component. **This is import evidence, not reachability analysis.**
 The asymmetry is the point. `import_observed` raises priority. `not_observed` clears nothing:
 transitive use, dynamic `require`, reflection, framework wiring, service loaders and
 configuration-driven instantiation all leave no import in first-party source. Check
-`traceproof:usage_files_skipped` before reading anything into a `not_observed` — a skipped file
+`veriflow:usage_files_skipped` before reading anything into a `not_observed` — a skipped file
 may hold the very import that would have changed it.
 
 A vulnerability's CycloneDX `analysis.state` stays `in_triage` whatever the usage state. Usage
@@ -566,7 +566,7 @@ prioritizes work; it never adjudicates a candidate.
 
 ### What the scan does and does not read
 
-Detection is **lexical, not parsed** (`traceproof:usage_detection_method`), so a specifier inside
+Detection is **lexical, not parsed** (`veriflow:usage_detection_method`), so a specifier inside
 a comment or string can be reported. That is the conservative direction: over-reporting says
 investigate, under-reporting would say clear. `node_modules/`, `target/`, `build/`, `dist/`,
 `out/` and `vendor/` are excluded as not first-party, and `*.min.js`/`*.bundle.js` are excluded
@@ -576,8 +576,8 @@ For Maven, an import is matched against the dependency's groupId prefix. That co
 **convention, not a rule** — `junit:junit` publishes `org.junit`, so a project using JUnit reports
 `not_observed`. Treat Maven `not_observed` as carrying almost no information.
 
-No call graph is resolved (`traceproof:usage_call_graph_resolved: false`) and no vulnerable symbol
-is matched (`traceproof:usage_vulnerable_symbol_matching: none`). OSV records for npm and Maven
+No call graph is resolved (`veriflow:usage_call_graph_resolved: false`) and no vulnerable symbol
+is matched (`veriflow:usage_vulnerable_symbol_matching: none`). OSV records for npm and Maven
 carry version ranges, not affected functions, and third-party code is not in the snapshot at all,
 so there is nothing for a call path to reach.
 
@@ -587,7 +587,7 @@ When a Go match comes from an advisory that carries `ecosystem_specific.imports`
 vulnerability database publishes and no other parsed ecosystem does — `--usage` adds a second,
 finer state per vulnerability:
 
-| `traceproof:go_symbol_evidence` | Meaning |
+| `veriflow:go_symbol_evidence` | Meaning |
 |---|---|
 | `symbol_referenced` | source imports the vulnerable package and names one of the advisory's symbols |
 | `package_imported` | the vulnerable package is imported; no named symbol was referenced |
@@ -595,7 +595,7 @@ finer state per vulnerability:
 | `no_symbol_data` | the advisory carries no import data |
 | `not_evaluated` | no Go source was read |
 
-`symbol_referenced` also lists what was found in `traceproof:go_symbols_referenced`.
+`symbol_referenced` also lists what was found in `veriflow:go_symbols_referenced`.
 
 `package_not_imported` is the strongest negative this tool produces and is **still not a safety
 conclusion**. An imported package can call the vulnerable one internally, a transitive dependency
@@ -608,12 +608,12 @@ for `identifier.Symbol`. A method symbol like `Decoder.Decode` is searched by it
 because a call site cannot be resolved lexically, so `package_imported` versus `symbol_referenced`
 is a priority signal rather than a proof of use. Blank imports (`_`) bind no name. Dot imports
 (`.`) put symbols in scope unqualified and are counted in
-`traceproof:go_dot_imports_unresolvable` rather than guessed at. Platform constraints
+`veriflow:go_dot_imports_unresolvable` rather than guessed at. Platform constraints
 (`goos`/`goarch`) are recorded but never applied, since the build target is unknown —
-`traceproof:go_platform_filtering` is always `none`.
+`veriflow:go_platform_filtering` is always `none`.
 
 No call graph is resolved. `govulncheck` answers the reachability question by building the whole
-program including dependencies; TraceProof has neither the dependencies nor the build, so it
+program including dependencies; VeriFlow has neither the dependencies nor the build, so it
 reports references rather than reachability.
 
 ## Retrieve reports for an import batch
@@ -621,10 +621,10 @@ reports references rather than reachability.
 After `scan-import`, inspect report availability or export a dashboard input:
 
 ```bash
-uv run traceproof import-reports IMPORT_ID --limit 100
-uv run traceproof import-reports IMPORT_ID --offset 100 --limit 100
-uv run traceproof import-reports IMPORT_ID --limit 1000 --format csv > import-reports.csv
-uv run traceproof get-report REPO_ID --report-id REPORT_ID --format html > report.html
+uv run veriflow import-reports IMPORT_ID --limit 100
+uv run veriflow import-reports IMPORT_ID --offset 100 --limit 100
+uv run veriflow import-reports IMPORT_ID --limit 1000 --format csv > import-reports.csv
+uv run veriflow get-report REPO_ID --report-id REPORT_ID --format html > report.html
 ```
 
 Rows stay tied to the runs admitted in that import. Status distinguishes intake not ready,
@@ -642,21 +642,21 @@ command makes no model calls and includes no source snippets. See the
 
 ## Start here
 
-TraceProof captures source, indexes Python, runs an approved local CodeQL query, and publishes reviewable candidates. Models can advise on those candidates; they cannot confirm vulnerabilities or suppress them. Operator assertions are recorded separately. A successful command, zero candidates, or `ready_for_review` does not establish that a repository is secure.
+VeriFlow captures source, indexes Python, runs an approved local CodeQL query, and publishes reviewable candidates. Models can advise on those candidates; they cannot confirm vulnerabilities or suppress them. Operator assertions are recorded separately. A successful command, zero candidates, or `ready_for_review` does not establish that a repository is secure.
 
 Install the locked development environment and initialize local storage:
 
 ```bash
 uv sync --locked
-uv run traceproof --help
-uv run traceproof init
-uv run traceproof get-report --help
+uv run veriflow --help
+uv run veriflow init
+uv run veriflow get-report --help
 ```
 
-Use `uv run traceproof` in the examples below. An activated project virtual environment also provides `traceproof`. Commands accept `--help`; the global `--state-dir` option goes **before** the command. Its default is `.traceproof` relative to the current directory. Keep using the same state directory throughout a workflow:
+Use `uv run veriflow` in the examples below. An activated project virtual environment also provides `veriflow`. Commands accept `--help`; the global `--state-dir` option goes **before** the command. Its default is `.veriflow` relative to the current directory. Keep using the same state directory throughout a workflow:
 
 ```bash
-uv run traceproof --state-dir /absolute/local/state init
+uv run veriflow --state-dir /absolute/local/state init
 ```
 
 `init` creates or upgrades the database; it is not a reset command. Current migrations are applied explicitly, not on every read. Keep state on trusted local disk, not shared network storage. Source archives, raw tool outputs and evidence can be sensitive. The local OS account is the access boundary; repository ownership checks are not multi-user authentication.
@@ -682,9 +682,9 @@ Commands normally print JSON. Request/storage errors produce a nonzero exit code
 To recover run or query-attempt IDs, including work without a published report:
 
 ```bash
-uv run traceproof run-history REPO_ID --limit 100
-uv run traceproof scan-history REPO_ID --limit 100
-uv run traceproof scan-history REPO_ID --run-id RUN_ID --offset 0 --limit 100
+uv run veriflow run-history REPO_ID --limit 100
+uv run veriflow scan-history REPO_ID --limit 100
+uv run veriflow scan-history REPO_ID --run-id RUN_ID --offset 0 --limit 100
 ```
 
 Follow `next_offset` until null. Pages contain at most 1000 rows, sorted by newest run admission and then newest attempt within each run. New work can shift offset pages between requests; this is not a frozen export. Failed attempts remain visible, unknown counts are null, and a run with no query attempt has no scan-history rows. Extraction attempts are separate: use `extraction-history` to find IDs for `codeql-status`. Use `report-history` for published summary IDs.
@@ -695,14 +695,14 @@ The included generator creates a small benign archive. It does not execute the s
 
 ```bash
 uv run python examples/create_archive.py --output work/guide-input
-uv run traceproof import-csv work/guide-input/repos.csv --input-root "$PWD/work/guide-input" --key guide-import-1
-uv run traceproof worker IMPORT_ID --max-items 1
-uv run traceproof import-status IMPORT_ID
-uv run traceproof run-status RUN_ID
-uv run traceproof verify-snapshot SNAPSHOT_ID
-uv run traceproof index-run RUN_ID
-uv run traceproof query-index RUN_ID --kind symbols
-uv run traceproof repo-report synthetic-demo --run-id RUN_ID --format markdown
+uv run veriflow import-csv work/guide-input/repos.csv --input-root "$PWD/work/guide-input" --key guide-import-1
+uv run veriflow worker IMPORT_ID --max-items 1
+uv run veriflow import-status IMPORT_ID
+uv run veriflow run-status RUN_ID
+uv run veriflow verify-snapshot SNAPSHOT_ID
+uv run veriflow index-run RUN_ID
+uv run veriflow query-index RUN_ID --kind symbols
+uv run veriflow repo-report synthetic-demo --run-id RUN_ID --format markdown
 ```
 
 Expected checkpoints: the row is admitted, worker captures a snapshot, the run becomes `snapshotted`, and the Python index becomes ready. `repo-report` is **index coverage**, not the published vulnerability summary. Re-running indexing resumes checkpoints or reuses the same completed snapshot/parser index after source verification.
@@ -713,7 +713,7 @@ Finish writing archives before admission. Supply `sha256` to pin original archiv
 
 ## Run CodeQL and inspect candidates
 
-Before scanning, run `uv run traceproof doctor --query /absolute/approved.ql` for local
+Before scanning, run `uv run veriflow doctor --query /absolute/approved.ql` for local
 prerequisite diagnostics and suggested fixes. `blocked` exits 1; omitting the query can
 return `incomplete` with exit 0. This command neither runs CodeQL nor changes the schema.
 It checks availability, not query compilation, sufficient capacity or enterprise approval.
@@ -722,7 +722,7 @@ See [preflight details](../development/slice-22.md).
 For an already captured run, the source-only stages can be executed together:
 
 ```bash
-uv run traceproof scan-run RUN_ID /absolute/approved.ql --extraction-timeout 300 --query-timeout 600
+uv run veriflow scan-run RUN_ID /absolute/approved.ql --extraction-timeout 300 --query-timeout 600
 ```
 
 This indexes, checks readiness, extracts, queries and publishes the exact attempt. It
@@ -740,19 +740,19 @@ Expected row errors do not block later rows, but infrastructure errors stop the 
 Per-run results are durable; save the JSON batch summary yourself. See
 [batch scanning](../development/slice-25.md).
 
-CodeQL must be on PATH, with an approved query and its dependencies installed locally. TraceProof does not download packs during analysis. Local acceptance has used CodeQL 2.27.0 and `codeql/python-queries` 1.8.10; the enterprise must supply its approved versions and usage entitlement.
+CodeQL must be on PATH, with an approved query and its dependencies installed locally. VeriFlow does not download packs during analysis. Local acceptance has used CodeQL 2.27.0 and `codeql/python-queries` 1.8.10; the enterprise must supply its approved versions and usage entitlement.
 
 ```bash
-uv run traceproof codeql-extract RUN_ID --timeout 300
-uv run traceproof codeql-status EXTRACTION_ID
-uv run traceproof codeql-analyze EXTRACTION_ID /absolute/CodeInjection.ql --timeout 600
-uv run traceproof scan-report REPO_ID --run-id RUN_ID
+uv run veriflow codeql-extract RUN_ID --timeout 300
+uv run veriflow codeql-status EXTRACTION_ID
+uv run veriflow codeql-analyze EXTRACTION_ID /absolute/CodeInjection.ql --timeout 600
+uv run veriflow scan-report REPO_ID --run-id RUN_ID
 ```
 
 Extraction uses Python build mode `none`. Inspect extraction success before analysis. Query failure, timeout and invalid SARIF are durable outcomes. The benign first walkthrough may have no candidates. For a reproducible vulnerable/fixed/incomplete demonstration, use a **new** output directory and an installed `CodeInjection.ql` entry:
 
 ```bash
-uv run traceproof acceptance-run work/guide-acceptance /absolute/CodeInjection.ql --timeout 300
+uv run veriflow acceptance-run work/guide-acceptance /absolute/CodeInjection.ql --timeout 300
 ```
 
 This creates isolated state under `work/guide-acceptance/state`, synthetic input archives, reports in five formats and `acceptance.json`. It checks that the seeded case has a candidate, its fixed counterpart does not, and an invalid Python fixture remains incomplete. It makes no model calls. The runner gates analysis on indexing; individual CLI stages remain separately callable, so operators must inspect gates themselves.
@@ -764,12 +764,12 @@ To inspect this state, add `--state-dir work/guide-acceptance/state` before ever
 For a candidate returned by a scan:
 
 ```bash
-uv run traceproof build-bundle ATTEMPT_ID CANDIDATE_FINGERPRINT
-uv run traceproof bundle-status BUNDLE_ID
-uv run traceproof evidence-policy py/code-injection
-uv run traceproof triage-budget RUN_ID 100000
-uv run traceproof triage BUNDLE_ID examples/triage-replay-config.json guide-triage-1 --replay examples/triage-replay-response.json
-uv run traceproof triage-report RUN_ID
+uv run veriflow build-bundle ATTEMPT_ID CANDIDATE_FINGERPRINT
+uv run veriflow bundle-status BUNDLE_ID
+uv run veriflow evidence-policy py/code-injection
+uv run veriflow triage-budget RUN_ID 100000
+uv run veriflow triage BUNDLE_ID examples/triage-replay-config.json guide-triage-1 --replay examples/triage-replay-response.json
+uv run veriflow triage-report RUN_ID
 ```
 
 The supplied replay is offline, uses fictional rates/usage and abstains. `100000` micro-USD equals $0.10 in the ledger, not a replay charge. The run budget cannot be changed once set. Partial bundles, unsupported rules and exhausted budgets prevent provider invocation. Reusing the same triage key with identical inputs retrieves the recorded result; a different request needs a different key and may consume budget.
@@ -792,8 +792,8 @@ For local POC inference, run an Ollama daemon with a locally installed completio
 edit `examples/triage-ollama-config.json` to select it, then use:
 
 ```bash
-uv run traceproof triage-budget RUN_ID 100000
-uv run traceproof triage BUNDLE_ID examples/triage-ollama-config.json local-triage-1
+uv run veriflow triage-budget RUN_ID 100000
+uv run veriflow triage BUNDLE_ID examples/triage-ollama-config.json local-triage-1
 ```
 
 No API key or `--replay` is needed. The endpoint is numeric loopback only, source/classification
@@ -824,15 +824,15 @@ Unknown usage, interrupted requests and ambiguous provider failures retain reser
 ## Publish, select and share a report
 
 ```bash
-uv run traceproof publish-report REPO_ID
-uv run traceproof report-history REPO_ID
-uv run traceproof resolve-report REPO_ID --selection latest-attempt
-uv run traceproof resolve-report REPO_ID --selection latest-completed
-uv run traceproof get-report REPO_ID --report-id REPORT_ID --format html > report.html
-uv run traceproof get-report REPO_ID --report-id REPORT_ID --format markdown > report.md
-uv run traceproof get-report REPO_ID --report-id REPORT_ID > report.json
-uv run traceproof get-report REPO_ID --report-id REPORT_ID --format scan-csv > scan.csv
-uv run traceproof get-report REPO_ID --report-id REPORT_ID --format candidates-csv > candidates.csv
+uv run veriflow publish-report REPO_ID
+uv run veriflow report-history REPO_ID
+uv run veriflow resolve-report REPO_ID --selection latest-attempt
+uv run veriflow resolve-report REPO_ID --selection latest-completed
+uv run veriflow get-report REPO_ID --report-id REPORT_ID --format html > report.html
+uv run veriflow get-report REPO_ID --report-id REPORT_ID --format markdown > report.md
+uv run veriflow get-report REPO_ID --report-id REPORT_ID > report.json
+uv run veriflow get-report REPO_ID --report-id REPORT_ID --format scan-csv > scan.csv
+uv run veriflow get-report REPO_ID --report-id REPORT_ID --format candidates-csv > candidates.csv
 ```
 
 Publication reads stored state without invoking analysis. New triage/review state needs a new publication to appear in summaries; identical inputs reuse the same report. Exact report IDs stay immutable. Use `publish-report --run-id RUN_ID --attempt-id ATTEMPT_ID` for historical work.
@@ -869,8 +869,8 @@ First inspect `review-history REPO_ID ATTEMPT_ID CANDIDATE_FINGERPRINT` and the 
 ```
 
 ```bash
-uv run traceproof record-review REPO_ID ATTEMPT_ID CANDIDATE_FINGERPRINT review.json guide-review-1
-uv run traceproof publish-report REPO_ID
+uv run veriflow record-review REPO_ID ATTEMPT_ID CANDIDATE_FINGERPRINT review.json guide-review-1
+uv run veriflow publish-report REPO_ID
 ```
 
 Allowed states are `confirmed`, `false_positive`, `needs_review`, `deferred`. Definitive assertions require a ready bundle and valid evidence citations. Review keys are idempotent; a stale revision requires reading history before intentionally making another assertion. History is append-only, reviewer identity is self-declared, and these assertions do not set independent verification or measured precision.
@@ -901,10 +901,10 @@ are unchanged. See [per-class metrics](../development/slice-18.md).
 To save an evaluation for later retrieval, run `init` for migration 0007, then:
 
 ```bash
-uv run traceproof benchmark-publish MANIFEST LABELS PLAN
-uv run traceproof benchmark-history DATASET_ID --limit 100
-uv run traceproof benchmark-get DATASET_ID SCORECARD_ID --format markdown
-uv run traceproof benchmark-get DATASET_ID SCORECARD_ID --format weaknesses-csv
+uv run veriflow benchmark-publish MANIFEST LABELS PLAN
+uv run veriflow benchmark-history DATASET_ID --limit 100
+uv run veriflow benchmark-get DATASET_ID SCORECARD_ID --format markdown
+uv run veriflow benchmark-get DATASET_ID SCORECARD_ID --format weaknesses-csv
 ```
 
 Publication reuses identical scorecards and stores changed evaluations as separate IDs.
@@ -934,7 +934,7 @@ files are needed. See [benchmark comparison](../development/slice-20.md).
 | Unknown/exhausted triage budget | Inspect `triage-report`; no automatic refund or budget increase exists |
 | Disk filling | Stop new work and inspect storage. Automatic artifact cleanup is not implemented; do not delete referenced artifacts |
 
-For a local backup, stop all TraceProof writers, copy the whole state directory (including SQLite sidecar files and artifacts), and keep tool/query/configuration provenance separately. Do not copy only the database during active writes. Restore to another local directory, run `init` as appropriate, verify snapshots and retrieve exact reports before relying on it. This is local operational guidance, not a production backup/restore qualification.
+For a local backup, stop all VeriFlow writers, copy the whole state directory (including SQLite sidecar files and artifacts), and keep tool/query/configuration provenance separately. Do not copy only the database during active writes. Restore to another local directory, run `init` as appropriate, verify snapshots and retrieve exact reports before relying on it. This is local operational guidance, not a production backup/restore qualification.
 
 No explicit pause/cancel controls exist yet. `worker --max-items` bounds intake work; rerunning resumes supported checkpoints. There is no background all-stage scheduler: running `worker` captures archives, not the entire security pipeline. Do not infer 1,000-repository/day capacity from this POC.
 
@@ -1128,8 +1128,8 @@ and report the other language as unselected. Consolidated mixed-language scans r
 future work.
 
 ```bash
-uv run traceproof scan-run RUN_ID /absolute/approved-CodeInjection.ql --language javascript
-uv run traceproof scan-run RUN_ID /absolute/approved-CodeInjection.ql --language typescript
+uv run veriflow scan-run RUN_ID /absolute/approved-CodeInjection.ql --language javascript
+uv run veriflow scan-run RUN_ID /absolute/approved-CodeInjection.ql --language typescript
 ```
 
 The fixture-qualified query is javascript-queries 2.4.5's
@@ -1164,10 +1164,10 @@ After normal CSV/archive intake creates a source run, use the explicitly experim
 bounded-query path (Joern 4.0.625 operator installation required):
 
 ```sh
-uv run traceproof joern-java-discover RUN_ID /absolute/path/to/joern-cli --timeout 180
-uv run traceproof scan-report REPO_ID --attempt-id ATTEMPT_ID
-uv run traceproof publish-report REPO_ID --run-id RUN_ID --attempt-id ATTEMPT_ID
-uv run traceproof get-report REPO_ID --format html
+uv run veriflow joern-java-discover RUN_ID /absolute/path/to/joern-cli --timeout 180
+uv run veriflow scan-report REPO_ID --attempt-id ATTEMPT_ID
+uv run veriflow publish-report REPO_ID --run-id RUN_ID --attempt-id ATTEMPT_ID
+uv run veriflow get-report REPO_ID --format html
 ```
 
 This selects only Java source and follows String parameters annotated with the fully
@@ -1211,10 +1211,10 @@ A scan may retain valid candidates while also reporting files that failed parsin
 After intake captures an immutable snapshot, run the opt-in profile:
 
 ```sh
-uv run traceproof joern-csharp-discover RUN_ID \
+uv run veriflow joern-csharp-discover RUN_ID \
   /absolute/path/to/joern-cli /absolute/path/to/csharp-repair-build --timeout 180
-uv run traceproof publish-report REPO_ID --run-id RUN_ID --attempt-id ATTEMPT_ID
-uv run traceproof get-report REPO_ID --report-id REPORT_ID --format html > report.html
+uv run veriflow publish-report REPO_ID --run-id RUN_ID --attempt-id ATTEMPT_ID
+uv run veriflow get-report REPO_ID --report-id REPORT_ID --format html > report.html
 ```
 
 The repair build is produced by scripts/build_joern_csharp_repair.py, as documented in
@@ -1241,7 +1241,7 @@ broader C# rules and production qualification are not enabled by this opt-in com
 After archive intake, run:
 
 ```sh
-traceproof joern-python-discover RUN_ID /trusted/joern-cli --timeout 180
+veriflow joern-python-discover RUN_ID /trusted/joern-cli --timeout 180
 ```
 
 This opt-in profile selects the `input` parameter of methods named `lookup` and the first
@@ -1256,8 +1256,8 @@ is required. The CLI itself does not enforce OS network isolation.
 ## Experimental JavaScript and TypeScript discovery with Joern
 
 ```sh
-traceproof joern-javascript-discover RUN_ID /trusted/joern-cli --timeout 180
-traceproof joern-typescript-discover RUN_ID /trusted/joern-cli --timeout 180
+veriflow joern-javascript-discover RUN_ID /trusted/joern-cli --timeout 180
+veriflow joern-typescript-discover RUN_ID /trusted/joern-cli --timeout 180
 ```
 
 Each explicit command uses its own rule identity and copies only `.js` or `.ts` files,
@@ -1272,7 +1272,7 @@ Joern 4.0.625 is required; network isolation must be supplied by the runtime.
 ## Experimental Go discovery with Joern
 
 ```sh
-traceproof joern-go-discover RUN_ID /trusted/joern-cli --timeout 180
+veriflow joern-go-discover RUN_ID /trusted/joern-cli --timeout 180
 ```
 
 The bounded profile selects `lookup(input)` parameters and argument 3 of calls named
@@ -1288,7 +1288,7 @@ and publication; results remain incomplete and qualified Joern triage stays unsu
 ## Experimental Rust discovery with Joern
 
 ```sh
-traceproof joern-rust-discover RUN_ID /trusted/joern-cli /trusted/rust --timeout 180
+veriflow joern-rust-discover RUN_ID /trusted/joern-cli /trusted/rust --timeout 180
 ```
 
 Supply a standalone Rust toolchain containing `bin/rustc`, `bin/cargo` and matching
@@ -1301,7 +1301,7 @@ has name and a source-relative `.rs` path. Dependencies, workspaces, custom buil
 and other manifest settings are rejected before creating a scan. This is deliberately
 limited preparation support, not support for arbitrary Cargo projects.
 
-TraceProof copies `.rs` files and generates restricted Cargo metadata with build scripts
+VeriFlow copies `.rs` files and generates restricted Cargo metadata with build scripts
 and automatic target discovery disabled. Repository Cargo configuration/toolchain files
 are not copied. Cargo runs offline with a per-attempt home. OS network isolation still
 requires the restricted runtime. Generated metadata has its own digest in the scan report;
@@ -1315,8 +1315,8 @@ Use the normal durable scan/report retrieval and publication commands.
 ## Experimental C/C++ discovery with Joern
 
 ```sh
-traceproof joern-c-discover RUN_ID /trusted/joern-cli --timeout 180
-traceproof joern-cpp-discover RUN_ID /trusted/joern-cli --timeout 180
+veriflow joern-c-discover RUN_ID /trusted/joern-cli --timeout 180
+veriflow joern-cpp-discover RUN_ID /trusted/joern-cli --timeout 180
 ```
 
 C selects `.c` and `.h`; C++ selects `.cpp`, `.h` and `.hpp`. Other extensions and
@@ -1334,8 +1334,8 @@ unsupported. Trusted pinned Joern tooling and external runtime isolation are req
 ## Joern through the main scan workflow
 
 ```sh
-traceproof scan-run RUN_ID --engine joern --joern-home /trusted/joern-cli --language auto
-traceproof scan-import IMPORT_ID --engine joern --joern-home /trusted/joern-cli \
+veriflow scan-run RUN_ID --engine joern --joern-home /trusted/joern-cli --language auto
+veriflow scan-import IMPORT_ID --engine joern --joern-home /trusted/joern-cli \
   --language auto --limit 10
 ```
 
@@ -1381,7 +1381,7 @@ contract. For Joern, use a schema-2 plan with these fields:
   "query_sha256": "<published report query SHA-256>",
   "scanner_version": "4.0.625",
   "profile": "standard",
-  "rule_ids": ["traceproof/joern-rust-lookup-arg-v1"],
+  "rule_ids": ["veriflow/joern-rust-lookup-arg-v1"],
   "reports": [{"repo_id": "example", "report_id": "<published report ID>"}]
 }
 ```
@@ -1392,8 +1392,8 @@ are recognized. CWE associations describe query intent and do not qualify detect
 The existing benchmark manifest/label contracts and snapshot/file integrity checks apply.
 
 ```sh
-traceproof benchmark-evaluate manifest.json labels.json plan.json --format html
-traceproof benchmark-publish manifest.json labels.json plan.json
+veriflow benchmark-evaluate manifest.json labels.json plan.json --format html
+veriflow benchmark-publish manifest.json labels.json plan.json
 ```
 
 These evaluator-only operations do not scan or call models. Audit output uses evaluator
@@ -1413,7 +1413,7 @@ adjudicated evaluation remain necessary before reporting bank-portfolio precisio
 ## Flask request-to-shell discovery profile
 
 ```sh
-traceproof scan-run RUN_ID --engine joern --joern-home /trusted/joern-cli \
+veriflow scan-run RUN_ID --engine joern --joern-home /trusted/joern-cli \
   --language python --joern-profile python-flask-system-v1
 ```
 
@@ -1441,7 +1441,7 @@ The new rule is accepted by the benchmark coverage-audit mode without qualifying
 ## Express request-to-eval discovery profile
 
 ```sh
-traceproof scan-run RUN_ID --engine joern --joern-home /trusted/joern-cli \
+veriflow scan-run RUN_ID --engine joern --joern-home /trusted/joern-cli \
   --language javascript --joern-profile express-request-eval-v1
 ```
 
@@ -1473,7 +1473,7 @@ retry skipping distinguishes profiles; use `--rescan` after changes within a pro
 ## Go HTTP form-to-shell discovery profile
 
 ```sh
-traceproof scan-run RUN_ID --engine joern --joern-home /trusted/joern-cli \
+veriflow scan-run RUN_ID --engine joern --joern-home /trusted/joern-cli \
   --language go --joern-profile go-http-shell-v1
 ```
 
@@ -1505,7 +1505,7 @@ or models within a profile. No database migration or LLM key is needed for disco
 ## C/C++ command-line-to-system discovery profile
 
 ```sh
-traceproof scan-run RUN_ID --engine joern --joern-home /trusted/joern-cli \
+veriflow scan-run RUN_ID --engine joern --joern-home /trusted/joern-cli \
   --language c --joern-profile c-family-argv-system-v1
 ```
 
@@ -1537,7 +1537,7 @@ within a profile. No migration, source build or LLM key is required for discover
 ## Rust environment-to-shell discovery profile
 
 ```sh
-traceproof scan-run RUN_ID --engine joern --joern-home /trusted/joern-cli \
+veriflow scan-run RUN_ID --engine joern --joern-home /trusted/joern-cli \
   --rust-home /trusted/rust --language rust --joern-profile rust-env-shell-v1
 ```
 
@@ -1574,8 +1574,8 @@ unique path selection and exact native code on snapshot-bound source lines. Olde
 without the native digest remain readable but need a new scan to qualify for this audit.
 
 ```sh
-traceproof build-bundle ATTEMPT_ID CANDIDATE_FINGERPRINT
-traceproof check-evidence BUNDLE_ID decision.json \
+veriflow build-bundle ATTEMPT_ID CANDIDATE_FINGERPRINT
+veriflow check-evidence BUNDLE_ID decision.json \
   --review-policy joern-spring-review-v1
 ```
 
@@ -1600,8 +1600,8 @@ After scanning and building a fresh audited Spring bundle, use the existing run 
 and model configuration with an explicit review policy:
 
 ```sh
-traceproof triage-budget RUN_ID 100000 --max-requests 10
-traceproof triage BUNDLE_ID model.json advisory-key \
+veriflow triage-budget RUN_ID 100000 --max-requests 10
+veriflow triage BUNDLE_ID model.json advisory-key \
   --review-policy joern-spring-review-v1 --replay response.json
 ```
 
@@ -1618,7 +1618,7 @@ Retries return the existing ledger entry without another invocation. Budget/requ
 and uncertain-call reservation retention remain in force. Blocked rows count toward the
 request limit but reserve/charge zero when blocked by evidence or cost preflight.
 
-Before invoking a provider, TraceProof requires the native audit, complete source context,
+Before invoking a provider, VeriFlow requires the native audit, complete source context,
 ordered flow and modeled Spring/SQL endpoint syntax. Rejected preflight records
 incomplete_evidence and makes no provider call. Returned needs_review claims must still
 pass the explicit policy; fabricated or negative claims abstain. A passing advisory is
@@ -1643,8 +1643,8 @@ CLI/Python triage operations; HTTP API launch schemas have not been expanded in 
 Configure the existing per-run budget first. For the default Java/Spring Joern profile:
 
 ```sh
-traceproof triage-budget RUN_ID 100000 --max-requests 10
-traceproof scan-run RUN_ID --engine joern --language java \
+veriflow triage-budget RUN_ID 100000 --max-requests 10
+veriflow scan-run RUN_ID --engine joern --language java \
   --joern-home /trusted/joern-cli \
   --advisory-config model.json --review-policy joern-spring-review-v1 \
   --advisory-key scan-advice --advisory-limit 1 --replay response.json
@@ -1694,8 +1694,8 @@ schemas remain unchanged; the pipeline opt-in is currently exposed through CLI/P
 Use `joern-flask-review-v1` with the explicit `python-flask-system-v1` discovery profile:
 
 ```sh
-traceproof triage-budget RUN_ID 100000 --max-requests 10
-traceproof scan-run RUN_ID --engine joern --language auto \
+veriflow triage-budget RUN_ID 100000 --max-requests 10
+veriflow scan-run RUN_ID --engine joern --language auto \
   --joern-home /trusted/joern-cli --joern-profile python-flask-system-v1 \
   --advisory-config model.json --review-policy joern-flask-review-v1 \
   --advisory-key flask-advice --advisory-limit 1 --replay response.json
@@ -1732,8 +1732,8 @@ Use a language-specific policy with the existing Express discovery profile:
 | typescript | express-request-eval-v1 | joern-typescript-express-review-v1 |
 
 ```sh
-traceproof triage-budget RUN_ID 100000 --max-requests 10
-traceproof scan-run RUN_ID --engine joern --language auto \
+veriflow triage-budget RUN_ID 100000 --max-requests 10
+veriflow scan-run RUN_ID --engine joern --language auto \
   --joern-home /trusted/joern-cli --joern-profile express-request-eval-v1 \
   --advisory-config model.json --review-policy joern-javascript-express-review-v1 \
   --advisory-key express-advice --advisory-limit 1 --replay response.json
@@ -1764,8 +1764,8 @@ include the advisory history and policy identity for dashboard integration.
 Use the default C# discovery profile and a trusted repair directory:
 
 ```sh
-traceproof triage-budget RUN_ID 100000 --max-requests 10
-traceproof scan-run RUN_ID --engine joern --language csharp \
+veriflow triage-budget RUN_ID 100000 --max-requests 10
+veriflow scan-run RUN_ID --engine joern --language csharp \
   --joern-home /trusted/joern-cli --joern-repair-dir /trusted/csharp-repair \
   --advisory-config model.json --review-policy joern-csharp-review-v1 \
   --advisory-key csharp-advice --advisory-limit 1 --replay response.json
@@ -1798,8 +1798,8 @@ schemas are unchanged.
 Use the explicit Go discovery and advisory policy pair:
 
 ```sh
-traceproof triage-budget RUN_ID 100000 --max-requests 10
-traceproof scan-run RUN_ID --engine joern --language auto \
+veriflow triage-budget RUN_ID 100000 --max-requests 10
+veriflow scan-run RUN_ID --engine joern --language auto \
   --joern-home /trusted/joern-cli --joern-profile go-http-shell-v1 \
   --advisory-config model.json --review-policy joern-go-http-review-v1 \
   --advisory-key go-advice --advisory-limit 1 --replay response.json
@@ -1828,8 +1828,8 @@ HTTP launch schemas remain unchanged.
 ### Joern Rust environment-to-shell advisory (Slice 103)
 
 ```sh
-traceproof triage-budget RUN_ID 100000 --max-requests 10
-traceproof scan-run RUN_ID --engine joern --language auto \
+veriflow triage-budget RUN_ID 100000 --max-requests 10
+veriflow scan-run RUN_ID --engine joern --language auto \
   --joern-home /trusted/joern-cli --rust-home /trusted/rust \
   --joern-profile rust-env-shell-v1 --advisory-config model.json \
   --review-policy joern-rust-env-review-v1 --advisory-key rust-advice \
@@ -1865,8 +1865,8 @@ Use `--engine joern --joern-profile c-family-argv-system-v1` with `--language c`
 preconfigured run budget are required. For example, after importing a C repository:
 
 ```sh
-traceproof triage-budget RUN_ID 100000 --max-requests 10
-traceproof scan-run RUN_ID --engine joern --language c \
+veriflow triage-budget RUN_ID 100000 --max-requests 10
+veriflow scan-run RUN_ID --engine joern --language c \
   --joern-home /path/to/joern-cli --joern-profile c-family-argv-system-v1 \
   --advisory-config /path/to/provider.json --advisory-key c-review-1 \
   --review-policy joern-c-argv-review-v1
@@ -1890,7 +1890,7 @@ allowed hosts is accepted. Use an immutable 40-character commit when available; 
 or tag refs are resolved once and the resulting commit is recorded.
 
 ```sh
-traceproof acquire-git https://github.com/octocat/Hello-World.git refs/heads/master \
+veriflow acquire-git https://github.com/octocat/Hello-World.git refs/heads/master \
   /absolute/work/acquired-repo hello-world poc public --allowed-host github.com
 ```
 

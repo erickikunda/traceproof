@@ -6,14 +6,14 @@ migration is required. Existing replay/cloud request identities are preserved.
 
 ```bash
 ollama list
-uv run traceproof triage-budget RUN_ID 100000
-uv run traceproof triage BUNDLE_ID examples/triage-ollama-config.json local-triage-1
-uv run traceproof triage-report RUN_ID
-uv run traceproof publish-report REPO_ID
+uv run veriflow triage-budget RUN_ID 100000
+uv run veriflow triage BUNDLE_ID examples/triage-ollama-config.json local-triage-1
+uv run veriflow triage-report RUN_ID
+uv run veriflow publish-report REPO_ID
 ```
 
 The example selects the locally installed `LiquidAI/lfm2.5-1.2b-instruct:latest`. Change
-`model` to a local completion model listed by your daemon. TraceProof neither installs
+`model` to a local completion model listed by your daemon. VeriFlow neither installs
 nor downloads models. Start the Ollama service yourself if needed. Local tags can change;
 retain the installed model digest separately when recording POC evaluation provenance.
 

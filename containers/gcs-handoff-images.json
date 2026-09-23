@@ -2,18 +2,18 @@
   "slice": 122,
   "images": [
     {
-      "tag": "traceproof:gcs-acquisition-linux-poc",
+      "tag": "veriflow:gcs-acquisition-linux-poc",
       "image_id": "sha256:e7318fa2e88b044392591b70677c21f2dd388bf71fe2cb6e4abcd7454456ff67",
       "os": "linux",
       "architecture": "arm64",
-      "build_inputs": "252463d8b92ff4ae8e2cf9c430fd7eea5994bb11582cf7edda1ee2ff3095d43d  /tmp/traceproof-0.1.0-py3-none-any.whl\n99fd678bba1fa75f26a9b451d4ed253a494ff8c64bfdf3182206bb19727e287c  /tmp/requirements-gcs.lock\n"
+      "build_inputs": "252463d8b92ff4ae8e2cf9c430fd7eea5994bb11582cf7edda1ee2ff3095d43d  /tmp/veriflow-0.1.0-py3-none-any.whl\n99fd678bba1fa75f26a9b451d4ed253a494ff8c64bfdf3182206bb19727e287c  /tmp/requirements-gcs.lock\n"
     },
     {
-      "tag": "traceproof:ocp-smoke-gcs-linux-poc",
+      "tag": "veriflow:ocp-smoke-gcs-linux-poc",
       "image_id": "sha256:4c0d353919c56449325a78c9ef74ef8919df78625b103a2a047ac4315cb7b2fa",
       "os": "linux",
       "architecture": "arm64",
-      "build_inputs": "252463d8b92ff4ae8e2cf9c430fd7eea5994bb11582cf7edda1ee2ff3095d43d  /tmp/traceproof-0.1.0-py3-none-any.whl\n59edc8148280b5021a505a745076b53b9f2fc1b265b68e704441aca9b7c4a75b  /tmp/requirements.lock\n"
+      "build_inputs": "252463d8b92ff4ae8e2cf9c430fd7eea5994bb11582cf7edda1ee2ff3095d43d  /tmp/veriflow-0.1.0-py3-none-any.whl\n59edc8148280b5021a505a745076b53b9f2fc1b265b68e704441aca9b7c4a75b  /tmp/requirements.lock\n"
     }
   ],
   "ocp_qualified": false,

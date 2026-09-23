@@ -18,7 +18,7 @@ still take precedence when they block useful operation.
 
 ### Current architecture and delivery status
 
-TraceProof is a Python CLI application with SQLite and local artifacts, bounded scanner execution, evidence gates, budgeted optional model advice, and immutable reports. **Redis is not a POC dependency.** The enterprise target remains PostgreSQL with isolated OpenShift jobs; local database locking does not implement distributed leases or fleet scheduling.
+VeriFlow is a Python CLI application with SQLite and local artifacts, bounded scanner execution, evidence gates, budgeted optional model advice, and immutable reports. **Redis is not a POC dependency.** The enterprise target remains PostgreSQL with isolated OpenShift jobs; local database locking does not implement distributed leases or fleet scheduling.
 
 | Area | Implemented and locally tested | Remaining acceptance |
 |---|---|---|
@@ -991,7 +991,7 @@ Keep a release scorecard per language, framework and weakness class. A new model
 
 ## 16. Maintainability and implementation structure
 
-The implemented package is **src/traceproof/**, a modular application rather than separate microservices. Key boundaries include intake/git_acquisition/git_batch/acquisition_provenance; pipeline/joern_pipeline/scanning/scanner; language-specific parsers and claim gates; bundles/triage/scan_advisory; persistence/artifacts; reports/comparison/evaluation; and the Typer CLI. Query assets live with the application; fixture and native validation scripts record scoped acceptance. Container runners and OpenShift manifests are separate deployment assets.
+The implemented package is **src/veriflow/**, a modular application rather than separate microservices. Key boundaries include intake/git_acquisition/git_batch/acquisition_provenance; pipeline/joern_pipeline/scanning/scanner; language-specific parsers and claim gates; bundles/triage/scan_advisory; persistence/artifacts; reports/comparison/evaluation; and the Typer CLI. Query assets live with the application; fixture and native validation scripts record scoped acceptance. Container runners and OpenShift manifests are separate deployment assets.
 
 Keep these boundaries explicit as the code grows. A generic backend contract must not hide scanner-specific preparation, limitations or evidence strength. Future hosted API and distributed controllers should call the same domain services rather than duplicate CLI logic. Do not present a proposed directory layout as implemented code.
 

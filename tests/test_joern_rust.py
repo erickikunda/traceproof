@@ -4,8 +4,8 @@ from types import SimpleNamespace
 import pytest
 from test_slice03 import captured_source as captured_source
 
-from traceproof.domain import TraceProofError
-from traceproof.joern_rust import cargo_manifest, trusted_toolchain
+from veriflow.domain import VeriFlowError
+from veriflow.joern_rust import cargo_manifest, trusted_toolchain
 
 BASE = (
     '[package]\nname="probe"\nversion="0.1.0"\nedition="2021"\n'
@@ -43,12 +43,12 @@ def test_generated_manifest_disables_implicit_execution(tmp_path):
     ],
 )
 def test_unsupported_cargo_rejected(tmp_path, text):
-    with pytest.raises(TraceProofError):
+    with pytest.raises(VeriFlowError):
         cargo_manifest(tmp_path, fixture(tmp_path, text))
 
 
 def test_rust_toolchain_required(store):
-    with pytest.raises(TraceProofError):
+    with pytest.raises(VeriFlowError):
         trusted_toolchain(store, None)
 
 
@@ -58,8 +58,8 @@ def test_durable_rust_rejects_empty_graph(
 ):
     import json
 
-    from traceproof import joern, joern_rust
-    from traceproof.scanning import scan_report
+    from veriflow import joern, joern_rust
+    from veriflow.scanning import scan_report
 
     run = captured_source({"Cargo.toml": BASE, "main.rs": "fn main() {}\n"})
     home = tmp_path / "tool"
@@ -77,7 +77,7 @@ def test_durable_rust_rejects_empty_graph(
                     {
                         "schema_version": "2",
                         "engine_id": "joern",
-                        "rule_id": "traceproof/joern-rust-lookup-arg-v1",
+                        "rule_id": "veriflow/joern-rust-lookup-arg-v1",
                         "represented_rust_files": ["main.rs"] if represented else [],
                         "source_count": 0,
                         "sink_count": 0,

@@ -11,7 +11,7 @@ JSON keys and incorrect types. Documents are limited to 1 MiB each.
 
 | Document | Fields and purpose |
 | --- | --- |
-| Manifest | Schema/dataset versions and 1–1,000 unique repository entries: repository ID, TraceProof snapshot ID, languages, declared CWE scope and label completeness |
+| Manifest | Schema/dataset versions and 1–1,000 unique repository entries: repository ID, VeriFlow snapshot ID, languages, declared CWE scope and label completeness |
 | Labels | Dataset/label-set versions, canonical manifest SHA-256 and at most 20,000 labels with label ID, repository/snapshot, root-cause ID, CWE, normalized source path, file SHA-256, line range, symbol and adjudication reference |
 
 Manifest repositories permit `known_positives_only` or `exhaustive_for_declared_scope`.
@@ -29,9 +29,9 @@ The checker does not prove that a declared symbol or line actually describes a d
 ## Commands and digest workflow
 
 ```bash
-uv run traceproof benchmark-check examples/benchmark-manifest.json
-uv run traceproof benchmark-check examples/benchmark-manifest.json --labels examples/benchmark-labels.json
-uv run traceproof --state-dir /absolute/state benchmark-check /absolute/manifest.json \
+uv run veriflow benchmark-check examples/benchmark-manifest.json
+uv run veriflow benchmark-check examples/benchmark-manifest.json --labels examples/benchmark-labels.json
+uv run veriflow --state-dir /absolute/state benchmark-check /absolute/manifest.json \
   --labels /absolute/labels.json --check-local-snapshots
 ```
 

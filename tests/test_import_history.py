@@ -4,12 +4,12 @@ import pytest
 from conftest import row
 from typer.testing import CliRunner
 
-from traceproof.cli import app
-from traceproof.domain import TraceProofError
-from traceproof.import_controls import set_control
-from traceproof.import_history import import_history
-from traceproof.intake import submit
-from traceproof.persistence import ImportBatch
+from veriflow.cli import app
+from veriflow.domain import VeriFlowError
+from veriflow.import_controls import set_control
+from veriflow.import_history import import_history
+from veriflow.intake import submit
+from veriflow.persistence import ImportBatch
 
 
 def test_states_counts_filtering_and_ties(store, archive, manifest):
@@ -49,9 +49,9 @@ def test_states_counts_filtering_and_ties(store, archive, manifest):
 def test_empty_invalid_and_cli(store):
     assert import_history(store)["items"] == []
     assert import_history(store, offset=100)["next_offset"] is None
-    with pytest.raises(TraceProofError, match="Dispatch state"):
+    with pytest.raises(VeriFlowError, match="Dispatch state"):
         import_history(store, state="failed")
-    with pytest.raises(TraceProofError, match="pagination"):
+    with pytest.raises(VeriFlowError, match="pagination"):
         import_history(store, limit=0)
     result = CliRunner().invoke(
         app, ["--state-dir", str(store.root), "import-history", "--state", "paused", "--limit", "5"]

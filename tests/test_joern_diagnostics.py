@@ -1,6 +1,6 @@
 from types import SimpleNamespace
 
-from traceproof.joern_diagnostics import LIMIT, observe_logs
+from veriflow.joern_diagnostics import LIMIT, observe_logs
 
 
 def test_parser_events_deduplicate_files_without_exposing_messages(tmp_path):
