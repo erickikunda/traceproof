@@ -3,11 +3,11 @@
 Install the optional acquisition dependency with `uv sync --extra gcs`. The base/offline
 scanner does not need this dependency. Operator-provisioned Google Application Default
 Credentials (ADC) must already be configured in the acquisition environment. --use-adc
-explicitly opts into ADC discovery; TraceProof does not run login or create keys. In OCP,
+explicitly opts into ADC discovery; VeriFlow does not run login or create keys. In OCP,
 use the bank-approved identity mechanism and mount configuration only into acquisition.
 
 ```sh
-traceproof acquire-gcs approved-input folder/source.zip 123456789 EXPECTED_SHA256 \
+veriflow acquire-gcs approved-input folder/source.zip 123456789 EXPECTED_SHA256 \
   /handoff/new-gcs-source repo-id team classification \
   --allowed-bucket approved-input --use-adc --timeout 300
 ```
@@ -50,8 +50,8 @@ A dedicated image now includes the optional SDK, using containers/requirements-g
 
 ```sh
 uv build
-docker build -f containers/Containerfile.gcs-acquisition -t traceproof:gcs-acquisition-linux-poc .
-docker build -f containers/Containerfile.ocp-smoke -t traceproof:ocp-smoke-gcs-linux-poc .
+docker build -f containers/Containerfile.gcs-acquisition -t veriflow:gcs-acquisition-linux-poc .
+docker build -f containers/Containerfile.ocp-smoke -t veriflow:ocp-smoke-gcs-linux-poc .
 uv run python scripts/validate_gcs_handoff.py work/new-gcs-handoff
 ```
 
@@ -69,8 +69,8 @@ acceptance. See containers/gcs-specialized-images.json; older smoke tags are unc
 
 Specialized validation uses --language csharp or --language rust and --case vulnerable/fixed
 on scripts/validate_gcs_handoff.py. Build the matching Containerfile.ocp-smoke-csharp or
-Containerfile.ocp-smoke-rust with tag traceproof:ocp-smoke-gcs-csharp-linux-poc or
-traceproof:ocp-smoke-gcs-rust-linux-poc first. Use a new output directory for every case.
+Containerfile.ocp-smoke-rust with tag veriflow:ocp-smoke-gcs-csharp-linux-poc or
+veriflow:ocp-smoke-gcs-rust-linux-poc first. Use a new output directory for every case.
 
 
 ## Whole-language local acceptance (Slice 125)

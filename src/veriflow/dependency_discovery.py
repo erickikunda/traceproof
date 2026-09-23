@@ -5,7 +5,7 @@ from collections import Counter
 from pathlib import PurePosixPath
 
 from veriflow import go_modules, maven_poms, npm_manifests
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 
 ECOSYSTEMS = (npm_manifests, maven_poms, go_modules)
 
@@ -105,7 +105,7 @@ def discover_dependencies(manifest, tree):
     """Read declared packages; this resolves no transitive closure and installs nothing."""
     selected, ignored = declaration_files(manifest)
     if len(selected) > MAX_DEPENDENCY_FILES:
-        raise TraceProofError("Snapshot exceeds the dependency declaration file limit")
+        raise VeriFlowError("Snapshot exceeds the dependency declaration file limit")
     records, parsed, skipped, notes = [], {}, Counter(), Counter()
     for module, record in selected:
         raw, reason = read_declaration(tree, record)
@@ -119,7 +119,7 @@ def discover_dependencies(manifest, tree):
         parsed.setdefault(module.ECOSYSTEM, []).append(record.path)
     components = aggregate(records)
     if len(components) > MAX_DEPENDENCY_COMPONENTS:
-        raise TraceProofError("Snapshot exceeds the dependency component limit")
+        raise VeriFlowError("Snapshot exceeds the dependency component limit")
     coverage = {
         "ecosystems": sorted(parsed),
         "declaration_files_parsed": {key: sorted(value) for key, value in sorted(parsed.items())},

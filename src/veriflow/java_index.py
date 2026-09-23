@@ -9,7 +9,7 @@ from uuid import uuid4
 
 from sqlalchemy import select
 
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.indexing import verified_source
 from veriflow.java_parser import MAX_BYTES
 from veriflow.persistence import IndexedFile, SourceIndex
@@ -60,7 +60,7 @@ def build_java_index(store, run_id):
         if file.size_bytes <= MAX_BYTES:
             source = (tree / file.path).read_bytes()
             if hashlib.sha256(source).hexdigest() != file.sha256:
-                raise TraceProofError("Source changed during Java indexing")
+                raise VeriFlowError("Source changed during Java indexing")
             result = parse_isolated(source)
         with store.transaction() as session:
             session.add(

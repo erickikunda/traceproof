@@ -8,7 +8,7 @@ from test_slice03 import captured_source as captured_source
 from test_triage import FakeAdapter, policy
 
 from veriflow import batch_triage
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.joern_claims import POLICY, spring_preflight
 from veriflow.models import Reply, Usage, request_body
 from veriflow.reports import publish_report
@@ -39,7 +39,7 @@ def test_opt_in_advisory_idempotency_and_report(store, audited_bundle):
         triage(store, b["bundle_id"], policy(), adapter, "explicit", review_policy=POLICY) == result
     )
     assert adapter.calls == 1
-    with pytest.raises(TraceProofError, match="different request"):
+    with pytest.raises(VeriFlowError, match="different request"):
         triage(store, b["bundle_id"], policy(), adapter, "default", review_policy=POLICY)
     report = publish_report(store, b["repo_id"], b["run_id"], b["attempt_id"])
     assert report["candidates"][0]["triage_history"][-1]["review_policy"] == POLICY
@@ -190,6 +190,6 @@ def test_changed_preflight_does_not_reuse_prior_advice(store, audited_bundle, mo
             "policy_id": POLICY,
         },
     )
-    with pytest.raises(TraceProofError, match="different request"):
+    with pytest.raises(VeriFlowError, match="different request"):
         triage(store, b["bundle_id"], policy(), adapter, "same", review_policy=POLICY)
     assert adapter.calls == 1

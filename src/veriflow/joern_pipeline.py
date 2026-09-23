@@ -4,7 +4,7 @@ from pathlib import Path
 
 from sqlalchemy import func, select
 
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.indexing import verified_source
 from veriflow.joern import SUFFIXES, discover
 from veriflow.languages import EXTENSIONS
@@ -14,13 +14,13 @@ from veriflow.reports import publish_report
 
 def validate_options(queries, language, joern_home, threads, ram_mb, **options):
     if queries is not None:
-        raise TraceProofError("Joern uses packaged profiles; omit the CodeQL queries argument")
+        raise VeriFlowError("Joern uses packaged profiles; omit the CodeQL queries argument")
     if language != "auto" and language not in SUFFIXES:
-        raise TraceProofError("Unsupported Joern language")
+        raise VeriFlowError("Unsupported Joern language")
     if joern_home is None:
-        raise TraceProofError("Joern requires --joern-home")
+        raise VeriFlowError("Joern requires --joern-home")
     if threads != 2 or ram_mb != 2048:
-        raise TraceProofError("Joern profiles currently require default threads/ram options")
+        raise VeriFlowError("Joern profiles currently require default threads/ram options")
     if options.get("java_profile", "dependency-free") != "dependency-free" or any(
         options.get(key)
         for key in (
@@ -30,7 +30,7 @@ def validate_options(queries, language, joern_home, threads, ram_mb, **options):
             "csharp_offline",
         )
     ):
-        raise TraceProofError("CodeQL preparation options do not apply to Joern")
+        raise VeriFlowError("CodeQL preparation options do not apply to Joern")
 
 
 def selected_language(manifest, requested):
@@ -39,7 +39,7 @@ def selected_language(manifest, requested):
     extensions = {**EXTENSIONS, ".c": "c", ".cpp": "cpp", ".cc": "cpp", ".cxx": "cpp"}
     detected = {extensions.get(Path(f.path).suffix.lower()) for f in manifest.files} - {None}
     if len(detected) != 1 or not detected.issubset(SUFFIXES):
-        raise TraceProofError(
+        raise VeriFlowError(
             "Joern auto requires one supported source language; select explicitly"
         )
     return next(iter(detected))
@@ -82,9 +82,9 @@ def scan_run(
     if advisory is not None:
         advisory.validate_scope(language, discovery_profile)
     if language == "csharp" and repair_dir is None:
-        raise TraceProofError("C# Joern requires --joern-repair-dir")
+        raise VeriFlowError("C# Joern requires --joern-repair-dir")
     if language == "rust" and rust_home is None:
-        raise TraceProofError("Rust Joern requires --rust-home")
+        raise VeriFlowError("Rust Joern requires --rust-home")
     result = {
         "schema_version": "1",
         "engine": "joern",

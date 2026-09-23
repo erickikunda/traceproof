@@ -8,7 +8,7 @@ from pathlib import Path
 
 from sqlalchemy import select
 
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.indexing import verified_source
 from veriflow.joern_claims import RULE_POLICIES, native_audit
 from veriflow.persistence import Candidate, EvidenceBundle, ScanAttempt, exclusive_worker
@@ -29,9 +29,9 @@ def get_bundle(store, bundle_id):
     with store.transaction() as session:
         bundle = session.get(EvidenceBundle, bundle_id)
         if bundle is None:
-            raise TraceProofError("Evidence bundle not found")
+            raise VeriFlowError("Evidence bundle not found")
         if hashlib.sha256(canonical(bundle.content)).hexdigest() != bundle.id:
-            raise TraceProofError("Evidence bundle digest mismatch")
+            raise VeriFlowError("Evidence bundle digest mismatch")
         return {"bundle_id": bundle.id, **bundle.content}
 
 
@@ -50,20 +50,20 @@ def _build_bundle(store, attempt_id, candidate_fingerprint):
             )
         )
         if attempt is None or candidate is None:
-            raise TraceProofError("Scan candidate not found")
+            raise VeriFlowError("Scan candidate not found")
     run, manifest, tree = verified_source(store, attempt.run_id)
     raw_path = store.root / "scans" / attempt.id / "results.sarif"
     if (
         Path(attempt.report["raw_sarif_path"]).resolve() != raw_path.resolve()
         or raw_path.is_symlink()
     ):
-        raise TraceProofError("Unexpected SARIF artifact path")
+        raise VeriFlowError("Unexpected SARIF artifact path")
     with raw_path.open("rb") as handle:
         raw = handle.read(MAX_SARIF_BYTES + 1)
     if len(raw) > MAX_SARIF_BYTES or hashlib.sha256(raw).hexdigest() != attempt.report.get(
         "sarif_sha256"
     ):
-        raise TraceProofError("SARIF integrity check failed")
+        raise VeriFlowError("SARIF integrity check failed")
     matched = None
     try:
         for sarif_run in json.loads(raw)["runs"]:
@@ -76,7 +76,7 @@ def _build_bundle(store, attempt_id, candidate_fingerprint):
             if matched:
                 break
         if matched is None:
-            raise TraceProofError("Candidate is absent from pinned SARIF")
+            raise VeriFlowError("Candidate is absent from pinned SARIF")
         sarif_run, result = matched
         # Preserve primary locations and every flow in SARIF order; cap materialized snippets.
         locations = [
@@ -109,7 +109,7 @@ def _build_bundle(store, attempt_id, candidate_fingerprint):
             for role, location, metadata in locations[:location_limit]
         ]
     except (KeyError, TypeError, ValueError, IndexError, AttributeError, RecursionError):
-        raise TraceProofError("Cannot interpret candidate SARIF evidence") from None
+        raise VeriFlowError("Cannot interpret candidate SARIF evidence") from None
     snippets, gaps, source_bytes = [], [], 0
     if not result.get("locations"):
         gaps.append("primary_location_missing")
@@ -124,16 +124,16 @@ def _build_bundle(store, attempt_id, candidate_fingerprint):
         try:
             record = next(file for file in manifest.files if file.path == reference["path"])
             if record.size_bytes > MAX_BYTES:
-                raise TraceProofError("file_limit")
+                raise VeriFlowError("file_limit")
             with (tree / record.path).open("rb") as handle:
                 contents = handle.read(MAX_BYTES + 1)
             if hashlib.sha256(contents).hexdigest() != record.sha256:
-                raise TraceProofError("source_integrity")
+                raise VeriFlowError("source_integrity")
             encoding = tokenize.detect_encoding(io.BytesIO(contents).readline)[0]
             lines = io.StringIO(contents.decode(encoding), newline="").readlines()
             start, end = reference["line"], reference["end_line"]
             if end > len(lines) or end - start + 1 > 40:
-                raise TraceProofError("range_limit")
+                raise VeriFlowError("range_limit")
             start, end = max(1, start - 3), min(len(lines), end + 3)
             # Small Java/C# files retain imports and declaration context for syntax gates.
             # Existing cumulative source/envelope limits still apply.
@@ -151,7 +151,7 @@ def _build_bundle(store, attempt_id, candidate_fingerprint):
             text = "".join(lines[start - 1 : end])
             size = len(text.encode())
             if source_bytes + size > MAX_SOURCE_BYTES:
-                raise TraceProofError("source_budget")
+                raise VeriFlowError("source_budget")
             source_bytes += size
             snippets.append(
                 {
@@ -165,7 +165,7 @@ def _build_bundle(store, attempt_id, candidate_fingerprint):
                     "text": text,
                 }
             )
-        except TraceProofError as exc:
+        except VeriFlowError as exc:
             if str(exc) == "source_integrity":
                 raise
             gaps.append(f"location_{position}:{exc}")
@@ -215,7 +215,7 @@ def _build_bundle(store, attempt_id, candidate_fingerprint):
             policy=RULE_POLICIES[content["rule_id"]],
         )
     if len(canonical(content)) > MAX_BUNDLE_BYTES:
-        raise TraceProofError("Evidence bundle exceeds the 32 KiB envelope limit")
+        raise VeriFlowError("Evidence bundle exceeds the 32 KiB envelope limit")
     verified_source(store, run.id)
     identity = hashlib.sha256(canonical(content)).hexdigest()
     with store.transaction() as session:

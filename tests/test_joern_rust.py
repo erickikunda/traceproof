@@ -4,7 +4,7 @@ from types import SimpleNamespace
 import pytest
 from test_slice03 import captured_source as captured_source
 
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.joern_rust import cargo_manifest, trusted_toolchain
 
 BASE = (
@@ -43,12 +43,12 @@ def test_generated_manifest_disables_implicit_execution(tmp_path):
     ],
 )
 def test_unsupported_cargo_rejected(tmp_path, text):
-    with pytest.raises(TraceProofError):
+    with pytest.raises(VeriFlowError):
         cargo_manifest(tmp_path, fixture(tmp_path, text))
 
 
 def test_rust_toolchain_required(store):
-    with pytest.raises(TraceProofError):
+    with pytest.raises(VeriFlowError):
         trusted_toolchain(store, None)
 
 

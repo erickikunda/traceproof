@@ -7,7 +7,7 @@ import json
 import time
 from pathlib import Path
 
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.git_acquisition import acquire
 from veriflow.git_credentials import read_credentials
 from veriflow.git_transport import transport_settings
@@ -43,11 +43,11 @@ def acquire_csv(
     read_credentials(credential_file)
     transport_settings(ca_bundle, proxy)
     if not 1 <= max_rows <= 10 or not 1 <= timeout <= 3600 or not allowed_hosts:
-        raise TraceProofError("Require allowed hosts, 1–10 rows and 1–3600 seconds")
+        raise VeriFlowError("Require allowed hosts, 1–10 rows and 1–3600 seconds")
     with Path(manifest).open("rb") as source:
         raw = source.read(1024 * 1024 + 1)
     if len(raw) > 1024 * 1024:
-        raise TraceProofError("Git CSV exceeds 1 MiB")
+        raise VeriFlowError("Git CSV exceeds 1 MiB")
     try:
         reader = csv.DictReader(io.StringIO(raw.decode("utf-8-sig")), strict=True)
         if (
@@ -55,17 +55,17 @@ def acquire_csv(
             or len(reader.fieldnames) != len(HEADERS)
             or set(reader.fieldnames) != HEADERS
         ):
-            raise TraceProofError("Git CSV requires repo_id,url,revision,owner,classification only")
+            raise VeriFlowError("Git CSV requires repo_id,url,revision,owner,classification only")
         rows = list(reader)
     except (UnicodeError, csv.Error):
-        raise TraceProofError("Git CSV must be well-formed UTF-8") from None
+        raise VeriFlowError("Git CSV must be well-formed UTF-8") from None
     if not 1 <= len(rows) <= max_rows:
-        raise TraceProofError("Git CSV is empty or exceeds requested batch limit")
+        raise VeriFlowError("Git CSV is empty or exceeds requested batch limit")
     output = Path(output).absolute()
     try:
         output.mkdir(mode=0o700)
     except FileExistsError:
-        raise TraceProofError("Acquisition output already exists; choose a new directory") from None
+        raise VeriFlowError("Acquisition output already exists; choose a new directory") from None
     summary = dict(
         schema_version="1",
         state="running",
@@ -91,7 +91,7 @@ def acquire_csv(
             directory = output / f"row-{index + 2:06d}"
             try:
                 if None in row or any(value is None for value in row.values()):
-                    raise TraceProofError("CSV record field count does not match header")
+                    raise VeriFlowError("CSV record field count does not match header")
                 receipt = acquire(
                     row["url"],
                     row["revision"],
@@ -107,7 +107,7 @@ def acquire_csv(
                 with (directory / "input.csv").open() as source:
                     ready = list(csv.DictReader(source))
                 if len(ready) != 1:
-                    raise TraceProofError("Acquisition did not emit exactly one archive record")
+                    raise VeriFlowError("Acquisition did not emit exactly one archive record")
                 acquired_rows.append(ready[0])
                 entry.update(
                     state="acquired",
@@ -116,7 +116,7 @@ def acquire_csv(
                     archive_sha256=receipt["archive_sha256"],
                     acquisition_directory=directory.name,
                 )
-            except TraceProofError as exc:
+            except VeriFlowError as exc:
                 entry.update(state="failed", error=str(exc))
             checkpoint(output, summary, acquired_rows)
         summary["state"] = (

@@ -6,7 +6,7 @@ sqlite3.connect(LITERAL_DATABASE).execute(QUERY[, PARAMETERS]). The source code 
 never imported or executed; no database is opened by the scanner.
 
 ```sh
-traceproof --state-dir /path/to/state scan-run RUN_ID --engine joern --language python \
+veriflow --state-dir /path/to/state scan-run RUN_ID --engine joern --language python \
   --joern-home /path/to/joern-cli --joern-profile python-flask-sql-v1
 ```
 

@@ -5,7 +5,7 @@ import json
 from importlib.resources import files
 from pathlib import Path
 
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 
 POLICY = "joern-spring-review-v1"
 RULE = "veriflow/joern-spring-get-jdbc-sql-v1"
@@ -62,7 +62,7 @@ RULE_POLICIES = {profile[2]: policy for policy, profile in PROFILES.items()}
 
 def require_policy(policy):
     if policy not in PROFILES:
-        raise TraceProofError("Unsupported explicit review policy")
+        raise VeriFlowError("Unsupported explicit review policy")
     return PROFILES[policy]
 
 
@@ -89,17 +89,17 @@ def native_audit(root, report, manifest, tree, sarif, result, *, policy=POLICY):
             or report.get("discovery_profile", "default") != profile
             or report.get("query_sha256") != query_digest(policy)
         ):
-            raise TraceProofError("unsupported_native_profile")
+            raise VeriFlowError("unsupported_native_profile")
         native_path = root / "flows.json"
         if native_path.is_symlink():
-            raise TraceProofError("native_artifact_symlink")
+            raise VeriFlowError("native_artifact_symlink")
         with native_path.open("rb") as handle:
             raw = handle.read(MAX_SARIF_BYTES + 1)
         if (
             len(raw) > MAX_SARIF_BYTES
             or hashlib.sha256(raw).hexdigest() != report["native_output_sha256"]
         ):
-            raise TraceProofError("native_integrity")
+            raise VeriFlowError("native_integrity")
         doc = decode_output(raw, language, rule)
         extra = {}
         if policy == CSHARP_POLICY:
@@ -108,35 +108,35 @@ def native_audit(root, report, manifest, tree, sarif, result, *, policy=POLICY):
 
             identity = report.get("repair_identity", {})
             if not valid_repair_identity(identity):
-                raise TraceProofError("unsupported_repair_identity")
+                raise VeriFlowError("unsupported_repair_identity")
             paths = doc["paths"]
             if (
                 len(paths) > 32
                 or any(not isinstance(path, list) for path in paths)
                 or sum(len(path) for path in paths) > 128
             ):
-                raise TraceProofError("native_mapping_limit")
+                raise VeriFlowError("native_mapping_limit")
             raw, mapping = map_output(
                 doc, root / "source", [f for f in manifest.files if f.path.endswith(".cs")]
             )
             recorded = report.get("source_mapping", {})
             if any(recorded.get(k) != mapping[k] for k in ("validated_paths", "unsupported_paths")):
-                raise TraceProofError("source_mapping_mismatch")
+                raise VeriFlowError("source_mapping_mismatch")
             doc = decode_output(raw, language, rule)
             extra = {"repair_identity": identity, "span_version": span_version}
         regenerated = to_sarif(raw, root / "source", manifest, language, rule)
         if regenerated != sarif:
-            raise TraceProofError("native_sarif_mismatch")
+            raise VeriFlowError("native_sarif_mismatch")
         matches = [
             i
             for i, item in enumerate(json.loads(regenerated)["runs"][0]["results"])
             if item == result
         ]
         if len(matches) != 1:
-            raise TraceProofError("ambiguous_native_path")
+            raise VeriFlowError("ambiguous_native_path")
         path = doc["paths"][matches[0]]
         if not 2 <= len(path) <= (8 if policy == RUST_POLICY else 7):
-            raise TraceProofError("native_path_limit")
+            raise VeriFlowError("native_path_limit")
         records = {f.path: f for f in manifest.files}
         nodes = []
         for step, node in enumerate(path):
@@ -146,18 +146,18 @@ def native_audit(root, report, manifest, tree, sarif, result, *, policy=POLICY):
             relative = location.as_posix()
             record = records[relative]
             if record.size_bytes > 1024 * 1024:
-                raise TraceProofError("native_source_file_limit")
+                raise VeriFlowError("native_source_file_limit")
             contents = (tree / relative).read_bytes()
             if hashlib.sha256(contents).hexdigest() != record.sha256:
-                raise TraceProofError("source_integrity")
+                raise VeriFlowError("source_integrity")
             code = node["code"]
             line = node["line"]
             if not isinstance(code, str) or not code.strip() or len(code) > 2000:
-                raise TraceProofError("unsupported_native_code")
+                raise VeriFlowError("unsupported_native_code")
             on_source = code in contents.decode("utf-8").splitlines()[line - 1]
             endpoint = step in (0, len(path) - 1)
             if not on_source and (policy != FLASK_POLICY or endpoint):
-                raise TraceProofError("native_code_not_on_source_line")
+                raise VeriFlowError("native_code_not_on_source_line")
             nodes.append(
                 {
                     "flow_step": step,
@@ -180,18 +180,18 @@ def native_audit(root, report, manifest, tree, sarif, result, *, policy=POLICY):
             "scope": "native/SARIF/source coordinate consistency, not semantic proof",
         }
     except (
-        TraceProofError,
-        OSError,
-        ValueError,
-        KeyError,
-        IndexError,
-        TypeError,
-        UnicodeError,
+            VeriFlowError,
+            OSError,
+            ValueError,
+            KeyError,
+            IndexError,
+            TypeError,
+            UnicodeError,
     ) as exc:
         return {
             **audit,
             "status": "withheld",
-            "reason": str(exc) if isinstance(exc, TraceProofError) else "invalid_native_evidence",
+            "reason": str(exc) if isinstance(exc, VeriFlowError) else "invalid_native_evidence",
         }
 
 

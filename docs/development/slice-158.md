@@ -25,7 +25,7 @@ downgraded only `evaluated_no_match`, so a component with a match and an unread 
 `matched`, counted toward `components_fully_evaluated` and carried no gap. The matched state still
 stands, but `components_fully_evaluated` is zero whenever any record was unread, every affected
 component carries a `component_state_database_incomplete` gap, and the CycloneDX metadata now
-exposes `traceproof:osv_records_unread` and `traceproof:osv_components_fully_evaluated`. Before
+exposes `veriflow:osv_records_unread` and `veriflow:osv_components_fully_evaluated`. Before
 this, `get-sbom --database` disclosed no incompleteness at all.
 
 **Validation claims in the slice notes were overstated.** Slice 157 counted sixteen new tests

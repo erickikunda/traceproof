@@ -5,7 +5,7 @@ import json
 from pathlib import Path, PurePosixPath
 
 from veriflow.bundles import canonical
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 
 MAX_PROFILE_BYTES = 4 * 1024 * 1024
 MAX_RECORD_BYTES = 2 * 1024 * 1024
@@ -29,10 +29,10 @@ def record_inventory(root):
     listing = {}
     for path in sorted(root.rglob("*")):
         if path.is_symlink():
-            raise TraceProofError("OSV database cannot contain symbolic links")
+            raise VeriFlowError("OSV database cannot contain symbolic links")
         if path.is_file():
             if len(listing) >= MAX_RECORDS:
-                raise TraceProofError("OSV database exceeds the record inventory limit")
+                raise VeriFlowError("OSV database exceeds the record inventory limit")
             with path.open("rb") as handle:
                 listing[path.relative_to(root).as_posix()] = hashlib.file_digest(
                     handle, "sha256"
@@ -67,7 +67,7 @@ def read_profile(path):
         if not root.is_relative_to(path.parent) or not root.is_dir():
             raise ValueError()
     except (ValueError, TypeError, KeyError, AttributeError, OSError):
-        raise TraceProofError("Invalid OSV database profile") from None
+        raise VeriFlowError("Invalid OSV database profile") from None
     return {
         "id": hashlib.sha256(raw).hexdigest(),
         "source": profile["source"],
@@ -84,9 +84,9 @@ def load_profile(path):
     profile = read_profile(path)
     listing = record_inventory(profile["root"])
     if len(listing) != profile["record_count"]:
-        raise TraceProofError("OSV database record count does not match its inventory")
+        raise VeriFlowError("OSV database record count does not match its inventory")
     if hashlib.sha256(canonical(listing)).hexdigest() != profile["inventory_sha256"]:
-        raise TraceProofError("OSV database integrity mismatch")
+        raise VeriFlowError("OSV database integrity mismatch")
     return {**profile, "listing": listing}
 
 

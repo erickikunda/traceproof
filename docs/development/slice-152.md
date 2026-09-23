@@ -17,7 +17,7 @@ modified afterwards is not detected — the uncached path refuses that database 
 therefore opt-in rather than default, and a test asserts the undetected case directly instead of
 leaving it as an implicit consequence.
 
-Every document names which path ran in `traceproof:osv_database_verification`: `reverified` when
+Every document names which path ran in `veriflow:osv_database_verification`: `reverified` when
 every record was re-hashed this run, `cached` when a derived index was reused. `--refresh-cache`
 forces verification and rewrites.
 

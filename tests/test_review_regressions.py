@@ -8,7 +8,7 @@ from test_dependency_discovery import snapshot as snapshot
 from test_osv_matching import LOCK, osv
 from test_osv_matching import database as database
 
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.go_modules import parse as parse_gomod
 from veriflow.maven_poms import parse as parse_pom
 from veriflow.maven_version import maven_key
@@ -71,7 +71,7 @@ def test_excess_matches_refuse_rather_than_truncate(store, snapshot, database, m
         [osv(f"GHSA-{index:04d}", "npm", "lodash", versions=["4.17.20"]) for index in range(4)]
     )
     monkeypatch.setattr("veriflow.osv_matching.MAX_MATCHES", 2)
-    with pytest.raises(TraceProofError, match="result limit"):
+    with pytest.raises(VeriFlowError, match="result limit"):
         export_sbom(store, repo, snapshot_id, packages=True, database=path)
 
 
@@ -147,7 +147,7 @@ def test_applicable_replacement_still_emits_its_target():
 )
 def test_declaration_limits_refuse_rather_than_truncate(parser, source, limit, match, monkeypatch):
     monkeypatch.setattr(limit, 2)
-    with pytest.raises(TraceProofError, match=match):
+    with pytest.raises(VeriFlowError, match=match):
         parser(source, "manifest")
 
 
@@ -168,7 +168,7 @@ def test_osv_output_limit_is_enforced(store, snapshot, database, monkeypatch):
     repo, snapshot_id = snapshot({"package-lock.json": LOCK})
     path = database([osv("GHSA-big", "npm", "lodash", versions=["4.17.20"])])
     monkeypatch.setattr("veriflow.osv_export.MAX_OSV_BYTES", 10)
-    with pytest.raises(TraceProofError, match="8 MiB"):
+    with pytest.raises(VeriFlowError, match="8 MiB"):
         export_osv(store, repo, snapshot_id, path)
 
 
@@ -250,7 +250,7 @@ def test_match_accumulation_stops_at_the_limit(store, snapshot, database, monkey
         return original(*args, **kwargs)
 
     monkeypatch.setattr("veriflow.osv_matching.match_record", counting)
-    with pytest.raises(TraceProofError, match="result limit"):
+    with pytest.raises(VeriFlowError, match="result limit"):
         export_sbom(store, repo, snapshot_id, packages=True, database=path)
     # Refused as the limit was crossed, not after building all eight.
     assert len(built) == 4
@@ -276,7 +276,7 @@ def test_osv_output_limit_applies_while_encoding(store, snapshot, database, monk
     repo, snapshot_id = snapshot({"package-lock.json": LOCK})
     path = database([osv("GHSA-x", "npm", "lodash", versions=["4.17.20"])])
     monkeypatch.setattr("veriflow.osv_export.MAX_OSV_BYTES", 50)
-    with pytest.raises(TraceProofError, match="8 MiB"):
+    with pytest.raises(VeriFlowError, match="8 MiB"):
         export_osv(store, repo, snapshot_id, path)
 
 

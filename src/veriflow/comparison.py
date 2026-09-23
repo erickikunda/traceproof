@@ -4,7 +4,7 @@ import hashlib
 from collections import defaultdict
 
 from veriflow.bundles import canonical
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.reports import get_report, markdown_cell
 
 COMPARISON_VERSION = "8"
@@ -188,7 +188,7 @@ def render_comparison(report, format="json"):
     if format == "json":
         return canonical(report).decode()
     if format != "markdown":
-        raise TraceProofError("Comparison format must be json or markdown")
+        raise VeriFlowError("Comparison format must be json or markdown")
     lines = [
         "# TraceProof report comparison",
         "",

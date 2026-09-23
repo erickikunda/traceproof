@@ -1,7 +1,7 @@
 # Slice 29: self-contained HTML benchmark scorecards
 
 ```bash
-uv run traceproof benchmark-get DATASET_ID SCORECARD_ID --format html > scorecard.html
+uv run veriflow benchmark-get DATASET_ID SCORECARD_ID --format html > scorecard.html
 ```
 
 The HTML view renders an exact saved scorecard without reading label inputs, rerunning

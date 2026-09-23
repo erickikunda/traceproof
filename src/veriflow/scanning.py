@@ -9,7 +9,7 @@ from uuid import uuid4
 from sqlalchemy import select
 
 from veriflow.codeql_resources import resource_settings
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.indexing import verified_source
 from veriflow.intake import now
 from veriflow.persistence import Candidate, Run, ScanAttempt
@@ -22,9 +22,9 @@ from veriflow.scanner_backends import PreparedInput, backend_for
 def query_entry(store, queries):
     queries = Path(queries).resolve(strict=True)
     if not queries.is_file() or queries.suffix not in {".ql", ".qls"}:
-        raise TraceProofError("Provide a trusted local .ql query or .qls suite")
+        raise VeriFlowError("Provide a trusted local .ql query or .qls suite")
     if queries.is_relative_to(store.root / "artifacts"):
-        raise TraceProofError("Queries must come from operator tooling, not scanned source")
+        raise VeriFlowError("Queries must come from operator tooling, not scanned source")
     return queries
 
 
@@ -33,7 +33,7 @@ def analyze(store, extraction_id, queries, timeout=600, *, threads=2, ram_mb=204
     backend = backend_for(engine)
     resources = resource_settings(threads, ram_mb)
     if not 1 <= timeout <= 3600:
-        raise TraceProofError("Query timeout must be between 1 and 3600 seconds")
+        raise VeriFlowError("Query timeout must be between 1 and 3600 seconds")
     extraction = backend.prepared(store, extraction_id)
     run, manifest, tree = verified_source(store, extraction["run_id"])
     queries = query_entry(store, queries)
@@ -117,14 +117,14 @@ def analyze(store, extraction_id, queries, timeout=600, *, threads=2, ram_mb=204
             verified_source(store, run.id)
             with queries.open("rb") as handle:
                 if hashlib.file_digest(handle, "sha256").hexdigest() != query_digest:
-                    raise TraceProofError("Query entry file changed during analysis")
+                    raise VeriFlowError("Query entry file changed during analysis")
             with result.output_path.open("rb") as handle:
                 raw = handle.read(MAX_SARIF_BYTES + 1)
             candidates, summary = normalize(raw, manifest, tree)
             report.update(summary, sarif_sha256=hashlib.sha256(raw).hexdigest())
             if not summary["execution_complete"] or summary["unmapped_candidates"]:
                 report["status"] = "partial"
-        except (TraceProofError, OSError):
+        except (VeriFlowError, OSError):
             report["status"] = "invalid_output_or_integrity"
             candidates = []
     report["elapsed_seconds"] = round(time.monotonic() - started, 3)
@@ -145,14 +145,14 @@ def analyze(store, extraction_id, queries, timeout=600, *, threads=2, ram_mb=204
 
 def scan_report(store, repo_id, run_id=None, attempt_id=None, offset=0, limit=100):
     if offset < 0 or not 1 <= limit <= 1000:
-        raise TraceProofError("Invalid candidate pagination")
+        raise VeriFlowError("Invalid candidate pagination")
     with store.transaction() as session:
         runs = select(Run).where(Run.repo_id == repo_id)
         if run_id:
             runs = runs.where(Run.id == run_id)
         run = session.scalar(runs.order_by(Run.created_at.desc(), Run.id.desc()).limit(1))
         if run is None:
-            raise TraceProofError("Repository/run not found")
+            raise VeriFlowError("Repository/run not found")
         attempts = select(ScanAttempt).where(ScanAttempt.run_id == run.id)
         if attempt_id:
             attempts = attempts.where(ScanAttempt.id == attempt_id)
@@ -160,7 +160,7 @@ def scan_report(store, repo_id, run_id=None, attempt_id=None, offset=0, limit=10
             attempts.order_by(ScanAttempt.created_at.desc(), ScanAttempt.id.desc()).limit(1)
         )
         if attempt is None:
-            raise TraceProofError("No static-analysis attempt for the selected run")
+            raise VeriFlowError("No static-analysis attempt for the selected run")
         items = list(
             session.scalars(
                 select(Candidate.evidence)

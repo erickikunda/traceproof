@@ -7,7 +7,7 @@ from typer.testing import CliRunner
 
 from veriflow.bundles import canonical
 from veriflow.cli import app
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.osv_export import export_osv
 from veriflow.osv_matching import semver_key
 from veriflow.sbom_export import export_sbom
@@ -301,7 +301,7 @@ def test_unmatched_component_is_reported_as_evaluated(store, snapshot, database)
 def test_matching_requires_packages(store, snapshot, database):
     repo, snapshot_id = snapshot({"package-lock.json": LOCK})
     path = database([osv("GHSA-list", "npm", "lodash", versions=["4.17.20"])])
-    with pytest.raises(TraceProofError, match="requires --packages"):
+    with pytest.raises(VeriFlowError, match="requires --packages"):
         export_sbom(store, repo, snapshot_id, database=path)
 
 
@@ -309,7 +309,7 @@ def test_database_integrity_is_enforced(store, snapshot, database, tmp_path):
     repo, snapshot_id = snapshot({"package-lock.json": LOCK})
     path = database([osv("GHSA-list", "npm", "lodash", versions=["4.17.20"])])
     (tmp_path / "osv" / "records" / "GHSA-list.json").write_text('{"id": "GHSA-tampered"}')
-    with pytest.raises(TraceProofError, match="integrity mismatch"):
+    with pytest.raises(VeriFlowError, match="integrity mismatch"):
         export_sbom(store, repo, snapshot_id, packages=True, database=path)
 
 
@@ -317,7 +317,7 @@ def test_added_record_breaks_the_pinned_inventory(store, snapshot, database, tmp
     repo, snapshot_id = snapshot({"package-lock.json": LOCK})
     path = database([osv("GHSA-list", "npm", "lodash", versions=["4.17.20"])])
     (tmp_path / "osv" / "records" / "extra.json").write_text('{"id": "GHSA-extra"}')
-    with pytest.raises(TraceProofError, match="record count"):
+    with pytest.raises(VeriFlowError, match="record count"):
         export_sbom(store, repo, snapshot_id, packages=True, database=path)
 
 
@@ -328,7 +328,7 @@ def test_added_record_breaks_the_pinned_inventory(store, snapshot, database, tmp
 def test_invalid_profile_is_refused(store, snapshot, database, override):
     repo, snapshot_id = snapshot({"package-lock.json": LOCK})
     path = database([osv("GHSA-list", "npm", "lodash", versions=["4.17.20"])], **override)
-    with pytest.raises(TraceProofError, match="Invalid OSV database profile"):
+    with pytest.raises(VeriFlowError, match="Invalid OSV database profile"):
         export_sbom(store, repo, snapshot_id, packages=True, database=path)
 
 

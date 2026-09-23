@@ -4,17 +4,17 @@ from pathlib import PurePosixPath
 
 from sqlalchemy import select
 
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.indexing import published_index, snapshot_for_run
 from veriflow.persistence import IndexedFile
 
 
 def call_context(store, run_id, path, module_root=".", offset=0, limit=100):
     if not 1 <= limit <= 1000 or offset < 0:
-        raise TraceProofError("Invalid call query pagination")
+        raise VeriFlowError("Invalid call query pagination")
     root = PurePosixPath(module_root)
     if root.is_absolute() or ".." in root.parts:
-        raise TraceProofError("Module root must be snapshot-relative")
+        raise VeriFlowError("Module root must be snapshot-relative")
     _, snapshot = snapshot_for_run(store, run_id)
     with store.transaction() as session:
         index = published_index(session, snapshot.id)
@@ -28,11 +28,11 @@ def call_context(store, run_id, path, module_root=".", offset=0, limit=100):
 
         source = get_file(path)
         if source is None or source.result["status"] != "parsed":
-            raise TraceProofError("Call context requires an indexed Python file")
+            raise VeriFlowError("Call context requires an indexed Python file")
         try:
             PurePosixPath(path).relative_to(root)
         except ValueError:
-            raise TraceProofError("File is outside the selected module root") from None
+            raise VeriFlowError("File is outside the selected module root") from None
         binding = source.result.get("bindings", {})
         items = []
         for call in source.result["calls"][offset : offset + limit]:

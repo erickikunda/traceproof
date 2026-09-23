@@ -4,7 +4,7 @@ from dataclasses import asdict, dataclass
 
 from veriflow.codeql import extract, extraction_status
 from veriflow.codeql_scanner import execute
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.scanner import ScannerExecutor
 
 
@@ -19,16 +19,16 @@ class Backend:
     def prepare(self, store, run_id, **options):
         """Creation stays within the selected engine and its approved profiles."""
         if self.engine_id != "codeql" or self.input_kind != "codeql_database":
-            raise TraceProofError("Prepared-input adapter is not implemented")
+            raise VeriFlowError("Prepared-input adapter is not implemented")
         return extract(store, run_id, **options)
 
     def prepared(self, store, preparation_id):
         """Resolve only this backend's durable preparation store."""
         if self.engine_id != "codeql" or self.input_kind != "codeql_database":
-            raise TraceProofError("Prepared-input adapter is not implemented")
+            raise VeriFlowError("Prepared-input adapter is not implemented")
         result = extraction_status(store, preparation_id)
         if result.get("status") != "extracted":
-            raise TraceProofError("Security queries require a successful extraction")
+            raise VeriFlowError("Security queries require a successful extraction")
         return result
 
     def metadata(self):
@@ -60,5 +60,5 @@ class PreparedInput:
 
 def backend_for(engine_id: str = "codeql") -> Backend:
     if engine_id != "codeql":
-        raise TraceProofError(f"Scanner backend is not implemented: {engine_id}")
+        raise VeriFlowError(f"Scanner backend is not implemented: {engine_id}")
     return Backend("codeql", "1", "codeql_database", "sarif-2.1.0", execute)

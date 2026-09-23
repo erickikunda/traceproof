@@ -5,7 +5,7 @@ import hashlib
 from sqlalchemy import func, select
 
 from veriflow.bundles import canonical
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.evaluation import evaluate_benchmark
 from veriflow.history import validate_page
 from veriflow.intake import now
@@ -17,7 +17,7 @@ def verified(record):
         hashlib.sha256(canonical(record.content)).hexdigest() != record.id
         or record.content.get("dataset_id") != record.dataset_id
     ):
-        raise TraceProofError("Scorecard integrity check failed")
+        raise VeriFlowError("Scorecard integrity check failed")
     return {"scorecard_id": record.id, **record.content}
 
 
@@ -43,7 +43,7 @@ def get_scorecard(store, dataset_id, scorecard_id):
     with store.transaction() as session:
         record = session.get(BenchmarkScorecard, scorecard_id)
         if record is None or record.dataset_id != dataset_id:
-            raise TraceProofError("Scorecard does not belong to dataset")
+            raise VeriFlowError("Scorecard does not belong to dataset")
         return verified(record)
 
 

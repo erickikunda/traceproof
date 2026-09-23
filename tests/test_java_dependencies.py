@@ -6,7 +6,7 @@ import pytest
 from test_reports import scanned as scanned
 from test_triage import evidence_fixture as evidence_fixture
 
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.java_dependencies import java_environment, load_java_profile
 
 
@@ -60,7 +60,7 @@ def test_inventory_changes_rejected(tmp_path, change):
     else:
         jar.unlink()
         jar.symlink_to(path)
-    with pytest.raises(TraceProofError):
+    with pytest.raises(VeriFlowError):
         load_java_profile(path)
 
 
@@ -79,7 +79,7 @@ def test_invalid_profile_rejected(tmp_path, change):
     else:
         data["artifacts"] = ["org.example:other:jar:1.0"]
     path.write_text(json.dumps(data))
-    with pytest.raises(TraceProofError):
+    with pytest.raises(VeriFlowError):
         load_java_profile(path)
 
 
@@ -102,10 +102,10 @@ def test_profile_change_prevents_reuse(store, scanned, tmp_path, monkeypatch):
     query.write_text("// query")
 
     def preflight(*args):
-        raise TraceProofError("Reached extraction preflight")
+        raise VeriFlowError("Reached extraction preflight")
 
     monkeypatch.setattr(pipeline, "verified_source", preflight)
-    with pytest.raises(TraceProofError, match="Reached extraction"):
+    with pytest.raises(VeriFlowError, match="Reached extraction"):
         pipeline.scan_run(
             store,
             scanned[1],

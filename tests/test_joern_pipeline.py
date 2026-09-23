@@ -7,7 +7,7 @@ from typer.testing import CliRunner
 
 from veriflow import joern, pipeline
 from veriflow.cli import app
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.joern_pipeline import selected_language
 from veriflow.persistence import ScanAttempt
 
@@ -33,7 +33,7 @@ def test_auto_profile(path, language):
 
 def test_mixed_auto_rejected():
     manifest = SimpleNamespace(files=[SimpleNamespace(path=p) for p in ("a.py", "b.go")])
-    with pytest.raises(TraceProofError):
+    with pytest.raises(VeriFlowError):
         selected_language(manifest, "auto")
 
 
@@ -59,7 +59,7 @@ def test_pipeline_publication_and_engine_aware_skip(
     def fake(command, root, name, timeout):
         seen.append((name, timeout))
         if failed:
-            raise TraceProofError("synthetic scanner failure")
+            raise VeriFlowError("synthetic scanner failure")
         if name == "analyze":
             (root / "flows.json").write_text(
                 json.dumps(
@@ -111,7 +111,7 @@ def test_pipeline_publication_and_engine_aware_skip(
     ],
 )
 def test_incompatible_options_rejected_before_scanning(store, options):
-    with pytest.raises(TraceProofError):
+    with pytest.raises(VeriFlowError):
         pipeline.scan_run(store, "unused", engine="joern", joern_home="/unused", **options)
 
 

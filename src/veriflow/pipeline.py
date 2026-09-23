@@ -4,7 +4,7 @@ from sqlalchemy import func, select
 
 from veriflow.codeql_resources import resource_settings
 from veriflow.csharp_dependencies import load_profile
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.indexing import build_index, verified_source
 from veriflow.java_dependencies import load_java_profile
 from veriflow.java_index import build_java_index
@@ -60,7 +60,7 @@ def scan_run(
             csharp_offline=csharp_offline,
         )
         if not 1 <= extraction_timeout <= 3600 or not 1 <= query_timeout <= 3600:
-            raise TraceProofError("Stage timeouts must be between 1 and 3600 seconds")
+            raise VeriFlowError("Stage timeouts must be between 1 and 3600 seconds")
         return joern_pipeline.scan_run(
             store,
             run_id,
@@ -75,17 +75,17 @@ def scan_run(
             advisory=advisory,
         )
     if advisory is not None:
-        raise TraceProofError("Scan advisory options require engine joern")
+        raise VeriFlowError("Scan advisory options require engine joern")
     if any(x is not None for x in (joern_home, joern_repair_dir, rust_home, joern_profile)):
-        raise TraceProofError("Joern tooling options require engine joern")
+        raise VeriFlowError("Joern tooling options require engine joern")
     if queries is None:
-        raise TraceProofError("CodeQL requires the queries argument")
+        raise VeriFlowError("CodeQL requires the queries argument")
     backend = backend_for(engine)
     resources = resource_settings(threads, ram_mb)
     validate_selection(language, java_profile)
     requested_language = language
     if not 1 <= extraction_timeout <= 3600 or not 1 <= query_timeout <= 3600:
-        raise TraceProofError("Stage timeouts must be between 1 and 3600 seconds")
+        raise VeriFlowError("Stage timeouts must be between 1 and 3600 seconds")
     store.require_initialized()
     query = query_entry(store, queries)
     with exclusive_worker(store.root):
@@ -97,19 +97,19 @@ def scan_run(
             language, csharp_dependency_profile, allow_csharp_downloads, csharp_offline
         )
         if java_dependency_profile is not None and language != "java":
-            raise TraceProofError("Java dependency profiles require java")
+            raise VeriFlowError("Java dependency profiles require java")
         java_dependency_id = (
             load_java_profile(java_dependency_profile)["id"] if java_dependency_profile else ""
         )
         dependency_id = None
         if csharp_dependency_profile is not None:
             if language != "csharp":
-                raise TraceProofError("C# dependency profiles require csharp")
+                raise VeriFlowError("C# dependency profiles require csharp")
             dependency_id = load_profile(csharp_dependency_profile)["id"]
         with store.transaction() as session:
             run = session.get(Run, run_id)
             if run is None:
-                raise TraceProofError("Run not found")
+                raise VeriFlowError("Run not found")
             repo_id = run.repo_id
             if skip_existing:
                 previous = session.scalar(

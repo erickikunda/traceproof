@@ -1,6 +1,6 @@
 # Slice 128 — Python/Flask path candidates
 
-Adds python-flask-path-v1 and rule traceproof/joern-python-flask-path-v1 for CWE-22 candidates.
+Adds python-flask-path-v1 and rule veriflow/joern-python-flask-path-v1 for CWE-22 candidates.
 Reuses isolated Flask source syntax selection and adds conservative unshadowed builtin open
 read-path endpoints. Query matching retains file/line uniqueness and native flow evidence.
 Existing command-injection selection is unchanged. No new advisory policy is enabled.

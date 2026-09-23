@@ -6,7 +6,7 @@ from test_triage import evidence_fixture as evidence_fixture
 from typer.testing import CliRunner
 
 from veriflow.cli import app
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.persistence import ScanAttempt
 from veriflow.sarif_export import get_sarif
 
@@ -18,7 +18,7 @@ def test_exact_bytes_scope_and_cli(store, scanned):
     assert get_sarif(store, repo, attempt) == raw
     result = CliRunner().invoke(app, ["--state-dir", str(store.root), "get-sarif", repo, attempt])
     assert result.exit_code == 0 and result.stdout_bytes == raw
-    with pytest.raises(TraceProofError, match="belong"):
+    with pytest.raises(VeriFlowError, match="belong"):
         get_sarif(store, "other-repo", attempt)
     with store.transaction() as session:
         saved = session.get(ScanAttempt, attempt)
@@ -64,5 +64,5 @@ def test_parent_link_rejected(store, scanned, tmp_path):
     moved = tmp_path / "moved"
     directory.rename(moved)
     directory.symlink_to(moved, target_is_directory=True)
-    with pytest.raises(TraceProofError, match="links"):
+    with pytest.raises(VeriFlowError, match="links"):
         get_sarif(store, repo, attempt)

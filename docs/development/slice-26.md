@@ -1,6 +1,6 @@
 # Slice 26: import report inventory and dashboard export
 
-`traceproof import-reports IMPORT_ID --limit 100 --format json` reads the runs admitted
+`veriflow import-reports IMPORT_ID --limit 100 --format json` reads the runs admitted
 by a CSV import in original row order. `--offset` selects the next page; limit defaults
 to 100 and is bounded at 1000. JSON includes selected-page counts and `next_offset`.
 `--format csv` exports one row per selected input row, including rejected/uncaptured rows.

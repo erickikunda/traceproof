@@ -6,7 +6,7 @@ query/body/params field reads flowing into the first argument of the resolved
 identities. Automatic selection runs this profile alongside Express eval discovery.
 
 ```sh
-traceproof --state-dir /path/to/state scan-run RUN_ID --engine joern \
+veriflow --state-dir /path/to/state scan-run RUN_ID --engine joern \
   --language javascript --joern-home /path/to/joern-cli \
   --joern-profile express-request-exec-v1
 ```

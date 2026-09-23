@@ -7,7 +7,7 @@ import typer
 from sqlalchemy.exc import SQLAlchemyError
 
 from veriflow.artifacts import ArtifactStore
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.indexing import build_index, query_index, report_markdown, repository_report
 from veriflow.intake import import_status, process, render_json, run_status, submit
 from veriflow.persistence import Store, exclusive_worker
@@ -33,7 +33,7 @@ def perform(operation):
             typer.echo(result, nl=False)
         else:
             typer.echo(result if isinstance(result, str) else render_json(result))
-    except TraceProofError as exc:
+    except VeriFlowError as exc:
         typer.echo(render_json({"error": str(exc)}), err=True)
         raise typer.Exit(1) from exc
     except (OSError, SQLAlchemyError):
@@ -295,7 +295,7 @@ def acquire_osv_command(
         for item in expected_sha256 or []:
             name, separator, value = item.partition("=")
             if not separator:
-                raise TraceProofError("Expected digests use ECOSYSTEM=SHA256")
+                raise VeriFlowError("Expected digests use ECOSYSTEM=SHA256")
             digests[name] = value
         return acquire_osv(
             OSVReader(ca_bundle=ca_bundle, proxy=proxy, timeout=timeout),
@@ -409,7 +409,7 @@ def repo_report(
     elif format == "markdown":
         try:
             typer.echo(report_markdown(repository_report(ctx.obj, repo_id, run_id, index_id)))
-        except (TraceProofError, OSError, SQLAlchemyError):
+        except (VeriFlowError, OSError, SQLAlchemyError):
             typer.echo(
                 "Cannot retrieve report; check repository, run, and initialization.", err=True
             )
@@ -686,7 +686,7 @@ def scan_report_command(
 
     def operation():
         if format not in {"json", "markdown"}:
-            raise TraceProofError("Format must be json or markdown")
+            raise VeriFlowError("Format must be json or markdown")
         report = scan_report(ctx.obj, repo_id, run_id, attempt_id, offset, limit)
         return scan_report_markdown(report) if format == "markdown" else report
 
@@ -740,11 +740,11 @@ def evidence_check(
         with decision.open("rb") as handle:
             raw = handle.read(32 * 1024 + 1)
         if len(raw) > 32 * 1024:
-            raise TraceProofError("Decision exceeds the 32 KiB limit")
+            raise VeriFlowError("Decision exceeds the 32 KiB limit")
         try:
             parsed = Decision.model_validate_json(raw)
         except ValidationError:
-            raise TraceProofError("Decision does not match the supported claim schema") from None
+            raise VeriFlowError("Decision does not match the supported claim schema") from None
         bundle = get_bundle(ctx.obj, bundle_id)
         if review_policy is not None:
             from veriflow.joern_claims import assess_review_evidence, require_policy
@@ -786,11 +786,11 @@ def triage_command(
         policy = read_config(config)
         if policy.provider == "replay":
             if replay is None:
-                raise TraceProofError("Replay policy requires --replay RESPONSE_JSON")
+                raise VeriFlowError("Replay policy requires --replay RESPONSE_JSON")
             adapter = ReplayAdapter(replay)
         else:
             if replay is not None:
-                raise TraceProofError("A live policy cannot use a replay fixture")
+                raise VeriFlowError("A live policy cannot use a replay fixture")
             adapter = live_adapter(policy)
         return triage(ctx.obj, bundle_id, policy, adapter, key, review_policy=review_policy)
 
@@ -817,11 +817,11 @@ def triage_attempt_command(
         policy = read_config(config)
         if policy.provider == "replay":
             if replay is None:
-                raise TraceProofError("Replay policy requires --replay RESPONSE_JSON")
+                raise VeriFlowError("Replay policy requires --replay RESPONSE_JSON")
             adapter = ReplayAdapter(replay)
         else:
             if replay is not None:
-                raise TraceProofError("A live policy cannot use a replay fixture")
+                raise VeriFlowError("A live policy cannot use a replay fixture")
             adapter = live_adapter(policy)
         return triage_attempt(
             ctx.obj,

@@ -5,7 +5,7 @@ Each packages only its language allowlist and defaults to that language. The man
 renderer accepts all nine selections; runtime validates against its image-specific list.
 The general image still excludes C#/Rust. No extra tool paths come from CSV metadata.
 
-C# passes /opt/traceproof/csharp-repair to the existing repaired-frontend identity gate;
+C# passes /opt/veriflow/csharp-repair to the existing repaired-frontend identity gate;
 Rust passes /opt/rust to the existing trusted-toolchain gate. Neither gate is bypassed or
 replaced. Failure is propagated and recorded without fallback or provider calls. The
 specialized layers preserve their qualified base application snapshots (Slices 101/103),

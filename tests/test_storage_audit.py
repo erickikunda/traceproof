@@ -7,7 +7,7 @@ from test_triage import evidence_fixture as evidence_fixture
 from typer.testing import CliRunner
 
 from veriflow.cli import app
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.persistence import exclusive_worker
 from veriflow.storage_audit import storage_audit
 
@@ -43,9 +43,9 @@ def test_limits_links_and_worker_lock(store, scanned, tmp_path):
     result = storage_audit(store)
     row = next(item for item in result["items"] if item["entry"] == link.name)
     assert row["logical_bytes"] == 0 and not row["measurement_complete"]
-    with exclusive_worker(store.root), pytest.raises(TraceProofError, match="worker"):
+    with exclusive_worker(store.root), pytest.raises(VeriFlowError, match="worker"):
         storage_audit(store)
-    with pytest.raises(TraceProofError, match="Entry limit"):
+    with pytest.raises(VeriFlowError, match="Entry limit"):
         storage_audit(store, max_entries=0)
 
 

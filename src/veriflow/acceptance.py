@@ -9,7 +9,7 @@ from pathlib import Path
 
 from veriflow.artifacts import ArtifactStore
 from veriflow.codeql import extract
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.indexing import build_index
 from veriflow.intake import process, submit
 from veriflow.persistence import Store, exclusive_worker
@@ -62,7 +62,7 @@ def check_case(case, report):
         elif case == "fixed":
             checks["seeded_candidate_absent"] = report.get("candidate_count") == 0
         else:
-            raise TraceProofError("Unknown acceptance case")
+            raise VeriFlowError("Unknown acceptance case")
     return {
         "case": case,
         "passed": all(checks.values()),
@@ -76,14 +76,14 @@ def check_case(case, report):
 def run_acceptance(output_dir, query, timeout=300):
     query = Path(query).resolve(strict=True)
     if not query.is_file() or query.suffix != ".ql":
-        raise TraceProofError("Acceptance requires the approved local CodeInjection.ql entry")
+        raise VeriFlowError("Acceptance requires the approved local CodeInjection.ql entry")
     if not 1 <= timeout <= 3600:
-        raise TraceProofError("Acceptance stage timeout must be 1–3600 seconds")
+        raise VeriFlowError("Acceptance stage timeout must be 1–3600 seconds")
     with query.open("rb") as handle:
         query_digest = hashlib.file_digest(handle, "sha256").hexdigest()
     root = Path(output_dir).resolve()
     if root.exists():
-        raise TraceProofError(
+        raise VeriFlowError(
             "Acceptance output directory must be new; existing results are preserved"
         )
     root.mkdir(parents=True, mode=0o700)

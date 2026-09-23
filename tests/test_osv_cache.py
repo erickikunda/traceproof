@@ -5,7 +5,7 @@ from test_dependency_discovery import snapshot as snapshot
 from test_osv_matching import LOCK, osv
 from test_osv_matching import database as database
 
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.osv_database import cache_path, prepare, read_profile
 from veriflow.sbom_export import export_sbom
 
@@ -132,7 +132,7 @@ def test_unwritable_cache_never_fails_the_scan(store, database, monkeypatch):
 def test_a_tampered_record_is_caught_without_the_cache(store, database, tmp_path):
     path = database([RECORD])
     (tmp_path / "osv" / "records" / "GHSA-cache.json").write_text('{"id": "GHSA-tampered"}')
-    with pytest.raises(TraceProofError, match="integrity mismatch"):
+    with pytest.raises(VeriFlowError, match="integrity mismatch"):
         prepare(path)
 
 
@@ -142,14 +142,14 @@ def test_the_cache_trades_record_verification_for_speed(store, database, tmp_pat
     assert prepare(path, store.root)["verification"] == "reverified"
     (tmp_path / "osv" / "records" / "GHSA-cache.json").write_text('{"id": "GHSA-tampered"}')
     # Without the cache the same database is refused outright.
-    with pytest.raises(TraceProofError, match="integrity mismatch"):
+    with pytest.raises(VeriFlowError, match="integrity mismatch"):
         prepare(path)
     # With it, the approved contents are served and the change goes unnoticed.
     prepared = prepare(path, store.root)
     assert prepared["verification"] == "cached"
     assert [r["id"] for r, _ in prepared["index"][("npm", "lodash")]] == ["GHSA-cache"]
     # Refreshing restores full verification and refuses.
-    with pytest.raises(TraceProofError, match="integrity mismatch"):
+    with pytest.raises(VeriFlowError, match="integrity mismatch"):
         prepare(path, store.root, refresh=True)
 
 

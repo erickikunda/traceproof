@@ -8,7 +8,7 @@ from typer.testing import CliRunner
 
 from veriflow.artifacts import ArtifactStore
 from veriflow.cli import app
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.intake import process, submit
 from veriflow.persistence import Run
 from veriflow.sbom_export import export_sbom
@@ -191,14 +191,14 @@ def test_cli_exposes_packages_flag(store, snapshot):
 def test_declaration_file_limit_refuses(store, snapshot, monkeypatch):
     repo, snapshot_id = snapshot({"package-lock.json": LOCK_V3})
     monkeypatch.setattr("veriflow.dependency_discovery.MAX_DEPENDENCY_FILES", 0)
-    with pytest.raises(TraceProofError, match="declaration file limit"):
+    with pytest.raises(VeriFlowError, match="declaration file limit"):
         export_sbom(store, repo, snapshot_id, packages=True)
 
 
 def test_component_limit_refuses(store, snapshot, monkeypatch):
     repo, snapshot_id = snapshot({"package-lock.json": LOCK_V3})
     monkeypatch.setattr("veriflow.dependency_discovery.MAX_DEPENDENCY_COMPONENTS", 1)
-    with pytest.raises(TraceProofError, match="dependency component limit"):
+    with pytest.raises(VeriFlowError, match="dependency component limit"):
         export_sbom(store, repo, snapshot_id, packages=True)
 
 
@@ -218,5 +218,5 @@ def test_missing_tree_refuses_rather_than_report_zero(store, snapshot):
         path.chmod(0o600)
         path.unlink()
     tree.rmdir()
-    with pytest.raises(TraceProofError, match="unavailable"):
+    with pytest.raises(VeriFlowError, match="unavailable"):
         export_sbom(store, repo, snapshot_id, packages=True)

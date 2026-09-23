@@ -3,7 +3,7 @@ import sys
 
 import pytest
 
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.network_isolation import offline_command, validate_offline
 
 
@@ -12,13 +12,13 @@ from veriflow.network_isolation import offline_command, validate_offline
     [("python", "p", False), ("csharp", None, False), ("csharp", "p", True)],
 )
 def test_offline_requires_unambiguous_pinned_csharp(language, profile, downloads):
-    with pytest.raises(TraceProofError):
+    with pytest.raises(VeriFlowError):
         validate_offline(language, profile, downloads, True)
 
 
 def test_unsupported_host_fails_closed(monkeypatch):
     monkeypatch.setattr("veriflow.network_isolation.sys.platform", "linux")
-    with pytest.raises(TraceProofError, match="macOS"):
+    with pytest.raises(VeriFlowError, match="macOS"):
         offline_command(["/usr/bin/true"])
 
 

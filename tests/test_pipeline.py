@@ -7,7 +7,7 @@ from typer.testing import CliRunner
 
 from veriflow import pipeline, scanner_backends
 from veriflow.cli import app
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.persistence import ScanAttempt
 from veriflow.reports import get_report, publish_report, report_history
 
@@ -87,11 +87,11 @@ def test_exact_attempt_publication_and_cli(store, scanned, query, monkeypatch):
 
 
 def test_preflight_rejects_bad_query_and_timeout(store, scanned, tmp_path, query):
-    with pytest.raises(TraceProofError, match="timeout"):
+    with pytest.raises(VeriFlowError, match="timeout"):
         pipeline.scan_run(store, scanned[1], query, extraction_timeout=0)
     bad = tmp_path / "bad.py"
     bad.write_text("pass")
-    with pytest.raises(TraceProofError, match="trusted local"):
+    with pytest.raises(VeriFlowError, match="trusted local"):
         pipeline.scan_run(store, scanned[1], bad)
 
 

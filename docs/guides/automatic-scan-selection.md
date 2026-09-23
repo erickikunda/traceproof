@@ -5,8 +5,8 @@
 profiles for each recognized source language. No model is used for selection.
 
 ```sh
-traceproof scan-run RUN_ID --engine joern --joern-home /opt/joern-cli
-traceproof scan-import IMPORT_ID --engine joern --joern-home /opt/joern-cli --limit 10
+veriflow scan-run RUN_ID --engine joern --joern-home /opt/joern-cli
+veriflow scan-import IMPORT_ID --engine joern --joern-home /opt/joern-cli --limit 10
 ```
 
 Python selects Flask command, file-path, SSRF and SQLite query-text profiles.

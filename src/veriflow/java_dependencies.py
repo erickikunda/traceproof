@@ -7,7 +7,7 @@ import re
 from pathlib import Path, PurePosixPath
 
 from veriflow.csharp_dependencies import inventory
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 
 
 def load_java_profile(path):
@@ -52,9 +52,9 @@ def load_java_profile(path):
         if not isinstance(repo["files"], dict) or set(repo["files"]) != expected:
             raise ValueError()
         if inventory(root) != repo["files"]:
-            raise TraceProofError("Java dependency profile integrity mismatch")
+            raise VeriFlowError("Java dependency profile integrity mismatch")
     except (ValueError, TypeError, KeyError, AttributeError):
-        raise TraceProofError("Invalid Java dependency profile") from None
+        raise VeriFlowError("Invalid Java dependency profile") from None
     return dict(
         id=hashlib.sha256(raw).hexdigest(),
         path=path,

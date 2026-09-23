@@ -46,7 +46,7 @@ raise, and the Go parser rejects an unbounded version outright.
 **The OSV output limit is enforced.** `MAX_OSV_BYTES` was declared and never referenced.
 
 **The CycloneDX metadata no longer denies analysis the document carries.**
-`traceproof:vulnerability_analysis` was always `not_included`, even beside a populated
+`veriflow:vulnerability_analysis` was always `not_included`, even beside a populated
 `vulnerabilities` array; it now reports `osv_version_range_matching` when a database was consulted.
 
 The design table listed OSV acquisition container qualification as outstanding while the same

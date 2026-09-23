@@ -2,7 +2,7 @@
 
 Implemented and locally compiled an experimental one-line Joern frontend change. The
 original Joern installation and all source fixtures remain unchanged. No call edges are
-inferred or injected by TraceProof.
+inferred or injected by VeriFlow.
 
 The pinned AstCreator compilation-unit path directly maps non-global-statement members
 to ASTs, bypassing astForMembers. That helper marks globally declared types with the

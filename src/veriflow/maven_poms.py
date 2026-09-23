@@ -3,7 +3,7 @@
 import re
 import xml.etree.ElementTree as ElementTree
 
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 
 ECOSYSTEM = "maven"
 DECLARATION_NAMES = ("pom.xml",)
@@ -141,7 +141,7 @@ def parse(raw, source):
     listed = child_element(root, "dependencies")
     declared = [e for e in (listed if listed is not None else ()) if local(e.tag) == "dependency"]
     if len(declared) > MAX_DEPENDENCIES:
-        raise TraceProofError("POM exceeds the dependency limit; no partial inventory was produced")
+        raise VeriFlowError("POM exceeds the dependency limit; no partial inventory was produced")
     for element in declared:
         group, artifact = coordinate(element, properties)
         if group is None:

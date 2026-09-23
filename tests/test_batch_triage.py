@@ -8,7 +8,7 @@ from typer.testing import CliRunner
 
 from veriflow import batch_triage
 from veriflow.cli import app
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.persistence import Candidate
 from veriflow.triage import set_budget, triage_report
 
@@ -44,12 +44,12 @@ def test_budget_and_request_stops(store, scanned):
 def test_scope_and_page_validation(store, scanned):
     repo, run, attempt, _ = scanned
     adapter = FakeAdapter()
-    with pytest.raises(TraceProofError, match="budget"):
+    with pytest.raises(VeriFlowError, match="budget"):
         batch_triage.triage_attempt(store, repo, attempt, policy(), adapter, "batch")
     set_budget(store, run, 100000)
-    with pytest.raises(TraceProofError, match="belong"):
+    with pytest.raises(VeriFlowError, match="belong"):
         batch_triage.triage_attempt(store, "other", attempt, policy(), adapter, "batch")
-    with pytest.raises(TraceProofError, match="100"):
+    with pytest.raises(VeriFlowError, match="100"):
         batch_triage.triage_attempt(store, repo, attempt, policy(), adapter, "batch", limit=101)
     result = batch_triage.triage_attempt(store, repo, attempt, policy(), adapter, "batch", offset=1)
     assert result["items"] == [] and result["next_offset"] is None and adapter.calls == 0

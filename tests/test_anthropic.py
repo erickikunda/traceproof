@@ -120,7 +120,7 @@ def test_transport_headers_and_policy(monkeypatch):
     assert captured["headers"]["Anthropic-version"] == "2023-06-01"
     assert b"synthetic-key" not in captured["body"]
     assert captured["timeout"] == 60
-    with pytest.raises(models.TraceProofError, match="disabled"):
+    with pytest.raises(models.VeriFlowError, match="disabled"):
         models.live_adapter(policy(allow_source_transmission=False)).invoke({})
     with pytest.raises(ValidationError):
         policy(endpoint="https://unapproved.example/v1/messages")

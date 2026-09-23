@@ -21,11 +21,11 @@ verified rather than assumed: `xml.etree.ElementTree` expands internal entities,
 attacker-supplied DTD would be a billion-laughs sink inside the scanner. A real `pom.xml` needs
 no DTD, so refusal costs nothing.
 
-Renamed in the CycloneDX output as the stage stopped being npm-only: `traceproof:npm_scopes` to
-`traceproof:declared_scopes`, `traceproof:vendored_manifests_ignored` to
-`traceproof:excluded_declarations_ignored`, and `traceproof:dependency_pinned_components` to
-`traceproof:dependency_resolution_counts`. Skip reasons and parsed-file counts are now keyed by
-ecosystem. `traceproof:npm_integrity` stays npm-specific.
+Renamed in the CycloneDX output as the stage stopped being npm-only: `veriflow:npm_scopes` to
+`veriflow:declared_scopes`, `veriflow:vendored_manifests_ignored` to
+`veriflow:excluded_declarations_ignored`, and `veriflow:dependency_pinned_components` to
+`veriflow:dependency_resolution_counts`. Skip reasons and parsed-file counts are now keyed by
+ecosystem. `veriflow:npm_integrity` stays npm-specific.
 
 Seventeen new tests cover literal, interpolated, managed, ranged and unresolvable versions,
 `${project.version}` from a parent block, imported-BOM and profile gap counting, optional and test

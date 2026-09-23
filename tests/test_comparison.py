@@ -7,7 +7,7 @@ from typer.testing import CliRunner
 
 from veriflow.cli import app
 from veriflow.comparison import compare_reports, render_comparison
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.reports import publish_report
 
 
@@ -158,7 +158,7 @@ def test_markdown_escapes_candidate_text(pair):
     text = render_comparison(result, "markdown")
     assert "<script>" not in text and "[x](https://bad)" not in text
     assert result["comparison_id"] in text
-    with pytest.raises(TraceProofError, match="format"):
+    with pytest.raises(VeriFlowError, match="format"):
         render_comparison(result, "unsupported")
 
 
@@ -168,7 +168,7 @@ def test_exact_published_reports_and_cli(store, scanned):
     identity = report["report_id"]
     result = compare_reports(store, repo, identity, identity)
     assert result["group_counts"]["observed_in_both"] == 1
-    with pytest.raises(TraceProofError, match="belong"):
+    with pytest.raises(VeriFlowError, match="belong"):
         compare_reports(store, "other-repo", identity, identity)
     output = CliRunner().invoke(
         app,

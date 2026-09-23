@@ -10,7 +10,7 @@ from sqlalchemy import func, select
 
 from veriflow.bundles import canonical, get_bundle
 from veriflow.claims import GATE_VERSION, assess_evidence, bundle_engine, requirements
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.intake import now
 from veriflow.models import PROMPT_VERSION, Adapter, Decision, ModelConfig, request_body
 from veriflow.persistence import Run, TriageBudget, TriageCall, exclusive_worker
@@ -27,20 +27,20 @@ def cost_micro_usd(input_tokens, output_tokens, config):
 
 def set_budget(store, run_id, limit_micro_usd, max_requests=None):
     if type(limit_micro_usd) is not int or not 0 <= limit_micro_usd <= 10**12:
-        raise TraceProofError("Budget must be an integer between 0 and 10^12 micro-USD")
+        raise VeriFlowError("Budget must be an integer between 0 and 10^12 micro-USD")
     if max_requests is not None and (
         type(max_requests) is not int or not 0 <= max_requests <= 10000
     ):
-        raise TraceProofError("Request limit must be an integer between 0 and 10000")
+        raise VeriFlowError("Request limit must be an integer between 0 and 10000")
     store.require_initialized()
     with exclusive_worker(store.root), store.transaction() as session:
         if session.get(Run, run_id) is None:
-            raise TraceProofError("Run not found")
+            raise VeriFlowError("Run not found")
         existing = session.get(TriageBudget, run_id)
         if existing and existing.limit_micro_usd != limit_micro_usd:
-            raise TraceProofError("Run budget is already fixed; changing it is not supported")
+            raise VeriFlowError("Run budget is already fixed; changing it is not supported")
         if existing and max_requests is not None and existing.max_requests != max_requests:
-            raise TraceProofError(
+            raise VeriFlowError(
                 "Run request limit is already fixed; changing it is not supported"
             )
         if existing is None:
@@ -56,11 +56,11 @@ def set_budget(store, run_id, limit_micro_usd, max_requests=None):
 
 def triage_report(store, run_id, offset=0, limit=100):
     if offset < 0 or not 1 <= limit <= 1000:
-        raise TraceProofError("Invalid triage pagination")
+        raise VeriFlowError("Invalid triage pagination")
     with store.transaction() as session:
         budget = session.get(TriageBudget, run_id)
         if budget is None:
-            raise TraceProofError("Run triage budget is not configured")
+            raise VeriFlowError("Run triage budget is not configured")
         charged = session.scalar(
             select(func.coalesce(func.sum(TriageCall.charged_micro_usd), 0)).where(
                 TriageCall.run_id == run_id
@@ -103,19 +103,19 @@ def triage(
     store, bundle_id: str, config: ModelConfig, adapter: Adapter, key: str, *, review_policy=None
 ):
     if not key.strip() or len(key) > 200:
-        raise TraceProofError("Triage key must contain 1–200 characters")
+        raise VeriFlowError("Triage key must contain 1–200 characters")
     store.require_initialized()
     with exclusive_worker(store.root):
         bundle = get_bundle(store, bundle_id)
         if bundle["classification"] not in config.allowed_classifications:
-            raise TraceProofError("Bundle classification is not allowed by model policy")
+            raise VeriFlowError("Bundle classification is not allowed by model policy")
         if config.provider != "replay":
             if not config.allow_source_transmission:
-                raise TraceProofError("Live source transmission is disabled")
+                raise VeriFlowError("Live source transmission is disabled")
             if config.provider in {"openai", "anthropic"} and not os.environ.get(
                 config.api_key_env
             ):
-                raise TraceProofError(
+                raise VeriFlowError(
                     "Set the configured API-key environment variable before live triage"
                 )
         preflight = None
@@ -160,7 +160,7 @@ def triage(
             )
             if existing:
                 if existing.request_sha256 != digest:
-                    raise TraceProofError("Triage key was already used for a different request")
+                    raise VeriFlowError("Triage key was already used for a different request")
                 return {
                     **existing.result,
                     "state": existing.state,
@@ -168,12 +168,12 @@ def triage(
                 }
             budget = session.get(TriageBudget, run_id)
             if budget is None:
-                raise TraceProofError("Configure a run triage budget before requesting triage")
+                raise VeriFlowError("Configure a run triage budget before requesting triage")
             requests = session.scalar(
                 select(func.count()).select_from(TriageCall).where(TriageCall.run_id == run_id)
             )
             if requests >= budget.max_requests:
-                raise TraceProofError("Run triage request limit exhausted; no provider was invoked")
+                raise VeriFlowError("Run triage request limit exhausted; no provider was invoked")
             spent = session.scalar(
                 select(func.coalesce(func.sum(TriageCall.charged_micro_usd), 0)).where(
                     TriageCall.run_id == run_id
@@ -281,7 +281,7 @@ def triage(
                 result["accounting_note"] = "Usage missing; full reservation retained"
         except (ValidationError, ValueError, TypeError, KeyError, AttributeError):
             state = "invalid_output"
-        except (OSError, TraceProofError, subprocess.SubprocessError):
+        except (OSError, VeriFlowError, subprocess.SubprocessError):
             # Includes timeouts and ambiguous transport errors; do not retry or release.
             state = "unknown"
         with store.transaction() as session:

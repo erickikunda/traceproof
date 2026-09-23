@@ -4,7 +4,7 @@ import os
 import re
 import stat
 
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.persistence import CodeqlAttempt, ScanAttempt, Snapshot, exclusive_worker
 
 AREAS = {"artifacts": Snapshot, "codeql": CodeqlAttempt, "scans": ScanAttempt}
@@ -51,9 +51,9 @@ def measure(path, remaining):
 
 def storage_audit(store, max_entries=1000, max_nodes=100000):
     if type(max_entries) is not int or not 1 <= max_entries <= 10000:
-        raise TraceProofError("Entry limit must be an integer between 1 and 10000")
+        raise VeriFlowError("Entry limit must be an integer between 1 and 10000")
     if type(max_nodes) is not int or not 1 <= max_nodes <= 1000000:
-        raise TraceProofError("Node limit must be an integer between 1 and 1000000")
+        raise VeriFlowError("Node limit must be an integer between 1 and 1000000")
     store.require_initialized()
     rows, issues = [], []
     remaining = max_nodes

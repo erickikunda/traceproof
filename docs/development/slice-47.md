@@ -26,7 +26,7 @@ containment. Source-only copying and existing process time/resource limits remai
 ## Use
 
 ```sh
-traceproof scan-run RUN_ID CSHARP_QUERY_PATH --language csharp --csharp-dependency-profile work/slice46-dependencies/profile.json --csharp-offline
+veriflow scan-run RUN_ID CSHARP_QUERY_PATH --language csharp --csharp-dependency-profile work/slice46-dependencies/profile.json --csharp-offline
 .venv/bin/python scripts/validate_csharp_classic.py CSHARP_QUERY_PATH NEW_OUTPUT_DIRECTORY --csharp-dependency-profile work/slice46-dependencies/profile.json --csharp-offline
 ```
 

@@ -1,11 +1,11 @@
-# System Design Document: TraceProof — evidence-gated vulnerability discovery
+# System Design Document: VeriFlow — evidence-gated vulnerability discovery
 
 - **Author(s):** Eric Kikunda
 - **Status:** Draft
 - **Target Release / Milestone:** Functional POC completion, then bank OCP dev acceptance (Q4 2026)
 - **Reviewers:** AppSec (evidence policy and detection quality), Platform/Infra (OpenShift, storage, identity), Model governance (provider approval and data handling), Vulnerability management (report and severity contract)
 - **Supersedes:** [system-design.md](system-design.md) v0.3. That document remains the record of the Foundry adaptation rationale (§2), the enterprise capacity model (§12) and the per-slice changelog. This v2 restructures the same material as an implementation-grounded SDD and states explicitly which parts are running code.
-- **Implementation checkpoint:** through Slice 141. Every "Implemented" claim below is traceable to `src/traceproof/`, `tests/` or `scripts/validate_*.py`.
+- **Implementation checkpoint:** through Slice 141. Every "Implemented" claim below is traceable to `src/veriflow/`, `tests/` or `scripts/validate_*.py`.
 
 ---
 
@@ -15,7 +15,7 @@
 
 A security organization needs a defensible vulnerability assessment across roughly 1,000 source repositories per day. Neither available approach works alone. Deterministic SAST at fleet scale produces alert volumes that reviewers cannot triage, and — more dangerously — reports zero findings for repositories it could not parse, extract or build, which reads downstream as "clean." An LLM pointed at source code produces fluent, unfalsifiable claims: it will cite line numbers that exist while asserting a data flow that does not, and it cannot distinguish "I found no path" from "I did not look."
 
-TraceProof addresses the conjunction of both failures. Deterministic scanners produce **candidates** with snapshot-bound provenance; a service-owned **evidence gate** re-verifies every quoted source span, sink expression and flow against the immutable snapshot before a model is invoked; and a budgeted model may only return an **advisory disposition** that is incapable of confirming or suppressing a candidate. The product's core invariant is that *coverage gaps stay visible*: a scan that failed, timed out or covered an unsupported language must never be representable as a clean result.
+VeriFlow addresses the conjunction of both failures. Deterministic scanners produce **candidates** with snapshot-bound provenance; a service-owned **evidence gate** re-verifies every quoted source span, sink expression and flow against the immutable snapshot before a model is invoked; and a budgeted model may only return an **advisory disposition** that is incapable of confirming or suppressing a candidate. The product's core invariant is that *coverage gaps stay visible*: a scan that failed, timed out or covered an unsupported language must never be representable as a clean result.
 
 ### Goals
 
@@ -174,9 +174,9 @@ Arrows are data flow, not network permission. The scanner plane never receives G
 
 The operator interface is the CLI; the hosted HTTP API remains a proposal (v1 §20). The contract is nonetheless typed and testable.
 
-**Invocation shape.** `traceproof [--state-dir PATH] <command> [args]`. `--state-dir` is global and precedes the subcommand. Every command returns a JSON object on stdout unless `--format markdown|html|scan-csv|candidates-csv` is requested.
+**Invocation shape.** `veriflow [--state-dir PATH] <command> [args]`. `--state-dir` is global and precedes the subcommand. Every command returns a JSON object on stdout unless `--format markdown|html|scan-csv|candidates-csv` is requested.
 
-**Error contract.** `TraceProofError` is the only expected failure class; it renders as `{"error": "<message>"}` on stderr with exit code 1. `OSError` and `SQLAlchemyError` collapse to a generic storage message so that paths and source content cannot leak through error text. Unhandled exceptions are intentionally not caught — they are bugs, not operator conditions.
+**Error contract.** `VeriFlowError` is the only expected failure class; it renders as `{"error": "<message>"}` on stderr with exit code 1. `OSError` and `SQLAlchemyError` collapse to a generic storage message so that paths and source content cannot leak through error text. Unhandled exceptions are intentionally not caught — they are bugs, not operator conditions.
 
 **Critical semantic:** a nonzero exit means the *request* failed. A successful exit with `"status": "failed"` or `"status": "incomplete"` is a durable diagnostic outcome and is the normal representation of a scan that could not complete. Automation must inspect `status`, never exit code alone.
 
@@ -208,7 +208,7 @@ A completed report from last week must not conceal a newer failed or partial sca
 
 ### 4.2 Data modeling & storage
 
-**Schema** — 17 tables, Alembic `0001`…`0009`, applied by `traceproof init` (idempotent, forward-only).
+**Schema** — 17 tables, Alembic `0001`…`0009`, applied by `veriflow init` (idempotent, forward-only).
 
 | Table | Grain | Identity and integrity |
 |---|---|---|
@@ -458,4 +458,4 @@ Principal limitations by language are recorded in [scanner-language-assessment.m
 
 ---
 
-**Standing caveat.** Nothing in this document asserts that TraceProof has found, confirmed or ruled out a vulnerability in any real application. Every detection profile produces candidates under stated syntactic bounds. A report with zero candidates means the selected profiles found nothing they are capable of finding — never that the repository is secure.
+**Standing caveat.** Nothing in this document asserts that VeriFlow has found, confirmed or ruled out a vulnerability in any real application. Every detection profile produces candidates under stated syntactic bounds. A report with zero candidates means the selected profiles found nothing they are capable of finding — never that the repository is secure.

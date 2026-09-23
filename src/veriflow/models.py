@@ -16,7 +16,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_valida
 
 from veriflow.bundles import canonical
 from veriflow.claims import EvidenceClaim, bundle_engine, requirements
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 
 PROMPT_VERSION = "3"
 INSTRUCTIONS = (
@@ -117,7 +117,7 @@ def read_config(path):
             raise ValueError()
         return ModelConfig.model_validate_json(raw)
     except (ValidationError, ValueError):
-        raise TraceProofError(
+        raise VeriFlowError(
             "Invalid model configuration; check policy, endpoint and pricing"
         ) from None
 
@@ -158,7 +158,7 @@ def request_body(bundle, config, *, review_policy=None):
         }
         # Conservative byte bound avoids knowingly relying on daemon prompt truncation.
         if len(canonical(body)) + 4096 + config.max_output_tokens > config.ollama_context_tokens:
-            raise TraceProofError("Ollama context budget too small for this evidence request")
+            raise VeriFlowError("Ollama context budget too small for this evidence request")
         return body
     if config.provider == "anthropic":
         return {
@@ -217,7 +217,7 @@ class ReplayAdapter:
         with Path(path).open("rb") as handle:
             self.raw = handle.read(128 * 1024 + 1)
         if len(self.raw) > 128 * 1024:
-            raise TraceProofError("Replay response exceeds 128 KiB")
+            raise VeriFlowError("Replay response exceeds 128 KiB")
         self.identity = "replay:" + hashlib.sha256(self.raw).hexdigest()
 
     def invoke(self, body):
@@ -226,7 +226,7 @@ class ReplayAdapter:
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
-        raise TraceProofError("Provider redirect rejected")
+        raise VeriFlowError("Provider redirect rejected")
 
 
 class LiveAdapter:
@@ -238,10 +238,10 @@ class LiveAdapter:
     def invoke(self, body):
         config = self.config
         if not config.allow_source_transmission:
-            raise TraceProofError("Live source transmission is disabled")
+            raise VeriFlowError("Live source transmission is disabled")
         secret = os.environ.get(config.api_key_env) if self.requires_api_key else None
         if self.requires_api_key and not secret:
-            raise TraceProofError("Configured API-key environment variable is absent")
+            raise VeriFlowError("Configured API-key environment variable is absent")
         # Isolate network I/O so even a server trickling bytes has a total wall-clock bound.
         child = subprocess.run(
             [sys.executable, "-I", "-m", "veriflow.models"],
@@ -252,16 +252,16 @@ class LiveAdapter:
             check=False,
         )
         if child.returncode:
-            raise TraceProofError("Provider request failed; charge may be unknown")
+            raise VeriFlowError("Provider request failed; charge may be unknown")
         return Reply.model_validate_json(child.stdout)
 
     def _invoke_https(self, body):
         config = self.config
         if not config.allow_source_transmission:
-            raise TraceProofError("Live source transmission is disabled")
+            raise VeriFlowError("Live source transmission is disabled")
         secret = os.environ.get(config.api_key_env) if self.requires_api_key else None
         if self.requires_api_key and not secret:
-            raise TraceProofError("Configured API-key environment variable is absent")
+            raise VeriFlowError("Configured API-key environment variable is absent")
         context = ssl.create_default_context(cafile=config.ca_file)
         opener = urllib.request.build_opener(
             urllib.request.ProxyHandler({}),
@@ -278,7 +278,7 @@ class LiveAdapter:
         with opener.open(request, timeout=config.timeout_seconds) as response:
             raw = response.read(128 * 1024 + 1)
         if len(raw) > 128 * 1024:
-            raise TraceProofError("Provider output exceeds 128 KiB")
+            raise VeriFlowError("Provider output exceeds 128 KiB")
         return self.parse(raw)
 
 
@@ -309,7 +309,7 @@ def live_adapter(config):
         return AnthropicAdapter(config)
     if config.provider == "ollama":
         return OllamaAdapter(config)
-    raise TraceProofError("Replay requires an explicit fixture")
+    raise VeriFlowError("Replay requires an explicit fixture")
 
 
 class OllamaAdapter(LiveAdapter):

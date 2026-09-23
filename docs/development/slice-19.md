@@ -3,11 +3,11 @@
 Migration 0007 adds `benchmark_scorecards`, keyed by canonical scorecard content hash.
 
 ```bash
-uv run traceproof init
-uv run traceproof benchmark-publish MANIFEST LABELS PLAN
-uv run traceproof benchmark-history DATASET_ID --limit 100
-uv run traceproof benchmark-get DATASET_ID SCORECARD_ID --format markdown
-uv run traceproof benchmark-get DATASET_ID SCORECARD_ID --format weaknesses-csv
+uv run veriflow init
+uv run veriflow benchmark-publish MANIFEST LABELS PLAN
+uv run veriflow benchmark-history DATASET_ID --limit 100
+uv run veriflow benchmark-get DATASET_ID SCORECARD_ID --format markdown
+uv run veriflow benchmark-get DATASET_ID SCORECARD_ID --format weaknesses-csv
 ```
 
 Publication evaluates pinned inputs under the local single-worker lock and commits one

@@ -10,7 +10,7 @@ from typer.testing import CliRunner
 
 from veriflow.acceptance import FIXTURES, check_case, run_acceptance
 from veriflow.cli import app
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.indexing import build_index
 from veriflow.persistence import Run, ScanAttempt, SourceIndex, exclusive_worker
 from veriflow.reports import get_report, publish_report, render_report
@@ -97,7 +97,7 @@ def test_acceptance_rejects_clean_claim_and_wrong_seed_location():
     assert check_case("fixed", changed)["passed"]
     assert not check_case("fixed", {**changed, "coverage_verified": True})["passed"]
     assert not check_case("fixed", {**changed, "triage_call_count": 1})["passed"]
-    with pytest.raises(TraceProofError, match="Unknown"):
+    with pytest.raises(VeriFlowError, match="Unknown"):
         check_case("other", report)
 
 
@@ -107,7 +107,7 @@ def test_fixture_contract_and_preserved_output(tmp_path):
     assert set(FIXTURES["incomplete"]) == {"app.py", "broken.py"}
     query = tmp_path / "query.ql"
     query.write_text("// test")
-    with pytest.raises(TraceProofError, match="must be new"):
+    with pytest.raises(VeriFlowError, match="must be new"):
         run_acceptance(tmp_path, query)
     assert query.read_text() == "// test"
 

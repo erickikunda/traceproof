@@ -13,7 +13,7 @@ from typer.testing import CliRunner
 
 from veriflow.bundles import canonical
 from veriflow.cli import app
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.evaluation import evaluate_benchmark, render_scorecard, weakness_metrics
 from veriflow.indexing import build_index
 from veriflow.persistence import (
@@ -72,7 +72,7 @@ def test_legacy_scorecard_rendering_does_not_invent_metrics(evaluation):
     report["evaluator_version"] = "1"
     assert "Results by weakness class" not in render_scorecard(report, "markdown")
     assert csv_rows(report, "summary-csv")
-    with pytest.raises(TraceProofError, match="legacy"):
+    with pytest.raises(VeriFlowError, match="legacy"):
         render_scorecard(report, "weaknesses-csv")
 
 
@@ -304,16 +304,16 @@ def test_empty_labels_have_null_proxy(evaluation):
 def test_plan_pin_and_duplicates_rejected(evaluation):
     _, _, plan, execute = evaluation
     plan["manifest_sha256"] = "e" * 64
-    with pytest.raises(TraceProofError, match="manifest"):
+    with pytest.raises(VeriFlowError, match="manifest"):
         execute()
     plan["reports"].append(copy.deepcopy(plan["reports"][0]))
-    with pytest.raises(TraceProofError, match="Invalid"):
+    with pytest.raises(VeriFlowError, match="Invalid"):
         execute()
 
 
 def test_bounded_matching(evaluation, monkeypatch):
     monkeypatch.setattr("veriflow.evaluation.MAX_PAIR_CHECKS", 0)
-    with pytest.raises(TraceProofError, match="bounded"):
+    with pytest.raises(VeriFlowError, match="bounded"):
         evaluation[3]()
 
 

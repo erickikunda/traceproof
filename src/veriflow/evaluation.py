@@ -16,7 +16,7 @@ from veriflow.benchmark import (
     validate_pair,
 )
 from veriflow.bundles import canonical
-from veriflow.domain import Digest, Identifier, TraceProofError
+from veriflow.domain import Digest, Identifier, VeriFlowError
 from veriflow.persistence import Snapshot
 from veriflow.reports import csv_cell, get_report, markdown_cell
 
@@ -186,10 +186,10 @@ def evaluate_benchmark(store, manifest_path, labels_path, plan_path):
     manifest_digest = validate_pair(manifest, labels)
     plan = read_contract(plan_path, PlanContract)
     if plan.manifest_sha256 != manifest_digest:
-        raise TraceProofError("Evaluation plan does not match benchmark manifest")
+        raise VeriFlowError("Evaluation plan does not match benchmark manifest")
     selections = {item.repo_id: item.report_id for item in plan.reports}
     if selections.keys() - {item.repo_id for item in manifest.repositories}:
-        raise TraceProofError("Evaluation selection contains a repository outside the manifest")
+        raise VeriFlowError("Evaluation selection contains a repository outside the manifest")
     by_repo = defaultdict(list)
     for label in labels.labels:
         by_repo[label.repo_id].append(label)
@@ -204,7 +204,7 @@ def evaluate_benchmark(store, manifest_path, labels_path, plan_path):
         candidates = report["candidates"] if report else []
         candidates_seen += len(candidates)
         if candidates_seen > MAX_CANDIDATES:
-            raise TraceProofError("Evaluation exceeds 20,000 candidate rows")
+            raise VeriFlowError("Evaluation exceeds 20,000 candidate rows")
         with store.transaction() as session:
             snapshot = session.get(Snapshot, repository.snapshot_id)
             files = (
@@ -241,7 +241,7 @@ def evaluate_benchmark(store, manifest_path, labels_path, plan_path):
             eligible = buckets[(label.path, label.file_sha256, label.cwe)]
             pair_checks += len(eligible)
             if pair_checks > MAX_PAIR_CHECKS:
-                raise TraceProofError("Evaluation exceeds bounded location comparisons")
+                raise VeriFlowError("Evaluation exceeds bounded location comparisons")
             matches = [
                 candidate["fingerprint"]
                 for candidate in eligible
@@ -369,7 +369,7 @@ def evaluate_benchmark(store, manifest_path, labels_path, plan_path):
         )
     encoded = canonical(body)
     if len(encoded) > 8 * 1024 * 1024:
-        raise TraceProofError("Evaluation scorecard exceeds 8 MiB")
+        raise VeriFlowError("Evaluation scorecard exceeds 8 MiB")
     return {"scorecard_id": hashlib.sha256(encoded).hexdigest(), **body}
 
 
@@ -389,7 +389,7 @@ def render_scorecard(report, format="json"):
     }:
         return scorecard_csv(report, format)
     if format != "markdown":
-        raise TraceProofError(
+        raise VeriFlowError(
             "Scorecard format must be json, markdown, html, summary-csv, repositories-csv, "
             "labels-csv, candidates-csv or weaknesses-csv"
         )
@@ -452,7 +452,7 @@ def render_scorecard(report, format="json"):
 def scorecard_csv(report, format):
     """Separate data grains with stable provenance; blank cells preserve unknown values."""
     if format == "weaknesses-csv" and "weaknesses" not in report:
-        raise TraceProofError("Weakness metrics unavailable in this legacy scorecard; reevaluate")
+        raise VeriFlowError("Weakness metrics unavailable in this legacy scorecard; reevaluate")
     common = {
         "export_schema_version": "1",
         "grain": format.removesuffix("-csv"),

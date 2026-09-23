@@ -4,10 +4,10 @@ The existing offline evaluator now renders four CSV formats without changing mat
 metrics, scorecard identity or database state:
 
 ```bash
-uv run traceproof benchmark-evaluate MANIFEST LABELS PLAN --format summary-csv > summary.csv
-uv run traceproof benchmark-evaluate MANIFEST LABELS PLAN --format repositories-csv > repositories.csv
-uv run traceproof benchmark-evaluate MANIFEST LABELS PLAN --format labels-csv > labels.csv
-uv run traceproof benchmark-evaluate MANIFEST LABELS PLAN --format candidates-csv > candidates.csv
+uv run veriflow benchmark-evaluate MANIFEST LABELS PLAN --format summary-csv > summary.csv
+uv run veriflow benchmark-evaluate MANIFEST LABELS PLAN --format repositories-csv > repositories.csv
+uv run veriflow benchmark-evaluate MANIFEST LABELS PLAN --format labels-csv > labels.csv
+uv run veriflow benchmark-evaluate MANIFEST LABELS PLAN --format candidates-csv > candidates.csv
 ```
 
 Each populated row includes export schema version 1, grain, scorecard ID, evaluator

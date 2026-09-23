@@ -5,7 +5,7 @@ import json
 from pathlib import PurePosixPath
 from urllib.parse import unquote, urlsplit
 
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 
 MAX_SARIF_BYTES = 16 * 1024 * 1024
 MAX_RESULTS = 10_000
@@ -67,7 +67,7 @@ def fingerprint(snapshot_id, driver, rule, result):
 
 def normalize(raw, manifest, tree):
     if len(raw) > MAX_SARIF_BYTES:
-        raise TraceProofError("SARIF exceeds the 16 MiB limit")
+        raise VeriFlowError("SARIF exceeds the 16 MiB limit")
     try:
         doc = json.loads(raw)
         if doc["version"] != "2.1.0" or not isinstance(doc["runs"], list) or not doc["runs"]:
@@ -90,7 +90,7 @@ def normalize(raw, manifest, tree):
             for result in run.get("results", []):
                 raw_count += 1
                 if raw_count > MAX_RESULTS:
-                    raise TraceProofError("SARIF exceeds the 10,000-result limit")
+                    raise VeriFlowError("SARIF exceeds the 10,000-result limit")
                 rule = result.get("ruleId")
                 if not rule and "ruleIndex" in result:
                     rule = indexed(driver["rules"], result["ruleIndex"])["id"]
@@ -136,4 +136,4 @@ def normalize(raw, manifest, tree):
             "unmapped_candidates": sum(item["evidence"] is None for item in candidates),
         }
     except (KeyError, TypeError, ValueError, IndexError, AttributeError, RecursionError):
-        raise TraceProofError("Malformed or unsupported SARIF structure") from None
+        raise VeriFlowError("Malformed or unsupported SARIF structure") from None

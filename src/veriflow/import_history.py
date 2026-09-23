@@ -2,7 +2,7 @@
 
 from sqlalchemy import func, select
 
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.history import validate_page
 from veriflow.persistence import ImportBatch, ImportControl, ImportItem
 
@@ -10,7 +10,7 @@ from veriflow.persistence import ImportBatch, ImportControl, ImportItem
 def import_history(store, state=None, offset=0, limit=100):
     validate_page(offset, limit)
     if state not in {None, "active", "paused", "cancelled"}:
-        raise TraceProofError("Dispatch state must be active, paused or cancelled")
+        raise VeriFlowError("Dispatch state must be active, paused or cancelled")
     latest = (
         select(ImportControl.revision)
         .where(ImportControl.import_id == ImportBatch.id)

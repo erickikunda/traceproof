@@ -128,7 +128,7 @@ CodeInjection query about 3.9 seconds on a tiny synthetic Flask/eval fixture, pr
 one `py/code-injection` candidate. These times are smoke checks, not throughput estimates.
 
 Resolved subsequently: the official GitHub 2.27.0 bundle was reinstalled with a verified
-archive digest. Its `scc --version` succeeds, and TraceProof extraction with baseline
+archive digest. Its `scc --version` succeeds, and VeriFlow extraction with baseline
 counting enabled completed successfully in approximately 2.8 seconds. The launcher points
 to `/opt/homebrew/opt/codeql-github/2.27.0/codeql/codeql`; bundled query packs are included.
 `--skip-baseline` is no longer needed locally. Enterprise toolchain qualification should

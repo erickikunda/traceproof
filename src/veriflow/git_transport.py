@@ -4,7 +4,7 @@ import ssl
 from pathlib import Path
 from urllib.parse import urlsplit
 
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 
 
 def transport_settings(ca_bundle=None, proxy=None):
@@ -18,7 +18,7 @@ def transport_settings(ca_bundle=None, proxy=None):
                 raise ValueError
             ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT).load_verify_locations(cadata=ca.decode("ascii"))
         except (OSError, ValueError, UnicodeError, ssl.SSLError):
-            raise TraceProofError(
+            raise VeriFlowError(
                 "CA bundle must be readable PEM certificates, at most 1 MiB"
             ) from None
     if proxy is not None:
@@ -41,7 +41,7 @@ def transport_settings(ca_bundle=None, proxy=None):
             if not valid:
                 raise ValueError
         except ValueError:
-            raise TraceProofError(
+            raise VeriFlowError(
                 "Proxy requires a credential-free HTTP(S) host and optional port"
             ) from None
     return ca, proxy

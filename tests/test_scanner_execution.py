@@ -23,12 +23,12 @@ def test_missing_or_unlaunchable_scanner(tmp_path, monkeypatch, available):
 
 
 def test_unknown_backend_rejected_before_store_access():
-    from veriflow.domain import TraceProofError
+    from veriflow.domain import VeriFlowError
     from veriflow.pipeline import scan_run
     from veriflow.scanning import analyze
 
     for operation in (scan_run, analyze):
-        with pytest.raises(TraceProofError, match="not implemented"):
+        with pytest.raises(VeriFlowError, match="not implemented"):
             operation(None, "unused", "unused", engine="unimplemented")
 
 

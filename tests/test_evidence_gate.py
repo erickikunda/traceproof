@@ -11,7 +11,7 @@ from typer.testing import CliRunner
 from veriflow.bundles import MAX_BUNDLE_BYTES, build_bundle, canonical, get_bundle
 from veriflow.claims import EvidenceClaim, assess_evidence, requirements
 from veriflow.cli import app
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.expansion import ExpansionItem, expand_bundle, read_expansion
 from veriflow.models import Decision, Reply, Usage, request_body
 from veriflow.persistence import EvidenceBundle, TriageCall
@@ -190,7 +190,7 @@ def test_expansion_depth_and_source_budget(store, evidence_fixture):
     )
     _, attempt, fingerprint, _ = evidence_fixture(source=source)
     parent = build_bundle(store, attempt, fingerprint)
-    with pytest.raises(TraceProofError, match="source budget"):
+    with pytest.raises(VeriFlowError, match="source budget"):
         expand_bundle(
             store,
             parent["bundle_id"],
@@ -206,7 +206,7 @@ def test_expansion_depth_and_source_budget(store, evidence_fixture):
         child["bundle_id"],
         [ExpansionItem(path="app.py", line=20, end_line=20, reason="two")],
     )
-    with pytest.raises(TraceProofError, match="depth"):
+    with pytest.raises(VeriFlowError, match="depth"):
         expand_bundle(
             store,
             grandchild["bundle_id"],
@@ -253,5 +253,5 @@ def test_cli_and_required_schema(store, bundle, tmp_path):
     claim_schema = schema["$defs"]["EvidenceClaim"]
     assert set(claim_schema["required"]) == set(claim_schema["properties"])
     path.write_text("[]")
-    with pytest.raises(TraceProofError):
+    with pytest.raises(VeriFlowError):
         read_expansion(path)

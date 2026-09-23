@@ -6,7 +6,7 @@ import pytest
 from test_slice03 import captured_source as captured_source
 
 from veriflow import joern, joern_csharp
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.reports import publish_report
 from veriflow.scanning import scan_report
 
@@ -23,12 +23,12 @@ def test_whole_ambiguous_path_withheld(tmp_path):
 
 
 def test_invalid_reference_cannot_become_partial_path(tmp_path):
-    with pytest.raises(TraceProofError):
+    with pytest.raises(VeriFlowError):
         joern_csharp.map_output({"paths": [[{"file": "../A.cs"}]]}, tmp_path, [])
 
 
 def test_missing_repair_and_artifact_tooling_rejected(store, tmp_path):
-    with pytest.raises(TraceProofError):
+    with pytest.raises(VeriFlowError):
         joern_csharp.repaired_frontend(store, tmp_path, tmp_path)
 
 

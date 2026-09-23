@@ -7,7 +7,7 @@ from test_triage import evidence_fixture as evidence_fixture
 from typer.testing import CliRunner
 
 from veriflow.cli import app
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.persistence import BenchmarkScorecard
 from veriflow.scorecards import get_scorecard, publish_scorecard, scorecard_history
 
@@ -74,17 +74,17 @@ def test_ownership_integrity_and_pagination(store, evaluation, tmp_path):
     report = publish_scorecard(
         store, *[tmp_path / (name + ".json") for name in ["manifest", "labels", "plan"]]
     )
-    with pytest.raises(TraceProofError, match="belong"):
+    with pytest.raises(VeriFlowError, match="belong"):
         get_scorecard(store, "other", report["scorecard_id"])
     assert scorecard_history(store, "other")["total"] == 0
-    with pytest.raises(TraceProofError, match="pagination"):
+    with pytest.raises(VeriFlowError, match="pagination"):
         scorecard_history(store, "test", limit=0)
     with store.transaction() as session:
         record = session.get(BenchmarkScorecard, report["scorecard_id"])
         record.content = {**record.content, "precision": 1.0}
-    with pytest.raises(TraceProofError, match="integrity"):
+    with pytest.raises(VeriFlowError, match="integrity"):
         get_scorecard(store, "test", report["scorecard_id"])
-    with pytest.raises(TraceProofError, match="integrity"):
+    with pytest.raises(VeriFlowError, match="integrity"):
         scorecard_history(store, "test")
 
 

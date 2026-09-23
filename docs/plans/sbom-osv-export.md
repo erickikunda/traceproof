@@ -27,21 +27,21 @@ format" seam that a new SBOM encoder can simply join.
 `Cargo.toml`, `*.csproj` or any lockfile belonging to a scanned repository.
 `java_dependencies.py` and `csharp_dependencies.py` are pinned *operator-supplied build
 toolchain* profiles for CodeQL extraction — SDK references and Maven artifacts used to run
-the analyzer. They describe TraceProof's analysis environment, not the target's dependencies.
+the analyzer. They describe VeriFlow's analysis environment, not the target's dependencies.
 
 **The only inventory available today is file-level.** `SnapshotManifest.files` records
 `path`, `size_bytes` and `sha256` per extracted file (`artifacts.py`), verified end to end by
 `ArtifactStore.verify`. That is a file inventory, not a component inventory.
 
 **An OSV record is a verdict.** OSV describes a known vulnerability affecting a package
-version range, keyed by ecosystem and package. TraceProof candidates are unproven
+version range, keyed by ecosystem and package. VeriFlow candidates are unproven
 first-party source observations carrying CWE scope and no CVE identity. Encoding candidates
 as OSV records would assert precisely the conclusion every gate in this codebase withholds.
 OSV becomes meaningful only as *matching a package inventory against a vulnerability
 database*, which is a new pipeline stage requiring network access.
 
 **The container SBOM is a different artifact.** `docs/plans/implementation-plan.md` and
-`docs/architecture/system-design.md` reference an SBOM for TraceProof's own pinned images.
+`docs/architecture/system-design.md` reference an SBOM for VeriFlow's own pinned images.
 That is supply-chain evidence for the scanner, unrelated to the scanned repository. Keep the
 two namespaces distinct in operator documentation.
 
@@ -77,7 +77,7 @@ is absent by construction.
 
 The repeatable shape, following the Joern profile convention:
 
-- `src/traceproof/dependency_discovery.py` — bounded per-ecosystem parsers over snapshot
+- `src/veriflow/dependency_discovery.py` — bounded per-ecosystem parsers over snapshot
   files emitting Package URLs. Manifest and lockfile inputs are untrusted repository content
   and must be parsed under the same discipline as source: explicit size bounds, no entity
   resolution for XML (`pom.xml`, `*.csproj`), no evaluation of build scripts.
@@ -112,7 +112,7 @@ which are recorded as `declared_range` with no component version. Workspace `lin
 not registry packages and are excluded. Manifests under `node_modules/` are installed copies,
 not declarations, and are counted as ignored rather than parsed. npm `integrity` is the
 registry tarball digest — it is recorded as a property, never as a CycloneDX `hashes` entry,
-because TraceProof never saw that tarball.
+because VeriFlow never saw that tarball.
 
 ### Tier 3 — OSV matching
 
@@ -185,7 +185,7 @@ tradeoff is therefore opt-in, named per document in `database_verification` as `
 
 ## Reachability, and why Slice 148 does not claim it
 
-Reachability analysis would establish that a vulnerable function is actually invoked. TraceProof
+Reachability analysis would establish that a vulnerable function is actually invoked. VeriFlow
 cannot establish that for a declared dependency, for two reasons that are properties of the
 inputs rather than of the implementation:
 
@@ -282,7 +282,7 @@ never emitted.
 
 `// indirect` requirements are marked rather than dropped, so Go shows transitive modules that
 npm manifests and Maven POMs do not. This is still not closure resolution: the Go tool recorded
-those entries, TraceProof only read them, and `transitive_resolved` stays false.
+those entries, VeriFlow only read them, and `transitive_resolved` stays false.
 
 Go versions carry a `v` prefix while OSV Go records are written as plain semantic versions, so
 ordering strips the prefix and exact version lists are tried in both forms.
@@ -306,14 +306,14 @@ the sense required by supply-chain attestation is not delivered by any tier here
 these tiers produce a signed attestation. Zero components of a given ecosystem never means
 that ecosystem is absent; it means no parser has been written for it.
 
-Evidence: `src/traceproof/sbom_export.py`, `src/traceproof/osv_database.py`,
-`src/traceproof/go_modules.py`, `src/traceproof/go_symbols.py`,
-`src/traceproof/dependency_usage.py`,
-`src/traceproof/osv_acquisition.py`, `src/traceproof/osv_reader.py`,
-`src/traceproof/maven_version.py`,
-`src/traceproof/osv_matching.py`, `src/traceproof/osv_export.py`,
-`src/traceproof/dependency_discovery.py`,
-`src/traceproof/npm_manifests.py`, `src/traceproof/maven_poms.py`, `src/traceproof/artifacts.py`
+Evidence: `src/veriflow/sbom_export.py`, `src/veriflow/osv_database.py`,
+`src/veriflow/go_modules.py`, `src/veriflow/go_symbols.py`,
+`src/veriflow/dependency_usage.py`,
+`src/veriflow/osv_acquisition.py`, `src/veriflow/osv_reader.py`,
+`src/veriflow/maven_version.py`,
+`src/veriflow/osv_matching.py`, `src/veriflow/osv_export.py`,
+`src/veriflow/dependency_discovery.py`,
+`src/veriflow/npm_manifests.py`, `src/veriflow/maven_poms.py`, `src/veriflow/artifacts.py`
 manifest capture and verification, and `tests/test_sbom_export.py`,
 `tests/test_dependency_discovery.py`, `tests/test_maven_dependencies.py`,
 `tests/test_osv_matching.py`, `tests/test_maven_version.py`,

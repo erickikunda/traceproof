@@ -3,7 +3,7 @@
 import re
 from collections import Counter
 
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.maven_version import maven_key
 from veriflow.osv_database import OSV_ECOSYSTEMS, package_key
 
@@ -197,7 +197,7 @@ def match_record(component, record, basis, entry):
 
 def over_limit(count):
     if count > MAX_MATCHES:
-        raise TraceProofError(
+        raise VeriFlowError(
             "OSV matches exceed the result limit; no partial vulnerability result was produced"
         )
 

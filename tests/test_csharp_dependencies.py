@@ -5,7 +5,7 @@ from test_reports import scanned as scanned
 from test_triage import evidence_fixture as evidence_fixture
 
 from veriflow.csharp_dependencies import environment, inventory, load_profile
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 
 
 def profile(tmp_path):
@@ -51,7 +51,7 @@ def test_tampered_dependency_inventory_rejected(tmp_path, change):
     else:
         target.unlink()
         target.symlink_to(tmp_path / "sdk/dotnet")
-    with pytest.raises(TraceProofError):
+    with pytest.raises(VeriFlowError):
         load_profile(path)
 
 
@@ -60,7 +60,7 @@ def test_outside_profile_root_rejected(tmp_path):
     data = json.loads(path.read_text())
     data["sdk"]["directory"] = "../outside"
     path.write_text(json.dumps(data))
-    with pytest.raises(TraceProofError):
+    with pytest.raises(VeriFlowError):
         load_profile(path)
 
 
@@ -83,10 +83,10 @@ def test_changed_profile_does_not_reuse_old_attempt(store, scanned, tmp_path, mo
     query.write_text("// query")
 
     def preflight(*args):
-        raise TraceProofError("Reached extraction preflight")
+        raise VeriFlowError("Reached extraction preflight")
 
     monkeypatch.setattr(pipeline, "verified_source", preflight)
-    with pytest.raises(TraceProofError, match="Reached extraction"):
+    with pytest.raises(VeriFlowError, match="Reached extraction"):
         pipeline.scan_run(
             store,
             scanned[1],
@@ -185,10 +185,10 @@ def test_offline_request_does_not_reuse_network_enabled_scan(store, scanned, tmp
     query.write_text("// query")
 
     def preflight(*args):
-        raise TraceProofError("Reached extraction preflight")
+        raise VeriFlowError("Reached extraction preflight")
 
     monkeypatch.setattr(pipeline, "verified_source", preflight)
-    with pytest.raises(TraceProofError, match="Reached extraction"):
+    with pytest.raises(VeriFlowError, match="Reached extraction"):
         pipeline.scan_run(
             store,
             scanned[1],

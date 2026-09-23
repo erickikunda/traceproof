@@ -7,7 +7,7 @@ from test_evaluation import evaluation as evaluation
 from test_reports import scanned as scanned
 from test_triage import evidence_fixture as evidence_fixture
 
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.evaluation import JOERN_RULES, JoernEvaluationPlan, render_scorecard
 
 
@@ -53,7 +53,7 @@ def test_all_bounded_profiles_have_explicit_audit_scope(evaluation, rule):
 def test_unknown_rule_and_cross_engine_plan_rejected(evaluation):
     plan, evaluate = evaluation[2:]
     audit_plan(plan, "py/code-injection")
-    with pytest.raises(TraceProofError):
+    with pytest.raises(VeriFlowError):
         evaluate()
 
 

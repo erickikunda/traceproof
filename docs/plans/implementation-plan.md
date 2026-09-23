@@ -356,13 +356,13 @@ keep recall-preserving ablations separate from cheaper-but-less-complete configu
 
 Local `codeql resolve languages --format=json` on CodeQL 2.27.0 lists `java`, `csharp`,
 `javascript`, `rust` and `go`. This establishes extractor presence only, not installed query
-packs, usable build dependencies or qualified TraceProof adapters. TypeScript uses CodeQL's
+packs, usable build dependencies or qualified VeriFlow adapters. TypeScript uses CodeQL's
 JavaScript extractor. Validate these details at L0 against the pinned local toolchain and
 record supported framework/runtime versions in the capability matrix.
 
 Primary references: [CodeQL supported languages/frameworks](https://codeql.github.com/docs/codeql-overview/supported-languages-and-frameworks/)
 and [compiled-language build modes](https://docs.github.com/en/code-security/concepts/code-scanning/codeql/codeql-for-compiled-languages).
-Vendor support is a starting point; TraceProof's fixture-qualified scope is the release claim.
+Vendor support is a starting point; VeriFlow's fixture-qualified scope is the release claim.
 
 ```mermaid
 flowchart LR
@@ -839,7 +839,7 @@ feasibility probe: vulnerable/fixed/disconnected flows 1/0/0. Source-file/line r
 are retained and fixture hashes checked. The source/sink selectors are fixture-specific;
 Spring/JDBC semantics remain unqualified. Next implement durable discovery-only adapter
 results and normalization, then framework models and restricted Linux tests. Joern is
-not yet selectable via TraceProof scan commands. See Slice 63 for exact limits/timings.
+not yet selectable via VeriFlow scan commands. See Slice 63 for exact limits/timings.
 
 S3 progress (Slice 64): explicit experimental Joern command now persists scan attempts,
 graphs/logs, source-bound SARIF candidates and normal published reports. Real durable

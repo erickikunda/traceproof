@@ -3,7 +3,7 @@
 This is the first OCP preparation image, qualified locally for synthetic Python, Java/Spring and C#/classic ASP.NET
 source-only scan acceptance on Linux ARM64. It is not an OCP-certified deployment. No OpenShift
 installation is needed on the laptop. Docker Desktop and uv are required for the
-following commands; run from the TraceProof checkout.
+following commands; run from the VeriFlow checkout.
 
 ## Build
 
@@ -12,7 +12,7 @@ uv run python scripts/build_container.py
 ```
 
 Preparation downloads the checksum-pinned CodeQL 2.27.0 Linux ARM64 bundle into ignored
-work/container-inputs, downloads/verifies the pinned Linux JDK, builds the application wheel and builds traceproof:linux-poc.
+work/container-inputs, downloads/verifies the pinned Linux JDK, builds the application wheel and builds veriflow:linux-poc.
 The UBI9 Python 3.12 image is pinned by manifest digest in containers/Containerfile.
 Python runtime dependencies are installed from containers/requirements.lock with hash
 verification and wheels only. Build needs registry/PyPI/GitHub access; runtime does not.
@@ -106,7 +106,7 @@ verification. LLM calls remain untested in this network-disabled acceptance run.
 ### Python interpreter selection
 
 UBI's S2I shell startup normally prepends /opt/app-root/bin. The application image
-sets BASH_ENV=/dev/null, and validation uses the absolute TraceProof virtual-environment
+sets BASH_ENV=/dev/null, and validation uses the absolute VeriFlow virtual-environment
 interpreter for fixture scripts and package inventory. This avoids silently selecting
 a different Python environment when starting the container through bash.
 
@@ -115,7 +115,7 @@ a different Python environment when starting the container through bash.
 CodeQL build-mode=none can infer missing dependency artifacts and fetch them from
 Maven Central. Detailed javac-extractor logs from the historical macOS run show fetches;
 the offline Linux run logs show failed Spring artifact downloads and unresolved
-annotation symbols. The traceproof profile name dependency-free describes operator
+annotation symbols. The veriflow profile name dependency-free describes operator
 inputs, not extractor network behavior. Keep external network denied when testing
 untrusted/bank source and do not treat zero candidates as a clean verdict. Reports
 remain incomplete. Slice 50 supports --java-dependency-profile for approved pre-provisioned JARs. The
@@ -130,7 +130,7 @@ The Spring acceptance suites pass --java-dependency-profile automatically; other
 scans must select their own approved matching profile.
 
 ```sh
-traceproof scan-run RUN_ID JAVA_QUERY --language java --java-dependency-profile DEPENDENCY_ROOT/java-profile.json
+veriflow scan-run RUN_ID JAVA_QUERY --language java --java-dependency-profile DEPENDENCY_ROOT/java-profile.json
 uv run python scripts/pin_java_dependencies.py DEPENDENCY_ROOT --repository maven-repository --artifact org.example:library:jar:1.0
 ```
 
@@ -145,7 +145,7 @@ A profile is not a network sandbox or a complete dependency-resolution guarantee
 CodeQL can still attempt inferred downloads for other unresolved symbols; the container
 blocks those attempts. Even the passing fixture logs contain blocked fetch attempts.
 Keep Docker --network none or future OCP egress policy in place. Reports retain
-network_denial_verified=false because TraceProof does not attest the external Docker
+network_denial_verified=false because VeriFlow does not attest the external Docker
 policy; runtime.json/container-config.json are the separate local enforcement evidence.
 Reports remain incomplete; no general framework reachability or production readiness
 is inferred from the fixture results.
@@ -156,7 +156,7 @@ Preparation verifies Microsoft's published SHA-512 for the .NET 10.0.100 Linux A
 SDK and the pinned SHA-256 for Microsoft.NETFramework.ReferenceAssemblies.net48 1.0.3.
 Only reference DLLs are extracted from that package. An additional committed DLL
 inventory is checked at image build, before generating the SDK/reference profile.
-The generated profile is /opt/traceproof/csharp-dependencies/profile.json. It is
+The generated profile is /opt/veriflow/csharp-dependencies/profile.json. It is
 separate from the laptop's macOS SDK profile. Runtime rechecks the complete inventory.
 
 --suite csharp runs the raw socket/SQL fixture pair; --suite csharp-classic runs the
@@ -174,7 +174,7 @@ can run on OCP. No shared-PVC/SQLite durability or OCP SCC/SELinux testing is cl
 
 ### ASP.NET Core MVC (Slice 52)
 
-`--suite csharp-core` selects `/opt/traceproof/csharp-dependencies/core-profile.json`.
+`--suite csharp-core` selects `/opt/veriflow/csharp-dependencies/core-profile.json`.
 The image creates this profile from the already checksum-pinned .NET SDK 10.0.100,
 using its .NETCore.App.Ref and AspNetCore.App.Ref 10.0.0 reference packs. The SDK and
 reference files are inventoried and verified by the existing profile loader; runtime
@@ -203,7 +203,7 @@ network denial is external; the application does not claim to attest it.
 
 ### Classic ASP.NET Web API (Slice 54)
 
-`--suite csharp-webapi` selects `/opt/traceproof/csharp-dependencies/webapi-profile.json`.
+`--suite csharp-webapi` selects `/opt/veriflow/csharp-dependencies/webapi-profile.json`.
 This separate profile combines net48 with selected DLLs from Web API Core 5.3.0,
 Web API Client 6.0.0 and Json.NET 13.0.3. `containers/webapi-packages.json` records the
 NuGet URLs, package SHA-256s and exact DLL SHA-256s. Build preparation fetches and
@@ -223,7 +223,7 @@ is not executed; bank OCP validation remains a later acceptance gate.
 
 ### Classic ASP.NET MVC (Slice 55)
 
-`--suite csharp-mvc` selects `/opt/traceproof/csharp-dependencies/mvc-profile.json`.
+`--suite csharp-mvc` selects `/opt/veriflow/csharp-dependencies/mvc-profile.json`.
 It combines net48 with six selected DLLs from MVC 5.3.0, Web Pages 3.3.0 and Razor
 3.3.0. `containers/mvc-packages.json` pins official NuGet package URLs, archive hashes
 and individual assembly hashes. The shared classic profile builder verifies the exact

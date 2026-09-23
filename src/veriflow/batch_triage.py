@@ -5,7 +5,7 @@ import hashlib
 from sqlalchemy import func, select
 
 from veriflow.bundles import build_bundle, canonical
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.history import validate_page
 from veriflow.persistence import Candidate, Run, ScanAttempt, TriageBudget
 from veriflow.triage import triage
@@ -22,9 +22,9 @@ def triage_attempt(
         require_policy(review_policy)
     validate_page(offset, limit)
     if limit > 100:
-        raise TraceProofError("Batch triage limit must not exceed 100 candidates")
+        raise VeriFlowError("Batch triage limit must not exceed 100 candidates")
     if not key.strip() or len(key) > 200:
-        raise TraceProofError("Batch key must contain 1–200 characters")
+        raise VeriFlowError("Batch key must contain 1–200 characters")
     with store.transaction() as session:
         attempt = session.scalar(
             select(ScanAttempt)
@@ -32,11 +32,11 @@ def triage_attempt(
             .where(ScanAttempt.id == attempt_id, Run.repo_id == repo_id)
         )
         if attempt is None:
-            raise TraceProofError("Analysis attempt does not belong to repository")
+            raise VeriFlowError("Analysis attempt does not belong to repository")
         if attempt.report.get("status") not in {"completed", "partial"}:
-            raise TraceProofError("Batch triage requires a completed or partial query attempt")
+            raise VeriFlowError("Batch triage requires a completed or partial query attempt")
         if session.get(TriageBudget, attempt.run_id) is None:
-            raise TraceProofError("Configure a run triage budget before requesting triage")
+            raise VeriFlowError("Configure a run triage budget before requesting triage")
         run_id = attempt.run_id
         scope = Candidate.attempt_id == attempt_id
         total = session.scalar(select(func.count()).select_from(Candidate).where(scope))
@@ -68,7 +68,7 @@ def triage_attempt(
                 request_key,
                 **({"review_policy": review_policy} if review_policy else {}),
             )
-        except TraceProofError as exc:
+        except VeriFlowError as exc:
             rows.append({**row, "state": "operation_error", "error": str(exc)})
             halted = True
             break

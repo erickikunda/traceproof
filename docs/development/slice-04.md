@@ -93,7 +93,7 @@ class-specific evidence obligations and human review remain necessary.
 
 ## Operator configuration
 
-Run `traceproof init` to apply migration 0004. Offline examples are committed in
+Run `veriflow init` to apply migration 0004. Offline examples are committed in
 `examples/triage-replay-config.json` and `examples/triage-replay-response.json`.
 
 For live validation, create a local JSON policy with these fields:
@@ -119,13 +119,13 @@ Keep the actual key in the named local environment variable, never in the policy
 CSV, source archive or chat. Config validation failures omit raw values from CLI errors.
 
 ```bash
-uv run traceproof build-bundle ATTEMPT_ID CANDIDATE_FINGERPRINT
-uv run traceproof triage-budget RUN_ID 100000
-uv run traceproof triage BUNDLE_ID examples/triage-replay-config.json demo-1 \
+uv run veriflow build-bundle ATTEMPT_ID CANDIDATE_FINGERPRINT
+uv run veriflow triage-budget RUN_ID 100000
+uv run veriflow triage BUNDLE_ID examples/triage-replay-config.json demo-1 \
   --replay examples/triage-replay-response.json
-uv run traceproof triage-report RUN_ID
+uv run veriflow triage-report RUN_ID
 # For an explicitly configured live policy, omit --replay:
-# uv run traceproof triage BUNDLE_ID /absolute/local-policy.json live-1
+# uv run veriflow triage BUNDLE_ID /absolute/local-policy.json live-1
 ```
 
 ## Reservation and recovery semantics

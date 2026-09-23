@@ -3,14 +3,14 @@
 import os
 import time
 
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.gcs_acquisition import ObjectVersion
 
 
 class GCSReader:
     def __init__(self, *, use_adc=False, timeout=300, client_factory=None):
         if not use_adc:
-            raise TraceProofError(
+            raise VeriFlowError(
                 "GCS acquisition requires explicit Application Default Credentials opt-in"
             )
         self.timeout = timeout
@@ -22,18 +22,18 @@ class GCSReader:
     def remaining(self):
         remaining = self.deadline - time.monotonic()
         if remaining <= 0:
-            raise TraceProofError("GCS reader deadline exceeded")
+            raise VeriFlowError("GCS reader deadline exceeded")
         return min(30, remaining)
 
     def stat(self, bucket, name, generation):
         self.deadline = time.monotonic() + self.timeout
         if self.factory is None:
             if os.environ.get("STORAGE_EMULATOR_HOST"):
-                raise TraceProofError("GCS emulator endpoint is not supported by the live reader")
+                raise VeriFlowError("GCS emulator endpoint is not supported by the live reader")
             try:
                 from google.cloud import storage
             except ImportError:
-                raise TraceProofError(
+                raise VeriFlowError(
                     "Install TraceProof with the gcs optional dependency"
                 ) from None
             self.factory = storage.Client
@@ -56,7 +56,7 @@ class GCSReader:
                 checksum=None,
             )
             if len(data) != end - start + 1:
-                raise TraceProofError("GCS range response length mismatch")
+                raise VeriFlowError("GCS range response length mismatch")
             yield data
 
     def close(self):

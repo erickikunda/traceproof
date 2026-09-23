@@ -6,7 +6,7 @@ import zipfile
 
 import pytest
 
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.gcs_acquisition import ObjectVersion, acquire_archive
 
 
@@ -49,7 +49,7 @@ def test_archive_handoff(tmp_path):
     row = next(csv.DictReader((tmp_path / "out/archives.csv").open()))
     assert row["sha256"] == hashlib.sha256(buffer.getvalue()).hexdigest()
     assert reader.calls == [("approved-bucket", "folder/source.zip", "123")]
-    with pytest.raises(TraceProofError, match="already exists"):
+    with pytest.raises(VeriFlowError, match="already exists"):
         execute(tmp_path, reader)
 
 
@@ -58,7 +58,7 @@ def test_archive_handoff(tmp_path):
 )
 def test_failed_download_never_publishes(tmp_path, generation, size, digest):
     reader = Reader(b"fixture", generation, size)
-    with pytest.raises(TraceProofError):
+    with pytest.raises(VeriFlowError):
         execute(tmp_path, reader, **({"expected_sha256": digest} if digest else {}))
     assert not (tmp_path / "out/archives.csv").exists()
     assert not (tmp_path / "out/source.zip").exists()
@@ -67,6 +67,6 @@ def test_failed_download_never_publishes(tmp_path, generation, size, digest):
 
 def test_unapproved_bucket_before_reader(tmp_path):
     reader = Reader(b"fixture")
-    with pytest.raises(TraceProofError):
+    with pytest.raises(VeriFlowError):
         execute(tmp_path, reader, allowed_buckets=[])
     assert not reader.calls and not (tmp_path / "out").exists()

@@ -3,7 +3,7 @@ from types import SimpleNamespace
 import pytest
 
 from veriflow import joern_pipeline, joern_selection
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 
 
 def manifest(*paths):
@@ -27,7 +27,7 @@ def test_inventory_selects_all_profiles_and_preserves_unsupported():
 
 
 def test_no_source_does_not_claim_clean():
-    with pytest.raises(TraceProofError, match="No recognized"):
+    with pytest.raises(VeriFlowError, match="No recognized"):
         joern_selection.selection(manifest("README.md"))
 
 
@@ -42,7 +42,7 @@ def test_scope_failure_continues_other_languages_and_reports(monkeypatch):
     def fake(*args):
         calls.append((args[2], args[8], args[9]))
         if args[2] == "csharp":
-            raise TraceProofError("C# requires repair")
+            raise VeriFlowError("C# requires repair")
         return {"status": "incomplete", "report_id": args[9], "model_calls": 0}
 
     monkeypatch.setattr(joern_pipeline, "scan_run", fake)
@@ -59,7 +59,7 @@ def test_scope_failure_continues_other_languages_and_reports(monkeypatch):
 
 
 def test_advisory_requires_explicit_profile():
-    with pytest.raises(TraceProofError, match="discovery-only"):
+    with pytest.raises(VeriFlowError, match="discovery-only"):
         joern_selection.scan_selected(
             None, "run", "auto", "/joern", None, None, 300, 600, advisory=object()
         )

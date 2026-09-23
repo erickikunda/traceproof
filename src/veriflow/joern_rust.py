@@ -4,17 +4,17 @@ import json
 import tomllib
 from pathlib import Path
 
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 
 
 def cargo_manifest(tree, manifest):
     """Reject unsupported Cargo inputs; generate only the admitted binary metadata."""
     records = {f.path: f for f in manifest.files}
     if "Cargo.toml" not in records:
-        raise TraceProofError("Rust requires a root Cargo.toml")
+        raise VeriFlowError("Rust requires a root Cargo.toml")
     raw = (tree / "Cargo.toml").read_bytes()
     if len(raw) > 65536:
-        raise TraceProofError("Cargo manifest exceeds profile limit")
+        raise VeriFlowError("Cargo manifest exceeds profile limit")
     try:
         doc = tomllib.loads(raw.decode())
         if set(doc) != {"package", "bin"}:
@@ -56,20 +56,20 @@ def cargo_manifest(tree, manifest):
         lines += [f"{k} = {json.dumps(binary[k])}" for k in ("name", "path")]
         return ("\n".join(lines) + "\n").encode()
     except (ValueError, KeyError, TypeError, UnicodeError):
-        raise TraceProofError(
+        raise VeriFlowError(
             "Rust requires one explicit binary; dependencies/workspaces/build hooks unsupported"
         ) from None
 
 
 def trusted_toolchain(store, root):
     if root is None:
-        raise TraceProofError("Rust requires an operator-supplied toolchain directory")
+        raise VeriFlowError("Rust requires an operator-supplied toolchain directory")
     root = Path(root).resolve(strict=True)
     if any(root.is_relative_to(store.root / d) for d in ("artifacts", "scans")):
-        raise TraceProofError("Rust toolchain must not come from scan artifacts")
+        raise VeriFlowError("Rust toolchain must not come from scan artifacts")
     if not all(
         (root / p).is_file()
         for p in ("bin/rustc", "bin/cargo", "lib/rustlib/src/rust/library/core/src/lib.rs")
     ):
-        raise TraceProofError("Rust toolchain requires rustc, cargo and rust-src")
+        raise VeriFlowError("Rust toolchain requires rustc, cargo and rust-src")
     return root

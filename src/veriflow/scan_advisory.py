@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.joern_claims import require_policy
 from veriflow.models import Adapter, ModelConfig, ReplayAdapter, live_adapter, read_config
 from veriflow.persistence import TriageBudget
@@ -20,26 +20,26 @@ class AdvisoryOptions:
     def __post_init__(self):
         require_policy(self.review_policy)
         if not self.key.strip() or len(self.key) > 200:
-            raise TraceProofError("Advisory key must contain 1–200 characters")
+            raise VeriFlowError("Advisory key must contain 1–200 characters")
         if (
             type(self.offset) is not int
             or self.offset < 0
             or type(self.limit) is not int
             or not 1 <= self.limit <= 100
         ):
-            raise TraceProofError("Advisory page requires offset >= 0 and limit 1–100")
+            raise VeriFlowError("Advisory page requires offset >= 0 and limit 1–100")
 
     def validate_scope(self, language, discovery_profile):
         expected_language, profile, _, _ = require_policy(self.review_policy)
         if language != expected_language or (discovery_profile or "default") != profile:
-            raise TraceProofError(
+            raise VeriFlowError(
                 f"Scan advisory policy requires Joern {expected_language} profile {profile}"
             )
 
     def validate_budget(self, store, run_id):
         with store.transaction() as session:
             if session.get(TriageBudget, run_id) is None:
-                raise TraceProofError("Configure the run triage budget before advisory scanning")
+                raise VeriFlowError("Configure the run triage budget before advisory scanning")
 
 
 class CountingAdapter:
@@ -69,7 +69,7 @@ def run_advisory(store, repo_id, attempt_id, options):
             options.limit,
             review_policy=options.review_policy,
         )
-    except TraceProofError as exc:
+    except VeriFlowError as exc:
         result = {"status": "halted", "reason": str(exc)}
     return {
         **result,
@@ -85,17 +85,17 @@ def load_advisory(config_path, review_policy, key, replay, offset=0, limit=1):
     """CLI parsing only; never invokes a provider or sets a budget implicitly."""
     if config_path is None:
         if any(v is not None for v in (review_policy, key, replay)) or offset != 0 or limit != 1:
-            raise TraceProofError("Advisory options require --advisory-config")
+            raise VeriFlowError("Advisory options require --advisory-config")
         return None
     if review_policy is None or key is None:
-        raise TraceProofError("Advisory scanning requires --review-policy and --advisory-key")
+        raise VeriFlowError("Advisory scanning requires --review-policy and --advisory-key")
     config = read_config(config_path)
     if config.provider == "replay":
         if replay is None:
-            raise TraceProofError("Replay advisory requires --replay RESPONSE_JSON")
+            raise VeriFlowError("Replay advisory requires --replay RESPONSE_JSON")
         adapter = ReplayAdapter(replay)
     else:
         if replay is not None:
-            raise TraceProofError("A live advisory cannot use a replay fixture")
+            raise VeriFlowError("A live advisory cannot use a replay fixture")
         adapter = live_adapter(config)
     return AdvisoryOptions(config, adapter, key, review_policy, offset, limit)

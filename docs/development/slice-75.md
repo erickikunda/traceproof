@@ -9,7 +9,7 @@ Joern C# triage yet. The evidence narrows the failure but does not resolve it.
 
 Using the unchanged pinned Joern 4.0.625 and unchanged fixture query, copied the previous
 three-file controller/service/repository pair and enclosed the classes in the explicit
-TraceProofProbe namespace. No dependencies were downloaded or application builds run.
+VeriFlowProbe namespace. No dependencies were downloaded or application builds run.
 
 | Cross-file variant | Vulnerable flows | Fixed flows |
 |---|---:|---:|

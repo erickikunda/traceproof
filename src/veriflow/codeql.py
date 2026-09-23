@@ -15,7 +15,7 @@ from sqlalchemy import select
 from veriflow.codeql_resources import resource_settings
 from veriflow.csharp_dependencies import environment as dependency_environment
 from veriflow.csharp_dependencies import load_profile
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.indexing import verified_source
 from veriflow.java_dependencies import java_environment, load_java_profile
 from veriflow.java_index import build_java_index
@@ -49,16 +49,16 @@ def extract(
     resources = resource_settings(threads, ram_mb)
     validate_selection(language, java_profile)
     if not 1 <= timeout <= 3600:
-        raise TraceProofError("Extraction timeout must be between 1 and 3600 seconds")
+        raise VeriFlowError("Extraction timeout must be between 1 and 3600 seconds")
     run, manifest, tree = verified_source(store, run_id)
     requested_language = language
     language = select_language(manifest, language)
     adapter = adapter_for(language)
     if csharp_dependency_profile is not None and language != "csharp":
-        raise TraceProofError("C# dependency profiles require the csharp language")
+        raise VeriFlowError("C# dependency profiles require the csharp language")
     validate_offline(language, csharp_dependency_profile, allow_csharp_downloads, csharp_offline)
     if java_dependency_profile is not None and language != "java":
-        raise TraceProofError("Java dependency profiles require java")
+        raise VeriFlowError("Java dependency profiles require java")
     java_dependencies = (
         load_java_profile(java_dependency_profile) if java_dependency_profile else None
     )
@@ -66,7 +66,7 @@ def extract(
         load_profile(csharp_dependency_profile) if csharp_dependency_profile else None
     )
     if language == "csharp" and not allow_csharp_downloads and not csharp_offline:
-        raise TraceProofError(
+        raise VeriFlowError(
             "C# extraction may download a .NET SDK and NuGet dependencies; "
             "explicit allow-csharp-downloads is required"
         )
@@ -109,7 +109,7 @@ def extract(
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(tree / file.path, target)
             if hashlib.sha256(target.read_bytes()).hexdigest() != file.sha256:
-                raise TraceProofError("Source extraction copy failed integrity verification")
+                raise VeriFlowError("Source extraction copy failed integrity verification")
     executable = shutil.which("codeql")
     result = {
         "schema_version": "1",
@@ -158,7 +158,7 @@ def extract(
                     timeout=10,
                     check=True,
                 )
-            except (TraceProofError, OSError, subprocess.SubprocessError):
+            except (VeriFlowError, OSError, subprocess.SubprocessError):
                 result["status"] = "network_isolation_unavailable"
                 with store.transaction() as session:
                     session.get(CodeqlAttempt, attempt_id).result = result
@@ -243,10 +243,10 @@ def extract(
             verified_source(store, run_id)
             if java_dependencies:
                 if load_java_profile(java_dependencies["path"])["id"] != java_dependencies["id"]:
-                    raise TraceProofError("Java dependency profile changed")
+                    raise VeriFlowError("Java dependency profile changed")
             if dependency_profile:
                 if load_profile(dependency_profile["path"])["id"] != dependency_profile["id"]:
-                    raise TraceProofError("Dependency profile changed")
+                    raise VeriFlowError("Dependency profile changed")
             if extraction_tree != tree:
                 for file in manifest.files:
                     if file.path.lower().endswith(copy_suffix):
@@ -255,8 +255,8 @@ def extract(
                             target.is_symlink()
                             or hashlib.sha256(target.read_bytes()).hexdigest() != file.sha256
                         ):
-                            raise TraceProofError("Source extraction copy changed")
-        except (TraceProofError, OSError):
+                            raise VeriFlowError("Source extraction copy changed")
+        except (VeriFlowError, OSError):
             result["status"] = "integrity_failed"
     result["elapsed_seconds"] = round(time.monotonic() - started, 3)
     with store.transaction() as session:
@@ -268,5 +268,5 @@ def extraction_status(store, attempt_id):
     with store.transaction() as session:
         attempt = session.get(CodeqlAttempt, attempt_id)
         if attempt is None:
-            raise TraceProofError("CodeQL extraction attempt not found")
+            raise VeriFlowError("CodeQL extraction attempt not found")
         return attempt.result

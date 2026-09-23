@@ -11,7 +11,7 @@ from sqlalchemy import func, select
 
 from veriflow.acquisition_provenance import summary as acquisition_summary
 from veriflow.bundles import canonical
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.intake import now
 from veriflow.persistence import (
     Candidate,
@@ -38,14 +38,14 @@ def selected_run(session, repo_id, run_id=None):
         query = query.where(Run.id == run_id)
     run = session.scalar(query.order_by(Run.created_at.desc(), Run.id.desc()).limit(1))
     if run is None:
-        raise TraceProofError("Repository/run not found")
+        raise VeriFlowError("Repository/run not found")
     return run
 
 
 def bounded(session, query):
     rows = list(session.scalars(query.limit(MAX_ROWS + 1)))
     if len(rows) > MAX_ROWS:
-        raise TraceProofError("Report exceeds 10,000 rows; no partial report was published")
+        raise VeriFlowError("Report exceeds 10,000 rows; no partial report was published")
     return rows
 
 
@@ -62,7 +62,7 @@ def projection(session, repo_id, run_id, attempt_id):
         else session.scalar(attempts.where(ScanAttempt.id == attempt_id))
     )
     if attempt_id is not None and attempt is None:
-        raise TraceProofError("Attempt does not belong to selected run")
+        raise VeriFlowError("Attempt does not belong to selected run")
     scan = attempt.report if attempt else {}
     candidates = (
         bounded(
@@ -185,7 +185,7 @@ def projection(session, repo_id, run_id, attempt_id):
     )
     candidate_count = scan.get("candidate_count")
     if candidate_count is not None and candidate_count != len(rows):
-        raise TraceProofError("Stored candidate count does not reconcile; report not published")
+        raise VeriFlowError("Stored candidate count does not reconcile; report not published")
     return {
         "schema_version": "1",
         "projection_version": "15",
@@ -272,7 +272,7 @@ def publish_report(store, repo_id, run_id=None, attempt_id=None):
         content = {**body, "report_version": version, "created_at": now()}
         encoded = canonical(content)
         if len(encoded) > MAX_REPORT_BYTES:
-            raise TraceProofError("Report exceeds 8 MiB; no partial report was published")
+            raise VeriFlowError("Report exceeds 8 MiB; no partial report was published")
         identity = hashlib.sha256(encoded).hexdigest()
         record = PublishedReport(
             id=identity,
@@ -288,7 +288,7 @@ def publish_report(store, repo_id, run_id=None, attempt_id=None):
 
 def verified(record):
     if hashlib.sha256(canonical(record.content)).hexdigest() != record.id:
-        raise TraceProofError("Report integrity check failed")
+        raise VeriFlowError("Report integrity check failed")
     return {"report_id": record.id, **record.content}
 
 
@@ -301,7 +301,7 @@ def get_report(store, repo_id, report_id=None, run_id=None):
                 .where(PublishedReport.id == report_id, Run.repo_id == repo_id)
             )
             if record is None or (run_id and record.run_id != run_id):
-                raise TraceProofError("Report does not belong to repository/run")
+                raise VeriFlowError("Report does not belong to repository/run")
         else:
             run = selected_run(session, repo_id, run_id)
             record = session.scalar(
@@ -311,7 +311,7 @@ def get_report(store, repo_id, report_id=None, run_id=None):
                 .limit(1)
             )
             if record is None:
-                raise TraceProofError("No published report for selected run; no fallback was used")
+                raise VeriFlowError("No published report for selected run; no fallback was used")
             verified(record)
             latest_attempt = session.scalar(
                 select(ScanAttempt.id)
@@ -320,7 +320,7 @@ def get_report(store, repo_id, report_id=None, run_id=None):
                 .limit(1)
             )
             if record.content["attempt_id"] != latest_attempt:
-                raise TraceProofError(
+                raise VeriFlowError(
                     "Latest attempt has no current report; publish it or select an exact report ID"
                 )
         return verified(record)
@@ -329,7 +329,7 @@ def get_report(store, repo_id, report_id=None, run_id=None):
 def resolve_report(store, repo_id, selection="latest-attempt"):
     """Return a live selection envelope without altering immutable report content."""
     if selection not in {"latest-attempt", "latest-completed"}:
-        raise TraceProofError("Unknown report selection mode")
+        raise VeriFlowError("Unknown report selection mode")
     with store.transaction() as session:
         latest_run = selected_run(session, repo_id)
         latest_attempt = session.scalar(
@@ -402,7 +402,7 @@ def resolve_report(store, repo_id, selection="latest-attempt"):
 
 def report_history(store, repo_id, offset=0, limit=100):
     if offset < 0 or not 1 <= limit <= 1000:
-        raise TraceProofError("Invalid report pagination")
+        raise VeriFlowError("Invalid report pagination")
     with store.transaction() as session:
         selected_run(session, repo_id)
         query = select(PublishedReport).join(Run).where(Run.repo_id == repo_id)
@@ -595,4 +595,4 @@ def render_report(report, format="json"):
             "<details><summary>Report details and advisory history</summary>"
             f"<pre>{html.escape(pretty)}</pre></details></html>"
         )
-    raise TraceProofError("Format must be json, markdown, html, scan-csv or candidates-csv")
+    raise VeriFlowError("Format must be json, markdown, html, scan-csv or candidates-csv")

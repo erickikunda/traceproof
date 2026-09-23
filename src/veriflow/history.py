@@ -2,18 +2,18 @@
 
 from sqlalchemy import func, select
 
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.persistence import CodeqlAttempt, Repository, Run, ScanAttempt
 
 
 def validate_page(offset, limit):
     if type(offset) is not int or type(limit) is not int or offset < 0 or not 1 <= limit <= 1000:
-        raise TraceProofError("Invalid history pagination")
+        raise VeriFlowError("Invalid history pagination")
 
 
 def require_repository(session, repo_id):
     if session.get(Repository, repo_id) is None:
-        raise TraceProofError("Repository not found")
+        raise VeriFlowError("Repository not found")
 
 
 def page(repo_id, offset, limit, total, rows):
@@ -75,7 +75,7 @@ def scan_history(store, repo_id, run_id=None, offset=0, limit=100):
         if run_id is not None:
             run = session.get(Run, run_id)
             if run is None or run.repo_id != repo_id:
-                raise TraceProofError("Run does not belong to repository")
+                raise VeriFlowError("Run does not belong to repository")
         scope = [Run.repo_id == repo_id]
         if run_id is not None:
             scope.append(Run.id == run_id)
@@ -126,7 +126,7 @@ def extraction_history(store, repo_id, run_id=None, offset=0, limit=100):
         if run_id is not None:
             run = session.get(Run, run_id)
             if run is None or run.repo_id != repo_id:
-                raise TraceProofError("Run does not belong to repository")
+                raise VeriFlowError("Run does not belong to repository")
         scope = [Run.repo_id == repo_id]
         if run_id is not None:
             scope.append(Run.id == run_id)

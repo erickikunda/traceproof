@@ -4,7 +4,7 @@ import hashlib
 import json
 from pathlib import Path, PurePosixPath
 
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 
 MAX_FILES = 20000
 
@@ -13,10 +13,10 @@ def inventory(root):
     result = {}
     for path in sorted(root.rglob("*")):
         if path.is_symlink():
-            raise TraceProofError("Dependency inventories cannot contain symlinks")
+            raise VeriFlowError("Dependency inventories cannot contain symlinks")
         if path.is_file():
             if len(result) >= MAX_FILES:
-                raise TraceProofError("Dependency inventory exceeds file limit")
+                raise VeriFlowError("Dependency inventory exceeds file limit")
             with path.open("rb") as handle:
                 result[path.relative_to(root).as_posix()] = hashlib.file_digest(
                     handle, "sha256"
@@ -62,12 +62,12 @@ def load_profile(path):
             ):
                 raise ValueError()
             if inventory(root) != value["files"]:
-                raise TraceProofError("Dependency profile integrity mismatch")
+                raise VeriFlowError("Dependency profile integrity mismatch")
             roots[key] = root
         if not (roots["sdk"] / "dotnet").is_file() or not list(roots["references"].rglob("*.dll")):
             raise ValueError()
     except (ValueError, TypeError, KeyError, AttributeError):
-        raise TraceProofError("Invalid C# dependency profile") from None
+        raise VeriFlowError("Invalid C# dependency profile") from None
     return {
         "id": hashlib.sha256(raw).hexdigest(),
         "path": path,

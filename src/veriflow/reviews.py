@@ -9,7 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_valida
 from sqlalchemy import func, select
 
 from veriflow.bundles import canonical, get_bundle
-from veriflow.domain import Digest, TraceProofError
+from veriflow.domain import Digest, VeriFlowError
 from veriflow.intake import now
 from veriflow.persistence import (
     Candidate,
@@ -47,7 +47,7 @@ def read_review(path):
     with Path(path).open("rb") as handle:
         raw = handle.read(16 * 1024 + 1)
     if len(raw) > 16 * 1024:
-        raise TraceProofError("Review request exceeds 16 KiB")
+        raise VeriFlowError("Review request exceeds 16 KiB")
     try:
 
         def object_pairs(pairs):
@@ -60,7 +60,7 @@ def read_review(path):
 
         return ReviewRequest.model_validate(json.loads(raw, object_pairs_hook=object_pairs))
     except (ValidationError, ValueError, TypeError, RecursionError):
-        raise TraceProofError("Invalid review request; check schema, state and evidence") from None
+        raise VeriFlowError("Invalid review request; check schema, state and evidence") from None
 
 
 def selected_candidate(session, repo_id, attempt_id, fingerprint):
@@ -75,7 +75,7 @@ def selected_candidate(session, repo_id, attempt_id, fingerprint):
         )
     )
     if candidate is None:
-        raise TraceProofError("Candidate does not belong to repository/attempt")
+        raise VeriFlowError("Candidate does not belong to repository/attempt")
     return candidate
 
 
@@ -87,19 +87,19 @@ def verified_review(record):
         or record.content["request_sha256"] != record.request_sha256
         or record.content["bundle_id"] != record.bundle_id
     ):
-        raise TraceProofError("Operator review integrity check failed")
+        raise VeriFlowError("Operator review integrity check failed")
     return {"review_id": record.id, **record.content}
 
 
 def record_review(store, repo_id, attempt_id, fingerprint, request, key):
     if not isinstance(request, ReviewRequest):
-        raise TraceProofError("Expected a validated review request")
+        raise VeriFlowError("Expected a validated review request")
     try:
         request = ReviewRequest.model_validate(request.model_dump())
     except ValidationError:
-        raise TraceProofError("Invalid review request; check schema, state and evidence") from None
+        raise VeriFlowError("Invalid review request; check schema, state and evidence") from None
     if not key.strip() or len(key) > 200:
-        raise TraceProofError("Review key must contain 1–200 characters")
+        raise VeriFlowError("Review key must contain 1–200 characters")
     store.require_initialized()
     digest = hashlib.sha256(canonical(request.model_dump())).hexdigest()
     with exclusive_worker(store.root), store.transaction() as session:
@@ -111,7 +111,7 @@ def record_review(store, repo_id, attempt_id, fingerprint, request, key):
         )
         if existing:
             if existing.request_sha256 != digest:
-                raise TraceProofError("Review key was used for a different request")
+                raise VeriFlowError("Review key was used for a different request")
             return verified_review(existing)
         revision = (
             session.scalar(
@@ -122,17 +122,17 @@ def record_review(store, repo_id, attempt_id, fingerprint, request, key):
             or 0
         )
         if request.expected_revision != revision:
-            raise TraceProofError(
+            raise VeriFlowError(
                 "Stale review revision; retrieve history before submitting a new decision"
             )
         bundle_record = session.get(EvidenceBundle, request.bundle_id)
         if bundle_record is None or bundle_record.candidate_id != candidate.id:
-            raise TraceProofError("Review bundle does not belong to the candidate")
+            raise VeriFlowError("Review bundle does not belong to the candidate")
         bundle = get_bundle(store, request.bundle_id)
         if set(request.evidence_ids) - {item["id"] for item in bundle["snippets"]}:
-            raise TraceProofError("Review cites evidence absent from its bundle")
+            raise VeriFlowError("Review cites evidence absent from its bundle")
         if request.state in {"confirmed", "false_positive"} and bundle["status"] != "ready":
-            raise TraceProofError("Definitive review requires a ready evidence bundle")
+            raise VeriFlowError("Definitive review requires a ready evidence bundle")
         content = {
             "schema_version": "1",
             "candidate_id": candidate.id,
@@ -159,7 +159,7 @@ def record_review(store, repo_id, attempt_id, fingerprint, request, key):
 
 def review_history(store, repo_id, attempt_id, fingerprint, offset=0, limit=100):
     if offset < 0 or not 1 <= limit <= 1000:
-        raise TraceProofError("Invalid review pagination")
+        raise VeriFlowError("Invalid review pagination")
     with store.transaction() as session:
         candidate = selected_candidate(session, repo_id, attempt_id, fingerprint)
         query = select(OperatorReview).where(OperatorReview.candidate_id == candidate.id)

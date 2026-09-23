@@ -5,7 +5,7 @@ import pytest
 from typer.testing import CliRunner
 
 from veriflow.cli import app
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.gcs_acquisition import acquire_archive
 from veriflow.gcs_reader import GCSReader
 
@@ -70,7 +70,7 @@ def test_sdk_failure_sanitized_and_no_manifest(tmp_path):
     client = Mock()
     client.bucket.side_effect = RuntimeError("secret-provider-details")
     reader = GCSReader(use_adc=True, client_factory=lambda: client)
-    with pytest.raises(TraceProofError) as error:
+    with pytest.raises(VeriFlowError) as error:
         acquire_archive(
             reader,
             bucket="approved-bucket",

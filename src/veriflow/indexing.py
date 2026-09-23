@@ -10,7 +10,7 @@ from uuid import uuid4
 from sqlalchemy import select
 
 from veriflow.artifacts import ArtifactStore
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.persistence import IndexedFile, Run, Snapshot, SourceIndex
 from veriflow.python_parser import MAX_BYTES
 
@@ -23,7 +23,7 @@ def snapshot_for_run(store, run_id):
     with store.transaction() as session:
         run = session.get(Run, run_id)
         if run is None or run.snapshot_id is None:
-            raise TraceProofError("Run has no captured snapshot")
+            raise VeriFlowError("Run has no captured snapshot")
         snapshot = session.get(Snapshot, run.snapshot_id)
         return run, snapshot
 
@@ -33,7 +33,7 @@ def verified_source(store, run_id):
     artifacts = ArtifactStore(store.root)
     manifest = artifacts.verify(snapshot.id)
     if manifest.model_dump(mode="json") != snapshot.manifest:
-        raise TraceProofError("Snapshot manifest differs from its admitted database record")
+        raise VeriFlowError("Snapshot manifest differs from its admitted database record")
     return run, manifest, artifacts.path(snapshot.id) / "tree"
 
 
@@ -85,7 +85,7 @@ def build_index(store, run_id):
             else:
                 source = (tree / record.path).read_bytes()
                 if hashlib.sha256(source).hexdigest() != record.sha256:
-                    raise TraceProofError("Source changed during indexing")
+                    raise VeriFlowError("Source changed during indexing")
                 result = parse_isolated(source)
         result.update(path=record.path, sha256=record.sha256, size_bytes=record.size_bytes)
         with store.transaction() as session:
@@ -155,7 +155,7 @@ def published_index(session, snapshot_id, index_id=None):
         )
     )
     if index is None:
-        raise TraceProofError("No published index for this snapshot and parser version")
+        raise VeriFlowError("No published index for this snapshot and parser version")
     return index
 
 
@@ -173,7 +173,7 @@ def repository_report(store, repo_id, run_id=None, index_id=None):
             query = query.where(Run.id == run_id)
         run = session.scalar(query.order_by(Run.created_at.desc(), Run.id.desc()).limit(1))
         if run is None:
-            raise TraceProofError("Repository/run not found")
+            raise VeriFlowError("Repository/run not found")
         selected = run.id
     # Latest admitted run is intentional: never silently return an older successful run.
     return coverage_report(store, selected, index_id)
@@ -181,7 +181,7 @@ def repository_report(store, repo_id, run_id=None, index_id=None):
 
 def query_index(store, run_id, kind="symbols", path=None, offset=0, limit=100):
     if kind not in {"symbols", "calls"} or not 1 <= limit <= 1000 or offset < 0:
-        raise TraceProofError("Invalid index query")
+        raise VeriFlowError("Invalid index query")
     run, snapshot = snapshot_for_run(store, run_id)
     with store.transaction() as session:
         index = published_index(session, snapshot.id)

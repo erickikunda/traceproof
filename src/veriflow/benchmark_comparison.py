@@ -3,7 +3,7 @@
 from collections import Counter
 
 from veriflow.bundles import canonical
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.reports import markdown_cell
 from veriflow.scorecards import get_scorecard
 
@@ -85,7 +85,7 @@ def compare_scorecards(store, dataset_id, baseline_id, current_id):
         ],
     }
     if len(canonical(result)) > 8 * 1024 * 1024:
-        raise TraceProofError("Benchmark comparison exceeds 8 MiB")
+        raise VeriFlowError("Benchmark comparison exceeds 8 MiB")
     return result
 
 
@@ -93,7 +93,7 @@ def render_comparison(report, format="json"):
     if format == "json":
         return canonical(report).decode()
     if format != "markdown":
-        raise TraceProofError("Benchmark comparison format must be json or markdown")
+        raise VeriFlowError("Benchmark comparison format must be json or markdown")
     lines = [
         "# TraceProof benchmark comparison",
         "",

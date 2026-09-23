@@ -19,7 +19,7 @@ from veriflow.domain import (
     FileRecord,
     IntakeSpec,
     SnapshotManifest,
-    TraceProofError,
+    VeriFlowError,
 )
 
 CHUNK = 1024 * 1024
@@ -36,7 +36,7 @@ class BoundedTarInfo(tarfile.TarInfo):
             tarfile.GNUTYPE_LONGLINK,
         )
         if info.type in metadata_types and info.size > 65536:
-            raise TraceProofError("Archive metadata exceeds 64 KiB limit")
+            raise VeriFlowError("Archive metadata exceeds 64 KiB limit")
         return info
 
 
@@ -58,13 +58,13 @@ def open_scoped_source(source_uri: str, input_root: Path) -> BinaryIO:
     root = input_root.resolve(strict=True)
     path = Path(source_uri)
     if ".." in path.parts:
-        raise TraceProofError("Source path contains parent traversal")
+        raise VeriFlowError("Source path contains parent traversal")
     try:
         parts = path.relative_to(root).parts
     except ValueError as exc:
-        raise TraceProofError("Source is outside the configured input root") from exc
+        raise VeriFlowError("Source is outside the configured input root") from exc
     if not parts:
-        raise TraceProofError("Source must name an archive file")
+        raise VeriFlowError("Source must name an archive file")
     directory = os.open(root, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
     try:
         for part in parts[:-1]:
@@ -74,7 +74,7 @@ def open_scoped_source(source_uri: str, input_root: Path) -> BinaryIO:
         fd = os.open(parts[-1], os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=directory)
         if not stat.S_ISREG(os.fstat(fd).st_mode):
             os.close(fd)
-            raise TraceProofError("Source must be a regular file")
+            raise VeriFlowError("Source must be a regular file")
         return os.fdopen(fd, "rb")
     finally:
         os.close(directory)
@@ -89,11 +89,11 @@ class LimitedReader:
 
     def read(self, size: int = -1) -> bytes:
         if size < 0 or size > CHUNK:
-            raise TraceProofError("Oversized archive metadata read")
+            raise VeriFlowError("Oversized archive metadata read")
         block = self.source.read(min(size, self.remaining + 1))
         self.remaining -= len(block)
         if self.remaining < 0:
-            raise TraceProofError("Decoded archive exceeds stream limit")
+            raise VeriFlowError("Decoded archive exceeds stream limit")
         return block
 
 
@@ -109,7 +109,7 @@ class Extractor:
     def member(self, name: str, directory: bool) -> Path | None:
         self.members += 1
         if self.members > self.limits.max_members:
-            raise TraceProofError("Archive member count exceeds limit")
+            raise VeriFlowError("Archive member count exceeds limit")
         while name.startswith("./"):
             name = name[2:]
         name = name.rstrip("/") if directory else name
@@ -122,23 +122,23 @@ class Extractor:
             or ":" in name
             or any(ord(c) < 32 or ord(c) == 127 for c in name)
         ):
-            raise TraceProofError("Unsafe archive member path")
+            raise VeriFlowError("Unsafe archive member path")
         parts = name.split("/")
         if any(part in ("", ".", "..") or part.strip() != part for part in parts):
-            raise TraceProofError("Archive member contains traversal or ambiguous components")
+            raise VeriFlowError("Archive member contains traversal or ambiguous components")
         if (
             len(parts) > self.limits.max_path_depth
             or len(name.encode()) > self.limits.max_path_bytes
         ):
-            raise TraceProofError("Archive member path exceeds limit")
+            raise VeriFlowError("Archive member path exceeds limit")
         if name in self.explicit:
-            raise TraceProofError("Duplicate archive member path")
+            raise VeriFlowError("Duplicate archive member path")
         self.explicit.add(name)
         for length in range(1, len(parts) + 1):
             prefix = "/".join(parts[:length])
             key = unicodedata.normalize("NFC", prefix).casefold()
             if key in self.spellings and self.spellings[key] != prefix:
-                raise TraceProofError("Case or Unicode collision in archive")
+                raise VeriFlowError("Case or Unicode collision in archive")
             self.spellings[key] = prefix
         target = self.root.joinpath(*parts)
         if directory:
@@ -149,7 +149,7 @@ class Extractor:
 
     def file(self, target: Path, source: BinaryIO, declared_size: int) -> None:
         if declared_size < 0 or self.total_bytes + declared_size > self.limits.max_expanded_bytes:
-            raise TraceProofError("Expanded archive exceeds limit")
+            raise VeriFlowError("Expanded archive exceeds limit")
         digest = hashlib.sha256()
         count = 0
         with target.open("xb") as destination:
@@ -157,15 +157,15 @@ class Extractor:
                 count += len(block)
                 self.total_bytes += len(block)
                 if count > declared_size or self.total_bytes > self.limits.max_expanded_bytes:
-                    raise TraceProofError("Expanded archive exceeds declared size or limit")
+                    raise VeriFlowError("Expanded archive exceeds declared size or limit")
                 if self.total_bytes > self.archive_size * self.limits.max_compression_ratio:
-                    raise TraceProofError("Archive compression ratio exceeds limit")
+                    raise VeriFlowError("Archive compression ratio exceeds limit")
                 digest.update(block)
                 destination.write(block)
             destination.flush()
             os.fsync(destination.fileno())
         if count != declared_size:
-            raise TraceProofError("Truncated archive member")
+            raise VeriFlowError("Truncated archive member")
         self.files.append(
             FileRecord(
                 path=target.relative_to(self.root).as_posix(),
@@ -178,18 +178,18 @@ class Extractor:
         if zipfile.is_zipfile(archive):
             with zipfile.ZipFile(archive) as opened:
                 if len(opened.infolist()) > self.limits.max_members:
-                    raise TraceProofError("Archive member count exceeds limit")
+                    raise VeriFlowError("Archive member count exceeds limit")
                 for item in opened.infolist():
                     if item.orig_filename != item.filename:
-                        raise TraceProofError("Ambiguous ZIP member name")
+                        raise VeriFlowError("Ambiguous ZIP member name")
                     mode = item.external_attr >> 16
                     file_type = stat.S_IFMT(mode)
                     if item.flag_bits & 1:
-                        raise TraceProofError("Encrypted archives are unsupported")
+                        raise VeriFlowError("Encrypted archives are unsupported")
                     if file_type not in (0, stat.S_IFREG, stat.S_IFDIR):
-                        raise TraceProofError("Archive links and special files are forbidden")
+                        raise VeriFlowError("Archive links and special files are forbidden")
                     if file_type == stat.S_IFDIR and not item.is_dir():
-                        raise TraceProofError("Inconsistent ZIP directory metadata")
+                        raise VeriFlowError("Inconsistent ZIP directory metadata")
                     target = self.member(item.filename, item.is_dir())
                     if target is not None and not item.is_dir():
                         with opened.open(item) as source:
@@ -206,23 +206,23 @@ class Extractor:
                     with tarfile.open(fileobj=reader, mode="r|", tarinfo=BoundedTarInfo) as opened:
                         for item in opened:
                             if not item.isfile() and not item.isdir():
-                                raise TraceProofError(
+                                raise VeriFlowError(
                                     "Archive links and special files are forbidden"
                                 )
                             if item.sparse is not None:
-                                raise TraceProofError("Sparse archive members are unsupported")
+                                raise VeriFlowError("Sparse archive members are unsupported")
                             target = self.member(item.name, item.isdir())
                             if target is not None and item.isfile():
                                 stream = opened.extractfile(item)
                                 if stream is None:
-                                    raise TraceProofError("Archive member cannot be read")
+                                    raise VeriFlowError("Archive member cannot be read")
                                 with stream:
                                     self.file(target, stream, item.size)
                 finally:
                     if source is not raw:
                         source.close()
         if not self.files:
-            raise TraceProofError("Archive contains no regular files")
+            raise VeriFlowError("Archive contains no regular files")
         return tuple(sorted(self.files, key=lambda record: record.path))
 
 
@@ -234,7 +234,7 @@ class ArtifactStore:
 
     def path(self, snapshot_id: str) -> Path:
         if len(snapshot_id) != 64 or any(c not in "0123456789abcdef" for c in snapshot_id):
-            raise TraceProofError("Invalid snapshot ID")
+            raise VeriFlowError("Invalid snapshot ID")
         return self.root / snapshot_id
 
     def capture(self, spec: IntakeSpec, input_root: Path) -> SnapshotManifest:
@@ -244,14 +244,14 @@ class ArtifactStore:
             with open_scoped_source(spec.source_uri, input_root) as source:
                 before = os.fstat(source.fileno())
                 if before.st_size > self.limits.max_archive_bytes:
-                    raise TraceProofError("Archive exceeds compressed byte limit")
+                    raise VeriFlowError("Archive exceeds compressed byte limit")
                 count = 0
                 digest = hashlib.sha256()
                 with archive.open("xb") as target:
                     while block := source.read(CHUNK):
                         count += len(block)
                         if count > self.limits.max_archive_bytes:
-                            raise TraceProofError("Archive exceeds compressed byte limit")
+                            raise VeriFlowError("Archive exceeds compressed byte limit")
                         digest.update(block)
                         target.write(block)
                     target.flush()
@@ -262,12 +262,12 @@ class ArtifactStore:
                     after.st_mtime_ns,
                     after.st_ctime_ns,
                 ):
-                    raise TraceProofError(
+                    raise VeriFlowError(
                         "Source changed while being copied; submit a stable archive"
                     )
             archive_digest = digest.hexdigest()
             if spec.sha256 is not None and archive_digest != spec.sha256:
-                raise TraceProofError("Archive SHA-256 does not match expected digest")
+                raise VeriFlowError("Archive SHA-256 does not match expected digest")
             identity = json.dumps(["1", spec.repo_id, spec.classification, archive_digest])
             snapshot_id = hashlib.sha256(identity.encode()).hexdigest()
             final = self.path(snapshot_id)
@@ -312,7 +312,7 @@ class ArtifactStore:
             NotImplementedError,
             zlib.error,
         ) as exc:
-            raise TraceProofError(f"Archive intake failed ({type(exc).__name__})") from exc
+            raise VeriFlowError(f"Archive intake failed ({type(exc).__name__})") from exc
         finally:
             if stage.exists():
                 shutil.rmtree(stage)
@@ -321,7 +321,7 @@ class ArtifactStore:
         root = self.path(snapshot_id)
         try:
             if root.is_symlink() or (root / "tree").is_symlink():
-                raise TraceProofError("Snapshot root cannot be a symbolic link")
+                raise VeriFlowError("Snapshot root cannot be a symbolic link")
             manifest = SnapshotManifest.model_validate_json((root / "manifest.json").read_text())
             identity = json.dumps(
                 ["1", manifest.repo_id, manifest.classification, manifest.archive_sha256]
@@ -330,24 +330,24 @@ class ArtifactStore:
                 manifest.snapshot_id != snapshot_id
                 or hashlib.sha256(identity.encode()).hexdigest() != snapshot_id
             ):
-                raise TraceProofError("Snapshot identity mismatch")
+                raise VeriFlowError("Snapshot identity mismatch")
             archive = root / "source.archive"
             if archive.is_symlink() or archive.stat().st_size != manifest.archive_size_bytes:
-                raise TraceProofError("Snapshot archive size/type mismatch")
+                raise VeriFlowError("Snapshot archive size/type mismatch")
             if digest_file(archive) != manifest.archive_sha256:
-                raise TraceProofError("Snapshot archive digest mismatch")
+                raise VeriFlowError("Snapshot archive digest mismatch")
             actual = set()
             for path in (root / "tree").rglob("*"):
                 if path.is_symlink():
-                    raise TraceProofError("Snapshot contains a symbolic link")
+                    raise VeriFlowError("Snapshot contains a symbolic link")
                 if path.is_file():
                     actual.add(path.relative_to(root / "tree").as_posix())
             if actual != {record.path for record in manifest.files}:
-                raise TraceProofError("Snapshot inventory mismatch")
+                raise VeriFlowError("Snapshot inventory mismatch")
             for record in manifest.files:
                 path = root / "tree" / record.path
                 if path.stat().st_size != record.size_bytes or digest_file(path) != record.sha256:
-                    raise TraceProofError("Snapshot source digest mismatch")
+                    raise VeriFlowError("Snapshot source digest mismatch")
             return manifest
         except (OSError, ValueError) as exc:
-            raise TraceProofError("Snapshot missing or manifest invalid") from exc
+            raise VeriFlowError("Snapshot missing or manifest invalid") from exc

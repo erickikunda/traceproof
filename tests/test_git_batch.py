@@ -8,7 +8,7 @@ from typer.testing import CliRunner
 from veriflow import git_batch
 from veriflow.artifacts import ArtifactStore
 from veriflow.cli import app
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.intake import process, submit
 
 
@@ -38,7 +38,7 @@ def test_real_git_batch_failure_continues_and_intake_binds(tmp_path, source_repo
     batch = submit(store, output / "archives.csv", output, "batch")
     captured = process(store, ArtifactStore(store.root), batch)
     assert [i["state"] for i in captured["items"]] == ["snapshotted", "snapshotted"]
-    with pytest.raises(TraceProofError, match="already exists"):
+    with pytest.raises(VeriFlowError, match="already exists"):
         git_batch.acquire_csv(path, output, ["fixture.invalid"])
 
 
@@ -77,7 +77,7 @@ def test_cli_failure_without_usable_csv(tmp_path):
 def test_batch_limit_before_network(tmp_path, monkeypatch):
     path = manifest(tmp_path, [row(), row()])
     monkeypatch.setattr(git_batch, "acquire", lambda *a, **k: pytest.fail("Unexpected network"))
-    with pytest.raises(TraceProofError):
+    with pytest.raises(VeriFlowError):
         git_batch.acquire_csv(path, tmp_path / "output", ["fixture.invalid"], max_rows=1)
     assert not (tmp_path / "output").exists()
 

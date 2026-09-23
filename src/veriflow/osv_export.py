@@ -3,7 +3,7 @@
 from collections import defaultdict
 
 from veriflow.bundles import canonical
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.sbom_export import matched_dependencies
 
 MAX_OSV_BYTES = 8 * 1024 * 1024
@@ -80,7 +80,7 @@ def export_osv(
         }
         accumulated += len(canonical(group))
         if accumulated > MAX_OSV_BYTES:
-            raise TraceProofError(
+            raise VeriFlowError(
                 "OSV result exceeds the 8 MiB limit; no partial result was produced"
             )
         results.append(group)
@@ -107,5 +107,5 @@ def export_osv(
     }
     encoded = canonical(document)
     if len(encoded) > MAX_OSV_BYTES:
-        raise TraceProofError("OSV result exceeds the 8 MiB limit; no partial result was produced")
+        raise VeriFlowError("OSV result exceeds the 8 MiB limit; no partial result was produced")
     return encoded

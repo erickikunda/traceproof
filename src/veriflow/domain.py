@@ -7,7 +7,7 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
-class TraceProofError(Exception):
+class VeriFlowError(Exception):
     """An expected failure safe to present without a stack trace."""
 
 

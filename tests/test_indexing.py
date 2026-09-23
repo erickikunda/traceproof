@@ -12,7 +12,7 @@ from veriflow import indexing
 from veriflow.artifacts import ArtifactStore
 from veriflow.cli import app
 from veriflow.codeql import extract, extraction_status
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.intake import process, run_status, submit
 from veriflow.persistence import IndexedFile, SourceIndex, exclusive_worker
 from veriflow.python_parser import MAX_BYTES, parse
@@ -121,7 +121,7 @@ with exclusive_worker(store.root):
     assert child.returncode == 42
     with store.transaction() as session:
         assert session.scalar(select(func.count()).select_from(IndexedFile)) == 1
-    with pytest.raises(TraceProofError, match="No published"):
+    with pytest.raises(VeriFlowError, match="No published"):
         indexing.coverage_report(store, run_id)
     report = indexing.build_index(store, run_id)
     assert report["python_index_gate"] == "ready"
@@ -133,13 +133,13 @@ def test_integrity_and_latest_report_do_not_fallback(store, archive, manifest):
     run_id = captured(store, archive, manifest)
     report = indexing.build_index(store, run_id)
     submit(store, manifest([row(archive)]), archive.parent, "new-run")
-    with pytest.raises(TraceProofError, match="no captured"):
+    with pytest.raises(VeriFlowError, match="no captured"):
         indexing.repository_report(store, "example")
     assert indexing.repository_report(store, "example", run_id) == report
     path = ArtifactStore(store.root).path(report["snapshot_id"]) / "tree/project/app.py"
     path.chmod(0o600)
     path.write_text("changed")
-    with pytest.raises(TraceProofError):
+    with pytest.raises(VeriFlowError):
         indexing.build_index(store, run_id)
     # Read-only materialized historical report requires no source reads.
     assert indexing.coverage_report(store, run_id) == report

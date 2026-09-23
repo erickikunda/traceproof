@@ -8,7 +8,7 @@ from test_triage import evidence_fixture as evidence_fixture
 
 from veriflow import codeql, scanning
 from veriflow.codeql_resources import resource_settings
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.persistence import ScanAttempt
 
 
@@ -17,9 +17,9 @@ from veriflow.persistence import ScanAttempt
     [(0, 2048), (-1, 2048), (65, 2048), (True, 2048), (2, 2047), (2, 262145), (2, 2048.0)],
 )
 def test_invalid_resources_rejected_before_storage(threads, ram):
-    with pytest.raises(TraceProofError):
+    with pytest.raises(VeriFlowError):
         codeql.extract(None, "unused", threads=threads, ram_mb=ram)
-    with pytest.raises(TraceProofError):
+    with pytest.raises(VeriFlowError):
         scanning.analyze(None, "unused", None, threads=threads, ram_mb=ram)
 
 

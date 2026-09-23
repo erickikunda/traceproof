@@ -8,7 +8,7 @@ from importlib.resources import files
 from alembic.config import Config
 from alembic.script import ScriptDirectory
 
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.scanning import query_entry
 
 
@@ -83,7 +83,7 @@ def diagnose(store, query=None):
                 "pass",
                 "Operator query entry exists and is readable; dependencies not checked",
             )
-        except (OSError, TraceProofError):
+        except (OSError, VeriFlowError):
             add(
                 "query",
                 "fail",

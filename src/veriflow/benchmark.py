@@ -8,7 +8,7 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator, model_validator
 
 from veriflow.bundles import canonical
-from veriflow.domain import Digest, Identifier, TraceProofError
+from veriflow.domain import Digest, Identifier, VeriFlowError
 from veriflow.persistence import Snapshot
 
 MAX_DOCUMENT_BYTES = 1024 * 1024
@@ -106,7 +106,7 @@ def read_contract(path, contract):
     with Path(path).open("rb") as handle:
         raw = handle.read(MAX_DOCUMENT_BYTES + 1)
     if len(raw) > MAX_DOCUMENT_BYTES:
-        raise TraceProofError("Benchmark document exceeds 1 MiB")
+        raise VeriFlowError("Benchmark document exceeds 1 MiB")
     try:
         # Reject duplicate JSON keys rather than silently overwriting label/scope fields.
         def object_pairs(pairs):
@@ -120,7 +120,7 @@ def read_contract(path, contract):
         value = json.loads(raw, object_pairs_hook=object_pairs)
         return contract.model_validate(value)
     except (ValidationError, ValueError, TypeError, RecursionError):
-        raise TraceProofError(
+        raise VeriFlowError(
             "Invalid benchmark document; check schema, identities and ranges"
         ) from None
 
@@ -130,7 +130,7 @@ def validate_pair(manifest, labels):
     repositories = {item.repo_id: item for item in manifest.repositories}
     if labels:
         if labels.dataset_id != manifest.dataset_id or labels.manifest_sha256 != manifest_digest:
-            raise TraceProofError("Label set does not match the pinned benchmark manifest")
+            raise VeriFlowError("Label set does not match the pinned benchmark manifest")
         for label in labels.labels:
             repository = repositories.get(label.repo_id)
             if (
@@ -138,7 +138,7 @@ def validate_pair(manifest, labels):
                 or label.snapshot_id != repository.snapshot_id
                 or label.cwe not in repository.weakness_scope
             ):
-                raise TraceProofError(
+                raise VeriFlowError(
                     "Label repository, snapshot or weakness is outside manifest scope"
                 )
     return manifest_digest

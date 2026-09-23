@@ -11,7 +11,7 @@ Joern identifies Express get/post route calls and the inline second-argument han
 The source selector links the first handler parameter by graph reference to field reads
 of query/body/params, for example `incoming.query.code`. The sink selector requires the
 builtin eval graph signature. The graph provides the flow between these endpoints;
-TraceProof does not invent intermediate edges. Profiles have distinct rule identities,
+VeriFlow does not invent intermediate edges. Profiles have distinct rule identities,
 query digests, published profile metadata and retry suppression. Existing source-location,
 report retrieval, evidence and benchmark coverage-audit paths remain in force.
 

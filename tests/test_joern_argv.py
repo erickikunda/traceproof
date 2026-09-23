@@ -4,7 +4,7 @@ import pytest
 from test_slice03 import captured_source as captured_source
 
 from veriflow import joern, pipeline
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.scanning import scan_report
 
 
@@ -54,7 +54,7 @@ def test_argv_profile_publication_and_retry(
 
 @pytest.mark.parametrize("language", ["python", "java", "go", "javascript"])
 def test_argv_rejects_other_languages(store, language):
-    with pytest.raises(TraceProofError, match="profile/language"):
+    with pytest.raises(VeriFlowError, match="profile/language"):
         joern.discover(
             store,
             "unused",

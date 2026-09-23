@@ -2,7 +2,7 @@
 
 import re
 
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 
 ECOSYSTEM = "go"
 DECLARATION_NAMES = ("go.mod",)
@@ -118,7 +118,7 @@ def parse(raw, source):
                 (replaced_version, is_local, target, target_version)
             )
     if len(requirements) > MAX_REQUIREMENTS:
-        raise TraceProofError(
+        raise VeriFlowError(
             "go.mod exceeds the requirement limit; no partial inventory was produced"
         )
     records, replaced = [], 0

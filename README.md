@@ -1,4 +1,4 @@
-# TraceProof
+# VeriFlow
 
 Evidence-driven, LLM-assisted vulnerability discovery.
 
@@ -9,7 +9,7 @@ See [Ollama setup](docs/development/slice-23.md).
 For step-by-step use, report interpretation and recovery, read the
 [CLI user/operator guide](docs/guides/cli-operator-guide.md).
 
-Run `uv run traceproof doctor --query /absolute/approved.ql` to inspect local prerequisites
+Run `uv run veriflow doctor --query /absolute/approved.ql` to inspect local prerequisites
 and suggested fixes before scanning. It does not run CodeQL, migrations or models.
 
 Use `run-history REPO_ID` and `scan-history REPO_ID` to find previous work, including
@@ -31,18 +31,18 @@ this local slice. CodeQL is not needed for intake.
 
 ```bash
 uv sync --locked
-uv run traceproof init
+uv run veriflow init
 uv run python examples/create_archive.py --output work/demo
-uv run traceproof import-csv work/demo/repos.csv --input-root "$PWD/work/demo" --key demo-1
+uv run veriflow import-csv work/demo/repos.csv --input-root "$PWD/work/demo" --key demo-1
 ```
 
 The import result includes `import_id` and per-row `run_id`. Use the actual returned IDs:
 
 ```bash
-uv run traceproof worker IMPORT_ID
-uv run traceproof import-status IMPORT_ID
-uv run traceproof run-status RUN_ID
-uv run traceproof verify-snapshot SNAPSHOT_ID
+uv run veriflow worker IMPORT_ID
+uv run veriflow import-status IMPORT_ID
+uv run veriflow run-status RUN_ID
+uv run veriflow verify-snapshot SNAPSHOT_ID
 ```
 
 Results are JSON unless Markdown is requested. Commands fail with a nonzero exit code
@@ -54,7 +54,7 @@ import. Reusing a key for different CSV bytes or input root is an error.
 Pass the global option before the command to select another local state directory:
 
 ```bash
-uv run traceproof --state-dir /absolute/local/state init
+uv run veriflow --state-dir /absolute/local/state init
 ```
 
 `worker --max-items 1 IMPORT_ID` processes one ready item. Run the worker again to
@@ -64,18 +64,18 @@ Rejected or failed archives need a corrected input and a new submission key.
 
 ## Index and retrieve coverage
 
-Run `traceproof init` again to upgrade an existing database to schema `0008`.
+Run `veriflow init` again to upgrade an existing database to schema `0008`.
 Then use a captured run:
 
 ```bash
-uv run traceproof index-run RUN_ID
-uv run traceproof query-index RUN_ID --kind symbols --limit 100
-uv run traceproof query-index RUN_ID --kind calls --path project/app.py
-uv run traceproof repo-report REPO_ID
-uv run traceproof repo-report REPO_ID --run-id RUN_ID --format markdown > coverage.md
+uv run veriflow index-run RUN_ID
+uv run veriflow query-index RUN_ID --kind symbols --limit 100
+uv run veriflow query-index RUN_ID --kind calls --path project/app.py
+uv run veriflow repo-report REPO_ID
+uv run veriflow repo-report REPO_ID --run-id RUN_ID --format markdown > coverage.md
 # Optional, requires CodeQL on PATH (verified locally with 2.27.0):
-uv run traceproof codeql-extract RUN_ID --timeout 300
-uv run traceproof codeql-status ATTEMPT_ID
+uv run veriflow codeql-extract RUN_ID --timeout 300
+uv run veriflow codeql-status ATTEMPT_ID
 ```
 
 Re-running `index-run` resumes persisted file checkpoints or reuses the completed index
@@ -104,7 +104,7 @@ After archive capture, `scan-import IMPORT_ID /absolute/approved.ql --limit 5` s
 bounded page of CSV rows sequentially. Existing query attempts are skipped unless
 `--rescan` is supplied. See [Slice 25](docs/development/slice-25.md).
 
-For a captured run, `uv run traceproof scan-run RUN_ID /absolute/approved.ql` performs
+For a captured run, `uv run veriflow scan-run RUN_ID /absolute/approved.ql` performs
 indexing, readiness checks, CodeQL extraction/queries and exact-attempt report publication.
 It makes no model calls. Inspect the returned status; repeated invocation starts fresh
 CodeQL work. See [Slice 21](docs/development/slice-21.md).
@@ -113,11 +113,11 @@ Re-run `index-run` to build the v2 index required by `call-context`. Old indexes
 retained; retrieve an old coverage report with `repo-report --run-id RUN_ID --index-id INDEX_ID`.
 
 ```bash
-uv run traceproof call-context RUN_ID project/app.py --module-root project
-uv run traceproof source-evidence RUN_ID project/app.py 1 20
-uv run traceproof codeql-analyze EXTRACTION_ID /absolute/approved/query.ql --timeout 600
-uv run traceproof scan-report REPO_ID
-uv run traceproof scan-report REPO_ID --run-id RUN_ID --attempt-id ATTEMPT_ID --format markdown
+uv run veriflow call-context RUN_ID project/app.py --module-root project
+uv run veriflow source-evidence RUN_ID project/app.py 1 20
+uv run veriflow codeql-analyze EXTRACTION_ID /absolute/approved/query.ql --timeout 600
+uv run veriflow scan-report REPO_ID
+uv run veriflow scan-report REPO_ID --run-id RUN_ID --attempt-id ATTEMPT_ID --format markdown
 ```
 
 The call-context view adds conservative candidates for direct top-level functions and
@@ -152,12 +152,12 @@ See [Slice 03 status](docs/development/slice-03.md) for the tested scope and lim
 Use an attempt ID and candidate fingerprint from `scan-report`:
 
 ```bash
-uv run traceproof build-bundle ATTEMPT_ID CANDIDATE_FINGERPRINT
-uv run traceproof bundle-status BUNDLE_ID
-uv run traceproof triage-budget RUN_ID 100000
-uv run traceproof triage BUNDLE_ID examples/triage-replay-config.json demo-triage-1 \
+uv run veriflow build-bundle ATTEMPT_ID CANDIDATE_FINGERPRINT
+uv run veriflow bundle-status BUNDLE_ID
+uv run veriflow triage-budget RUN_ID 100000
+uv run veriflow triage BUNDLE_ID examples/triage-replay-config.json demo-triage-1 \
   --replay examples/triage-replay-response.json
-uv run traceproof triage-report RUN_ID
+uv run veriflow triage-report RUN_ID
 ```
 
 The example is entirely offline. It uses fictional usage/rates to test the cost ledger,
@@ -187,9 +187,9 @@ Checks establish narrow syntax and retained flow consistency, not vulnerability 
 Rebuild old bundles for flow metadata, and use a new triage key for the updated prompt.
 
 ```bash
-uv run traceproof evidence-policy py/code-injection
-uv run traceproof check-evidence BUNDLE_ID /absolute/decision.json
-uv run traceproof expand-bundle BUNDLE_ID /absolute/expansion.json
+uv run veriflow evidence-policy py/code-injection
+uv run veriflow check-evidence BUNDLE_ID /absolute/decision.json
+uv run veriflow expand-bundle BUNDLE_ID /absolute/expansion.json
 ```
 
 Expansion requests are JSON arrays of `path`, `line`, `end_line`, and `reason` objects.
@@ -210,13 +210,13 @@ Slice 07 combines one scan attempt and its advisory history into an immutable su
 Run `init` to apply the latest migration, then:
 
 ```bash
-uv run traceproof publish-report REPO_ID
-uv run traceproof report-history REPO_ID
-uv run traceproof get-report REPO_ID --report-id REPORT_ID --format html > report.html
-uv run traceproof get-report REPO_ID --report-id REPORT_ID --format markdown > report.md
-uv run traceproof get-report REPO_ID --report-id REPORT_ID > report.json
-uv run traceproof get-report REPO_ID --report-id REPORT_ID --format scan-csv > scan.csv
-uv run traceproof get-report REPO_ID --report-id REPORT_ID --format candidates-csv > candidates.csv
+uv run veriflow publish-report REPO_ID
+uv run veriflow report-history REPO_ID
+uv run veriflow get-report REPO_ID --report-id REPORT_ID --format html > report.html
+uv run veriflow get-report REPO_ID --report-id REPORT_ID --format markdown > report.md
+uv run veriflow get-report REPO_ID --report-id REPORT_ID > report.json
+uv run veriflow get-report REPO_ID --report-id REPORT_ID --format scan-csv > scan.csv
+uv run veriflow get-report REPO_ID --report-id REPORT_ID --format candidates-csv > candidates.csv
 ```
 
 Publishing reads stored state without source access or model calls. Identical state
@@ -234,8 +234,8 @@ there are no candidates. See [Slice 07 contract](docs/development/slice-07.md).
 Compare two exact published versions without rerunning analysis:
 
 ```bash
-uv run traceproof compare-reports REPO_ID BASELINE_REPORT_ID CURRENT_REPORT_ID
-uv run traceproof compare-reports REPO_ID BASELINE_REPORT_ID CURRENT_REPORT_ID --format markdown
+uv run veriflow compare-reports REPO_ID BASELINE_REPORT_ID CURRENT_REPORT_ID
+uv run veriflow compare-reports REPO_ID BASELINE_REPORT_ID CURRENT_REPORT_ID --format markdown
 ```
 
 Slice 08 distinguishes exact repeated observations, tentative unchanged-file matches,
@@ -265,7 +265,7 @@ rejected. Size/member/depth/ratio limits are enforced; see `ArchiveLimits` for d
 
 ## Local state and security boundary
 
-`.traceproof/traceproof.db` stores metadata and run state. Immutable-by-convention artifact
+`.veriflow/veriflow.db` stores metadata and run state. Immutable-by-convention artifact
 generations contain the original archive, extracted tree and manifest. Published files
 are read-only; verification detects modification. This is not a sandbox against the
 owning OS user. State and archives must be trusted local storage accessible only to the
@@ -287,9 +287,9 @@ Slice 12 adds explicit operator assertions against a candidate's exact evidence 
 Run `init` for migration 0006. Save a review request JSON, then:
 
 ```bash
-uv run traceproof review-history REPO_ID ATTEMPT_ID CANDIDATE_FINGERPRINT
-uv run traceproof record-review REPO_ID ATTEMPT_ID CANDIDATE_FINGERPRINT /absolute/review.json REVIEW_KEY
-uv run traceproof publish-report REPO_ID
+uv run veriflow review-history REPO_ID ATTEMPT_ID CANDIDATE_FINGERPRINT
+uv run veriflow record-review REPO_ID ATTEMPT_ID CANDIDATE_FINGERPRINT /absolute/review.json REVIEW_KEY
+uv run veriflow publish-report REPO_ID
 ```
 
 Requests contain `reviewer_label`, `state` (`confirmed`, `false_positive`, `needs_review`,
@@ -305,7 +305,7 @@ See [Slice 12 contract](docs/development/slice-12.md).
 
 Anthropic Messages is also available through an explicit `provider: "anthropic"` model policy. Configure the approved endpoint, model, pricing and `api_key_env` explicitly; all live transmission remains opt-in. See [Slice 13 contract](docs/development/slice-13.md) for setup and accounting limits.
 
-Use `traceproof resolve-report REPO_ID --selection latest-completed` to retrieve the latest published static review-ready report together with disclosure of newer work. The default `latest-attempt` mode never falls back. See [Slice 14 contract](docs/development/slice-14.md) for freshness semantics and JSON fields.
+Use `veriflow resolve-report REPO_ID --selection latest-completed` to retrieve the latest published static review-ready report together with disclosure of newer work. The default `latest-attempt` mode never falls back. See [Slice 14 contract](docs/development/slice-14.md) for freshness semantics and JSON fields.
 
 ## Benchmark contract preparation
 
@@ -313,11 +313,11 @@ Slice 10 validates separate repository manifests and evaluator-only labels. It d
 run the benchmark or calculate quality metrics:
 
 ```bash
-uv run traceproof benchmark-schema > benchmark-schemas.json
-uv run traceproof benchmark-check examples/benchmark-manifest.json
-uv run traceproof benchmark-check examples/benchmark-manifest.json --labels examples/benchmark-labels.json
+uv run veriflow benchmark-schema > benchmark-schemas.json
+uv run veriflow benchmark-check examples/benchmark-manifest.json
+uv run veriflow benchmark-check examples/benchmark-manifest.json --labels examples/benchmark-labels.json
 # Optional alignment against snapshots already stored in the selected state directory:
-uv run traceproof benchmark-check /absolute/manifest.json --labels /absolute/labels.json --check-local-snapshots
+uv run veriflow benchmark-check /absolute/manifest.json --labels /absolute/labels.json --check-local-snapshots
 ```
 
 Examples use synthetic placeholder digests; they pass contract checks but intentionally
@@ -329,8 +329,8 @@ labels must never be submitted through CSV intake or sent to models. See
 Slice 11 adds an offline scorecard over exact stored reports:
 
 ```bash
-uv run traceproof benchmark-evaluate /absolute/manifest.json /absolute/labels.json /absolute/evaluation-plan.json
-uv run traceproof benchmark-evaluate /absolute/manifest.json /absolute/labels.json /absolute/evaluation-plan.json --format markdown
+uv run veriflow benchmark-evaluate /absolute/manifest.json /absolute/labels.json /absolute/evaluation-plan.json
+uv run veriflow benchmark-evaluate /absolute/manifest.json /absolute/labels.json /absolute/evaluation-plan.json --format markdown
 ```
 
 The plan pins the manifest, query digest, CodeQL version, profile, supported rules and
@@ -361,7 +361,7 @@ withhold deltas. See [Slice 20](docs/development/slice-20.md).
 Run the real CodeQL acceptance suite with an approved local `CodeInjection.ql` entry:
 
 ```bash
-uv run traceproof acceptance-run work/acceptance-001 /absolute/CodeInjection.ql --timeout 300
+uv run veriflow acceptance-run work/acceptance-001 /absolute/CodeInjection.ql --timeout 300
 ```
 
 The output directory must be new. The runner creates its own SQLite state and synthetic
@@ -383,7 +383,7 @@ uv run ruff check .
 uv run ruff format --check .
 ```
 
-SQLite migrations run through `traceproof init` using Alembic. SQLAlchemy domain storage
+SQLite migrations run through `veriflow init` using Alembic. SQLAlchemy domain storage
 is the starting point for PostgreSQL, but distributed claims and PostgreSQL integration
 are not implemented or certified yet. The local OS lock is deliberately not a substitute
 for production heartbeat leases.
@@ -395,11 +395,11 @@ See [documentation](docs/README.md), [system design](docs/architecture/system-de
 See [Slice 03 status](docs/development/slice-03.md) for static analysis and the current
 [Slice 04 status](docs/development/slice-04.md) for evidence bundles and triage.
 
-Use `traceproof import-reports IMPORT_ID --limit 1000 --format csv` to export report
+Use `veriflow import-reports IMPORT_ID --limit 1000 --format csv` to export report
 availability for a CSV import. Missing/failed work stays visible; returned report IDs
 support exact retrieval. See [Slice 26](docs/development/slice-26.md).
 
-Use `traceproof get-sarif REPO_ID ATTEMPT_ID > results.sarif` to retrieve verified original
+Use `veriflow get-sarif REPO_ID ATTEMPT_ID > results.sarif` to retrieve verified original
 CodeQL output for a SARIF viewer. Raw output may contain sensitive details; see
 [Slice 27](docs/development/slice-27.md).
 

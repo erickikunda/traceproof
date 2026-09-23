@@ -5,7 +5,7 @@ from test_reports import scanned as scanned
 from test_triage import evidence_fixture as evidence_fixture
 
 from veriflow import pipeline
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.languages import adapter_for, language_scope, validate_extraction_scope
 from veriflow.persistence import ScanAttempt
 from veriflow.reports import get_report, publish_report, render_report
@@ -23,15 +23,15 @@ def test_inventory_and_explicit_capabilities():
         scope["semantic_index"] == "not_qualified"
         and scope["evidence_gate"] == "spring_requestparam_sql_review_v1"
     )
-    with pytest.raises(TraceProofError, match="Implemented"):
+    with pytest.raises(VeriFlowError, match="Implemented"):
         adapter_for("rust")
 
 
 @pytest.mark.parametrize("path", ["pom.xml", "module/build.gradle", "vendor/a.jar", "Main.kt"])
 def test_java_profile_rejects_unqualified_project_inputs(path):
-    with pytest.raises(TraceProofError, match="dependency-free"):
+    with pytest.raises(VeriFlowError, match="dependency-free"):
         validate_extraction_scope(manifest("A.java", path), "java")
-    with pytest.raises(TraceProofError, match="no files"):
+    with pytest.raises(VeriFlowError, match="no files"):
         validate_extraction_scope(manifest("app.py"), "java")
 
 
@@ -64,10 +64,10 @@ def test_batch_skip_is_language_scoped(store, scanned, tmp_path, monkeypatch):
 
     def source(*args):
         called.append(True)
-        raise TraceProofError("Java reached source preflight")
+        raise VeriFlowError("Java reached source preflight")
 
     monkeypatch.setattr(pipeline, "verified_source", source)
-    with pytest.raises(TraceProofError, match="Java reached"):
+    with pytest.raises(VeriFlowError, match="Java reached"):
         pipeline.scan_run(store, scanned[1], query, skip_existing=True, language="java")
     assert called
     assert (
@@ -84,7 +84,7 @@ def test_source_only_profile_discloses_omitted_inputs():
     assert scope["omitted_file_count"] == 4
     assert scope["unselected_languages"] == ["kotlin"]
     assert scope["dependency_resolution"] == "not_qualified"
-    with pytest.raises(TraceProofError):
+    with pytest.raises(VeriFlowError):
         validate_extraction_scope(manifest("a.py"), "python", "source-only")
 
 
@@ -111,10 +111,10 @@ def test_skip_existing_does_not_cross_java_profiles(store, scanned, tmp_path, mo
     )
 
     def reached(*args):
-        raise TraceProofError("Different profile reached preflight")
+        raise VeriFlowError("Different profile reached preflight")
 
     monkeypatch.setattr(pipeline, "verified_source", reached)
-    with pytest.raises(TraceProofError, match="Different profile"):
+    with pytest.raises(VeriFlowError, match="Different profile"):
         pipeline.scan_run(store, scanned[1], query, language="java", skip_existing=True)
 
 
@@ -137,7 +137,7 @@ def test_auto_selects_single_supported_language(paths, expected):
 def test_auto_rejects_mixed_unsupported_or_empty_inventory(paths):
     from veriflow.languages import select_language
 
-    with pytest.raises(TraceProofError, match="Automatic selection"):
+    with pytest.raises(VeriFlowError, match="Automatic selection"):
         select_language(manifest(*paths), "auto")
 
 
@@ -186,7 +186,7 @@ def test_js_ts_distinct_scope_and_automatic_selection(language, filename):
     assert scope["selected_file_count"] == 1 and scope["omitted_file_count"] == 2
     assert scope["evidence_gate"] == "unsupported"
     assert scope["configuration_files"] == "omitted"
-    with pytest.raises(TraceProofError, match="Automatic selection"):
+    with pytest.raises(VeriFlowError, match="Automatic selection"):
         select_language(manifest("app.js", "app.ts"), "auto")
 
 

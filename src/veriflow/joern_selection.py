@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.indexing import verified_source
 from veriflow.languages import EXTENSIONS
 
@@ -47,7 +47,7 @@ def selection(manifest, requested="auto"):
     )
     languages = detected if requested == "auto" else [requested]
     if not languages:
-        raise TraceProofError(
+        raise VeriFlowError(
             "No recognized source language; select --language explicitly for header-only C"
         )
     return detected, [
@@ -71,7 +71,7 @@ def scan_selected(
     from veriflow.joern_pipeline import scan_run
 
     if advisory is not None:
-        raise TraceProofError(
+        raise VeriFlowError(
             "Automatic profile selection is discovery-only; "
             "select an explicit --joern-profile for advisory"
         )
@@ -96,7 +96,7 @@ def scan_selected(
                 skip_existing,
                 profile,
             )
-        except TraceProofError as exc:
+        except VeriFlowError as exc:
             result = {"status": "scope_error", "error": str(exc), "report_id": None}
         items.append({**result, **item})
     return {

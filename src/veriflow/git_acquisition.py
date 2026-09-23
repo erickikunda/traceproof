@@ -16,7 +16,7 @@ from urllib.parse import urlsplit
 
 from pydantic import ValidationError
 
-from veriflow.domain import IntakeSpec, TraceProofError
+from veriflow.domain import IntakeSpec, VeriFlowError
 from veriflow.git_credentials import credential_environment, read_credentials
 from veriflow.git_transport import configure, transport_settings
 
@@ -32,7 +32,7 @@ def validate_remote(url, revision, allowed_hosts):
         host = parsed.hostname
         port = parsed.port
     except ValueError:
-        raise TraceProofError("Invalid Git URL") from None
+        raise VeriFlowError("Invalid Git URL") from None
     if (
         parsed.scheme != "https"
         or not host
@@ -49,7 +49,7 @@ def validate_remote(url, revision, allowed_hosts):
         or not url.isascii()
         or host.lower() not in {h.lower() for h in allowed_hosts}
     ):
-        raise TraceProofError("Git requires credential-free HTTPS on an explicitly allowed host")
+        raise VeriFlowError("Git requires credential-free HTTPS on an explicitly allowed host")
     if (
         not (
             re.fullmatch(r"[a-f0-9]{40}", revision)
@@ -59,7 +59,7 @@ def validate_remote(url, revision, allowed_hosts):
         or "//" in revision
         or revision.endswith(("/", ".", ".lock"))
     ):
-        raise TraceProofError("Use a full refs/heads or refs/tags name, or a 40-character commit")
+        raise VeriFlowError("Use a full refs/heads or refs/tags name, or a 40-character commit")
 
 
 def work_bytes(root):
@@ -70,7 +70,7 @@ class Git:
     def __init__(self, root, timeout):
         executable = shutil.which("git")
         if not executable:
-            raise TraceProofError("Git executable not found")
+            raise VeriFlowError("Git executable not found")
         self.root = root
         self.deadline = time.monotonic() + timeout
         self.command = [
@@ -128,18 +128,18 @@ class Git:
                         or output.tell() > limit
                         or work_bytes(self.root) > MAX_WORK_BYTES
                     ):
-                        raise TraceProofError("Git acquisition exceeded time or storage limit")
+                        raise VeriFlowError("Git acquisition exceeded time or storage limit")
                     if status is not None:
                         break
                     time.sleep(0.05)
                 if status:
-                    raise TraceProofError(
+                    raise VeriFlowError(
                         "Git command failed; check repository, revision and connectivity"
                     )
                 output.seek(0)
                 data = output.read(limit + 1)
                 if len(data) > limit:
-                    raise TraceProofError("Git output exceeds limit")
+                    raise VeriFlowError("Git output exceeds limit")
                 return data
             finally:
                 if process.poll() is None:
@@ -165,7 +165,7 @@ def acquire(
     validate_remote(url, revision, allowed_hosts)
     auth_env = credential_environment(read_credentials(credential_file), url)
     if not 1 <= timeout <= 900:
-        raise TraceProofError("Acquisition timeout must be 1–900 seconds")
+        raise VeriFlowError("Acquisition timeout must be 1–900 seconds")
     output = Path(output).absolute()
     try:
         spec = IntakeSpec(
@@ -176,11 +176,11 @@ def acquire(
             classification=classification,
         )
     except ValidationError:
-        raise TraceProofError("Invalid acquisition repository metadata") from None
+        raise VeriFlowError("Invalid acquisition repository metadata") from None
     try:
         output.mkdir(mode=0o700)  # Exclusive ownership; never replace earlier acquisitions.
     except FileExistsError:
-        raise TraceProofError("Acquisition output already exists; choose a new directory") from None
+        raise VeriFlowError("Acquisition output already exists; choose a new directory") from None
     receipt = {
         "schema_version": "1",
         "state": "failed",
@@ -215,15 +215,15 @@ def acquire(
                 .strip()
             )
             if not re.fullmatch(r"[a-f0-9]{40}", commit):
-                raise TraceProofError(
+                raise VeriFlowError(
                     "Only SHA-1-format Git repositories are supported in this slice"
                 )
             if re.fullmatch(r"[a-f0-9]{40}", revision) and commit != revision:
-                raise TraceProofError("Fetched commit differs from the requested commit")
+                raise VeriFlowError("Fetched commit differs from the requested commit")
             tree = git.call("--git-dir=repo.git", "ls-tree", "-r", "-z", "-l", commit)
             entries = [row for row in tree.split(b"\0") if row]
             if not entries or len(entries) > MAX_FILES:
-                raise TraceProofError("Empty repository or source file count exceeds limit")
+                raise VeriFlowError("Empty repository or source file count exceeds limit")
             files, total, names = [], 0, set()
             archive_path = root / "source.zip"
             with zipfile.ZipFile(archive_path, "w", compression=zipfile.ZIP_STORED) as archive:
@@ -243,21 +243,21 @@ def acquire(
                         or any(ord(c) < 32 for c in path)
                         or path.casefold() in names
                     ):
-                        raise TraceProofError(
+                        raise VeriFlowError(
                             "Unsupported source path, symlink, submodule or collision"
                         )
                     names.add(path.casefold())
                     count = int(size)
                     total += count
                     if count > MAX_FILE_BYTES or total > MAX_SOURCE_BYTES:
-                        raise TraceProofError("Source content exceeds acquisition limits")
+                        raise VeriFlowError("Source content exceeds acquisition limits")
                     blob = git.call(
                         "--git-dir=repo.git", "cat-file", "blob", oid.decode(), limit=MAX_FILE_BYTES
                     )
                     if len(blob) != count:
-                        raise TraceProofError("Git blob size mismatch")
+                        raise VeriFlowError("Git blob size mismatch")
                     if blob.startswith(b"version https://git-lfs.github.com/spec/v1\n"):
-                        raise TraceProofError("Git LFS content retrieval is not supported")
+                        raise VeriFlowError("Git LFS content retrieval is not supported")
                     # Raw blobs preserve export-ignore/export-subst files and bypass filters.
                     archive.writestr(path, blob)
                     files.append(
@@ -300,8 +300,8 @@ def acquire(
         for name in ("source.zip", "input.csv"):
             (output / name).unlink(missing_ok=True)
         receipt.update(state="failed", error_type=type(exc).__name__)
-        if isinstance(exc, TraceProofError):
+        if isinstance(exc, VeriFlowError):
             raise
-        raise TraceProofError("Git acquisition failed; no scan input published") from None
+        raise VeriFlowError("Git acquisition failed; no scan input published") from None
     finally:
         (output / "acquisition.json").write_text(json.dumps(receipt, indent=2))

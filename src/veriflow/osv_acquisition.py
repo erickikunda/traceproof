@@ -10,7 +10,7 @@ from typing import Protocol
 from urllib.parse import urlsplit
 
 from veriflow.bundles import canonical
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.intake import now
 from veriflow.osv_database import OSV_ECOSYSTEMS
 
@@ -33,7 +33,7 @@ def validate_source(base_url, allowed_hosts):
         parsed = urlsplit(base_url)
         host, port = parsed.hostname, parsed.port
     except ValueError:
-        raise TraceProofError("Invalid OSV source URL") from None
+        raise VeriFlowError("Invalid OSV source URL") from None
     if (
         parsed.scheme != "https"
         or not host
@@ -48,13 +48,13 @@ def validate_source(base_url, allowed_hosts):
         or ".." in parsed.path
         or host.lower() not in {allowed.lower() for allowed in allowed_hosts}
     ):
-        raise TraceProofError("OSV acquisition requires credential-free HTTPS on an allowed host")
+        raise VeriFlowError("OSV acquisition requires credential-free HTTPS on an allowed host")
     return base_url.rstrip("/")
 
 
 def validate_ecosystems(ecosystems):
     if not ecosystems or not set(ecosystems) <= set(OSV_ECOSYSTEMS.values()):
-        raise TraceProofError("OSV acquisition requires ecosystems TraceProof can evaluate")
+        raise VeriFlowError("OSV acquisition requires ecosystems TraceProof can evaluate")
     return sorted(set(ecosystems))
 
 
@@ -71,7 +71,7 @@ def member_name(info):
         or name.startswith(".")
         or (info.external_attr >> 16) & 0o170000 not in (0, 0o100000)
     ):
-        raise TraceProofError("OSV archive member is not a plain flat JSON record")
+        raise VeriFlowError("OSV archive member is not a plain flat JSON record")
     return name
 
 
@@ -82,27 +82,27 @@ def expand(raw, destination, written, totals):
             for info in archive.infolist():
                 name = member_name(info)
                 if info.file_size > MAX_RECORD_BYTES:
-                    raise TraceProofError("OSV record exceeds the per-record byte limit")
+                    raise VeriFlowError("OSV record exceeds the per-record byte limit")
                 totals["expanded"] += info.file_size
                 if totals["expanded"] > MAX_EXPANDED_BYTES:
-                    raise TraceProofError("OSV archive exceeds the expanded byte limit")
+                    raise VeriFlowError("OSV archive exceeds the expanded byte limit")
                 if info.compress_size and (
                     info.file_size / info.compress_size > MAX_COMPRESSION_RATIO
                 ):
-                    raise TraceProofError("OSV archive member compression ratio is not accepted")
+                    raise VeriFlowError("OSV archive member compression ratio is not accepted")
                 with archive.open(info) as handle:
                     body = handle.read(MAX_RECORD_BYTES + 1)
                 if len(body) != info.file_size or len(body) > MAX_RECORD_BYTES:
-                    raise TraceProofError("OSV record size does not match its archive entry")
+                    raise VeriFlowError("OSV record size does not match its archive entry")
                 digest = hashlib.sha256(body).hexdigest()
                 if name in written:
                     # The same advisory ships in several ecosystem archives.
                     if written[name] != digest:
-                        raise TraceProofError("OSV archives disagree about a record's contents")
+                        raise VeriFlowError("OSV archives disagree about a record's contents")
                     totals["duplicates"] += 1
                     continue
                 if len(written) >= MAX_RECORDS:
-                    raise TraceProofError("OSV export exceeds the record limit")
+                    raise VeriFlowError("OSV export exceeds the record limit")
                 path = destination / name
                 with path.open("xb") as target:
                     target.write(body)
@@ -111,7 +111,7 @@ def expand(raw, destination, written, totals):
                 path.chmod(0o400)
                 written[name] = digest
     except (zipfile.BadZipFile, OSError, ValueError) as exc:
-        raise TraceProofError(f"OSV archive expansion failed ({type(exc).__name__})") from exc
+        raise VeriFlowError(f"OSV archive expansion failed ({type(exc).__name__})") from exc
 
 
 def acquire_osv(
@@ -130,14 +130,14 @@ def acquire_osv(
     selected = validate_ecosystems(ecosystems)
     expected = expected_sha256 or {}
     if not isinstance(expected, dict) or not set(expected) <= set(selected):
-        raise TraceProofError("Expected digests must name selected ecosystems")
+        raise VeriFlowError("Expected digests must name selected ecosystems")
     missing = [name for name in selected if name not in expected]
     if missing and not allow_unpinned:
-        raise TraceProofError(
+        raise VeriFlowError(
             "Unpinned OSV acquisition requires an explicit opt-in; supply digests or allow it"
         )
     if not 1 <= max_bytes <= MAX_ARCHIVE_BYTES:
-        raise TraceProofError("OSV archive limit must be positive and bounded")
+        raise VeriFlowError("OSV archive limit must be positive and bounded")
     output = Path(output).absolute()
     records = output / "records"
     try:
@@ -145,16 +145,16 @@ def acquire_osv(
         output.mkdir(parents=True)
         records.mkdir()
     except OSError:
-        raise TraceProofError("OSV output directory must not already exist") from None
+        raise VeriFlowError("OSV output directory must not already exist") from None
     written, totals, archives = {}, {"expanded": 0, "duplicates": 0}, []
     for ecosystem in selected:
         url = f"{source}/{ecosystem}/all.zip"
         raw = reader.fetch(url, max_bytes)
         if not isinstance(raw, bytes) or not raw or len(raw) > max_bytes:
-            raise TraceProofError("OSV archive response is empty or exceeds the byte limit")
+            raise VeriFlowError("OSV archive response is empty or exceeds the byte limit")
         digest = hashlib.sha256(raw).hexdigest()
         if ecosystem in expected and digest != expected[ecosystem]:
-            raise TraceProofError("OSV archive SHA-256 does not match the expected digest")
+            raise VeriFlowError("OSV archive SHA-256 does not match the expected digest")
         before = len(written)
         expand(raw, records, written, totals)
         archives.append(

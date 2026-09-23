@@ -6,7 +6,7 @@ from collections import Counter
 
 from sqlalchemy import func, select
 
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.history import validate_page
 from veriflow.persistence import ImportBatch, ImportItem, PublishedReport, Run, ScanAttempt
 from veriflow.reports import csv_cell, verified
@@ -33,7 +33,7 @@ def import_reports(store, import_id, offset=0, limit=100):
     validate_page(offset, limit)
     with store.transaction() as session:
         if session.get(ImportBatch, import_id) is None:
-            raise TraceProofError("Import not found")
+            raise VeriFlowError("Import not found")
         scope = ImportItem.import_id == import_id
         total = session.scalar(select(func.count()).select_from(ImportItem).where(scope))
         items = session.scalars(
@@ -111,7 +111,7 @@ def render_import_reports(result, format="json"):
     if format == "json":
         return result
     if format != "csv":
-        raise TraceProofError("Format must be json or csv")
+        raise VeriFlowError("Format must be json or csv")
     output = io.StringIO()
     writer = csv.DictWriter(output, fieldnames=FIELDS, lineterminator="\n")
     writer.writeheader()

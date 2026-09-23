@@ -4,7 +4,7 @@ import base64
 import json
 from pathlib import Path
 
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 
 
 def read_credentials(path):
@@ -27,7 +27,7 @@ def read_credentials(path):
             raise ValueError
         return value
     except (OSError, ValueError, UnicodeError):
-        raise TraceProofError(
+        raise VeriFlowError(
             "Credential file requires bounded JSON with url, username and password"
         ) from None
 
@@ -36,7 +36,7 @@ def credential_environment(credentials, url):
     if credentials is None:
         return {}
     if credentials["url"] != url:
-        raise TraceProofError("Credential repository URL does not match acquisition URL")
+        raise VeriFlowError("Credential repository URL does not match acquisition URL")
     token = base64.b64encode(
         (credentials["username"] + ":" + credentials["password"]).encode("utf-8")
     ).decode("ascii")

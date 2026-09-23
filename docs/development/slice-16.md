@@ -3,9 +3,9 @@
 Operators can discover work before a report is published:
 
 ```bash
-uv run traceproof run-history REPO_ID --limit 100
-uv run traceproof scan-history REPO_ID --limit 100
-uv run traceproof scan-history REPO_ID --run-id RUN_ID --offset 0 --limit 100
+uv run veriflow run-history REPO_ID --limit 100
+uv run veriflow scan-history REPO_ID --limit 100
+uv run veriflow scan-history REPO_ID --run-id RUN_ID --offset 0 --limit 100
 ```
 
 Run history includes admitted/failed runs, their snapshot and latest query-attempt ID.

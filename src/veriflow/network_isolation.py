@@ -3,7 +3,7 @@
 import sys
 from pathlib import Path
 
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 
 PROFILE = "(version 1)(allow default)(deny network*)"
 MODE = "macos-network-deny-v1"
@@ -24,7 +24,7 @@ os.execv(sys.argv[1], sys.argv[1:])
 
 def validate_offline(language, profile, downloads, offline):
     if offline and (language != "csharp" or profile is None or downloads):
-        raise TraceProofError(
+        raise VeriFlowError(
             "C# offline extraction requires csharp, a dependency profile, "
             "and no allow-csharp-downloads"
         )
@@ -32,5 +32,5 @@ def validate_offline(language, profile, downloads, offline):
 
 def offline_command(command):
     if sys.platform != "darwin" or not Path("/usr/bin/sandbox-exec").is_file():
-        raise TraceProofError("C# offline extraction currently requires macOS sandbox-exec")
+        raise VeriFlowError("C# offline extraction currently requires macOS sandbox-exec")
     return ["/usr/bin/sandbox-exec", "-p", PROFILE, sys.executable, "-c", GATE, *command]

@@ -1,6 +1,6 @@
 # Joern Java feasibility probe
 
-This opt-in probe runs only the checked-in synthetic fixtures. It is not a TraceProof
+This opt-in probe runs only the checked-in synthetic fixtures. It is not a VeriFlow
 scan backend and does not call an LLM. The packaged Scala query selects String RequestParam parameters on public GetMapping
 methods using fully qualified graph annotation names, and matches the exact JDBC
 Statement.executeQuery(String) graph signature. This is bounded discovery; it does not

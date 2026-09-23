@@ -10,7 +10,7 @@ from importlib.resources import files
 from pathlib import Path
 from uuid import uuid4
 
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.indexing import verified_source
 from veriflow.intake import now
 from veriflow.joern_diagnostics import observe_logs
@@ -66,14 +66,14 @@ def stage(command, root, name, timeout, *, rust_home=None):
         except subprocess.TimeoutExpired:
             os.killpg(process.pid, signal.SIGKILL)
             process.wait()
-            raise TraceProofError(f"Joern {name} timed out") from None
+            raise VeriFlowError(f"Joern {name} timed out") from None
     if code:
-        raise TraceProofError(f"Joern {name} failed; inspect stage log")
+        raise VeriFlowError(f"Joern {name} failed; inspect stage log")
 
 
 def decode_output(raw, language="java", rule=RULE):
     if len(raw) > MAX_SARIF_BYTES:
-        raise TraceProofError("Joern output exceeds 16 MiB")
+        raise VeriFlowError("Joern output exceeds 16 MiB")
     try:
         doc = json.loads(raw)
         if doc["schema_version"] != "2" or doc["engine_id"] != "joern" or doc["rule_id"] != rule:
@@ -92,7 +92,7 @@ def decode_output(raw, language="java", rule=RULE):
             raise ValueError()
         return doc
     except (ValueError, KeyError, TypeError, RecursionError):
-        raise TraceProofError("Malformed Joern coverage/output contract") from None
+        raise VeriFlowError("Malformed Joern coverage/output contract") from None
 
 
 def discovery_coverage(doc, source, selected, language="java"):
@@ -107,7 +107,7 @@ def discovery_coverage(doc, source, selected, language="java"):
                 raise ValueError()
             represented.add(path.as_posix())
     except ValueError:
-        raise TraceProofError("Graph inventory references unexpected source") from None
+        raise VeriFlowError("Graph inventory references unexpected source") from None
     if doc["flow_count"]:
         observation = "modeled_flows_found"
     elif not doc["source_count"] and not doc["sink_count"]:
@@ -137,7 +137,7 @@ def discovery_coverage(doc, source, selected, language="java"):
 def to_sarif(raw, source, manifest, language="java", rule=RULE):
     """Preserve recorded flow order; reject invalid references instead of inventing nodes."""
     if len(raw) > MAX_SARIF_BYTES:
-        raise TraceProofError("Joern output exceeds 16 MiB")
+        raise VeriFlowError("Joern output exceeds 16 MiB")
     try:
         doc = decode_output(raw, language, rule)
         paths = doc["paths"]
@@ -240,7 +240,7 @@ def to_sarif(raw, source, manifest, language="java", rule=RULE):
             }
         ).encode()
     except (ValueError, KeyError, TypeError, OSError, AttributeError, RecursionError):
-        raise TraceProofError("Invalid Joern output or source reference") from None
+        raise VeriFlowError("Invalid Joern output or source reference") from None
 
 
 def discover(
@@ -258,7 +258,7 @@ def discover(
     """Explicit local opt-in; caller supplies trusted tools, never repository scripts."""
     language = language or ("csharp" if repair_dir is not None else "java")
     if language not in SUFFIXES or (language == "csharp") != (repair_dir is not None):
-        raise TraceProofError("Unsupported Joern language/repair combination")
+        raise VeriFlowError("Unsupported Joern language/repair combination")
     supported_profiles = {
         "csharp-query-commandtext-v1": {"csharp"},
         "csharp-query-file-read-v1": {"csharp"},
@@ -282,14 +282,14 @@ def discover(
     if discovery_profile is not None and language not in supported_profiles.get(
         discovery_profile, set()
     ):
-        raise TraceProofError("Unsupported Joern discovery profile/language")
+        raise VeriFlowError("Unsupported Joern discovery profile/language")
     rust_toolchain = None
     if language == "rust":
         from veriflow.joern_rust import trusted_toolchain
 
         rust_toolchain = trusted_toolchain(store, rust_home)
     elif rust_home is not None:
-        raise TraceProofError("Rust toolchain only applies to Rust scans")
+        raise VeriFlowError("Rust toolchain only applies to Rust scans")
     stage_options = {"rust_home": rust_toolchain} if rust_toolchain else {}
     rule = {
         "java": RULE,
@@ -341,15 +341,15 @@ def discover(
     if discovery_profile == "rust-env-shell-v1":
         rule = "veriflow/joern-rust-env-shell-v1"
     if type(timeout) is not int or not 1 <= timeout <= 3600:
-        raise TraceProofError("Timeout must be between 1 and 3600 seconds")
+        raise VeriFlowError("Timeout must be between 1 and 3600 seconds")
     extraction_timeout = timeout if extraction_timeout is None else extraction_timeout
     if type(extraction_timeout) is not int or not 1 <= extraction_timeout <= 3600:
-        raise TraceProofError("Extraction timeout must be between 1 and 3600 seconds")
+        raise VeriFlowError("Extraction timeout must be between 1 and 3600 seconds")
     home = Path(joern_home).resolve(strict=True)
     if not (home / "lib" / f"io.joern.joern-cli-{VERSION}.jar").is_file():
-        raise TraceProofError("Expected pinned Joern version layout not found")
+        raise VeriFlowError("Expected pinned Joern version layout not found")
     if home.is_relative_to(store.root / "artifacts") or home.is_relative_to(store.root / "scans"):
-        raise TraceProofError("Joern must come from operator tooling, not scan artifacts")
+        raise VeriFlowError("Joern must come from operator tooling, not scan artifacts")
     frontend_name = {
         "java": "javasrc2cpg",
         "csharp": "javasrc2cpg",
@@ -372,7 +372,7 @@ def discover(
         run, manifest, tree = verified_source(store, run_id)
         selected = [f for f in manifest.files if f.path.endswith(SUFFIXES[language])]
         if not selected:
-            raise TraceProofError(f"Snapshot contains no {language} source")
+            raise VeriFlowError(f"Snapshot contains no {language} source")
         cargo = None
         if language == "rust":
             from veriflow.joern_rust import cargo_manifest
@@ -670,7 +670,7 @@ def discover(
                 target.parent.mkdir(parents=True, exist_ok=True)
                 content = (tree / record.path).read_bytes()
                 if hashlib.sha256(content).hexdigest() != record.sha256:
-                    raise TraceProofError("Source integrity changed")
+                    raise VeriFlowError("Source integrity changed")
                 target.write_bytes(content)
             if cargo is not None:
                 (source / "Cargo.toml").write_bytes(cargo)
@@ -819,16 +819,16 @@ def discover(
             verified_source(store, run_id)
             for record in prepared:
                 if hashlib.sha256((source / record.path).read_bytes()).hexdigest() != record.sha256:
-                    raise TraceProofError("Prepared source changed")
+                    raise VeriFlowError("Prepared source changed")
             if (
                 endpoint_digest is not None
                 and hashlib.sha256(endpoint_path.read_bytes()).hexdigest() != endpoint_digest
             ):
-                raise TraceProofError("Endpoint selection changed")
+                raise VeriFlowError("Endpoint selection changed")
             if cargo is not None and (source / "Cargo.toml").read_bytes() != cargo:
-                raise TraceProofError("Prepared Cargo metadata changed")
+                raise VeriFlowError("Prepared Cargo metadata changed")
             if hashlib.sha256(query.read_bytes()).hexdigest() != query_digest:
-                raise TraceProofError("Query changed")
+                raise VeriFlowError("Query changed")
             with (root / "flows.json").open("rb") as handle:
                 raw = handle.read(MAX_SARIF_BYTES + 1)
             report["native_output_sha256"] = hashlib.sha256(raw).hexdigest()
@@ -836,13 +836,13 @@ def discover(
             coverage = discovery_coverage(doc, source, selected, language)
             if language == "rust" and coverage["represented_rust_files"] == 0:
                 report["discovery_coverage"] = coverage
-                raise TraceProofError("Rust preparation produced no selected source in graph")
+                raise VeriFlowError("Rust preparation produced no selected source in graph")
             if repair_dir is not None:
                 from veriflow.joern_csharp import map_output, repaired_frontend
 
                 _, after_identity = repaired_frontend(store, home, Path(repair_dir))
                 if after_identity != repair_identity:
-                    raise TraceProofError("Repair tooling changed during scan")
+                    raise VeriFlowError("Repair tooling changed during scan")
                 raw, mapping = map_output(
                     doc,
                     source,
@@ -870,7 +870,7 @@ def discover(
                 diagnostic_warnings=None,
                 process_stages_completed=True,
             )
-        except (TraceProofError, OSError) as exc:
+        except (VeriFlowError, OSError) as exc:
             candidates = []
             report.update(
                 status="failed", failure_kind=type(exc).__name__, failed_stage=active_stage

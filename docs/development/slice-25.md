@@ -3,8 +3,8 @@
 After CSV admission and archive capture:
 
 ```bash
-uv run traceproof scan-import IMPORT_ID /absolute/approved.ql --limit 5
-uv run traceproof scan-import IMPORT_ID /absolute/approved.ql --offset 5 --limit 5
+uv run veriflow scan-import IMPORT_ID /absolute/approved.ql --limit 5
+uv run veriflow scan-import IMPORT_ID /absolute/approved.ql --offset 5 --limit 5
 ```
 
 This selects rows in original CSV order and invokes the existing source-only `scan-run`

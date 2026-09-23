@@ -5,14 +5,14 @@ from datetime import UTC, datetime
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.history import validate_page
 from veriflow.persistence import ImportBatch, ImportControl
 
 
 def current_control(session, import_id):
     if session.get(ImportBatch, import_id) is None:
-        raise TraceProofError("Import not found")
+        raise VeriFlowError("Import not found")
     record = session.scalar(
         select(ImportControl)
         .where(ImportControl.import_id == import_id)
@@ -56,11 +56,11 @@ def control_status(store, import_id, offset=0, limit=100):
 
 def set_control(store, import_id, state, key, reason, expected_revision):
     if state not in {"active", "paused", "cancelled"}:
-        raise TraceProofError("Import dispatch state must be active, paused or cancelled")
+        raise VeriFlowError("Import dispatch state must be active, paused or cancelled")
     if not key.strip() or len(key) > 200 or not reason.strip() or len(reason) > 1000:
-        raise TraceProofError("Provide a 1–200 character key and a 1–1000 character reason")
+        raise VeriFlowError("Provide a 1–200 character key and a 1–1000 character reason")
     if type(expected_revision) is not int or expected_revision < 0:
-        raise TraceProofError("Expected revision must be a nonnegative integer")
+        raise VeriFlowError("Expected revision must be a nonnegative integer")
     try:
         with store.transaction() as session:
             current = current_control(session, import_id)
@@ -75,17 +75,17 @@ def set_control(store, import_id, state, key, reason, expected_revision):
                     reason,
                     expected_revision,
                 ):
-                    raise TraceProofError("Import control key was used for a different request")
+                    raise VeriFlowError("Import control key was used for a different request")
                 applied_revision = existing.revision
             else:
                 if current["state"] == "cancelled":
-                    raise TraceProofError("Import dispatch is cancelled and cannot be resumed")
+                    raise VeriFlowError("Import dispatch is cancelled and cannot be resumed")
                 if current["revision"] != expected_revision:
-                    raise TraceProofError(
+                    raise VeriFlowError(
                         "Import control revision changed; inspect import-control-status"
                     )
                 if current["state"] == state:
-                    raise TraceProofError("Import already has the requested dispatch state")
+                    raise VeriFlowError("Import already has the requested dispatch state")
                 applied_revision = current["revision"] + 1
                 session.add(
                     ImportControl(
@@ -104,4 +104,4 @@ def set_control(store, import_id, state, key, reason, expected_revision):
             "current": control_status(store, import_id),
         }
     except IntegrityError:
-        raise TraceProofError("Concurrent control change; inspect status before retrying") from None
+        raise VeriFlowError("Concurrent control change; inspect status before retrying") from None

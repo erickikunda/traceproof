@@ -15,7 +15,7 @@ from typer.testing import CliRunner
 from veriflow.artifacts import ArtifactStore
 from veriflow.bundles import build_bundle, get_bundle
 from veriflow.cli import app
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.indexing import verified_source
 from veriflow.intake import now, process, submit
 from veriflow.models import (
@@ -159,7 +159,7 @@ def test_bundle_pinned_idempotent_and_read_only(store, evidence_fixture):
         assert session.scalar(select(func.count()).select_from(EvidenceBundle)) == 1
     path.write_bytes(b"changed")
     assert get_bundle(store, bundle["bundle_id"]) == bundle
-    with pytest.raises(TraceProofError, match="SARIF integrity"):
+    with pytest.raises(VeriFlowError, match="SARIF integrity"):
         build_bundle(store, attempt, fingerprint)
 
 
@@ -196,7 +196,7 @@ def test_reservation_usage_idempotency_and_candidate_immutability(store, ready):
     assert triage_report(store, run)["remaining_micro_usd"] == 99860
     with store.transaction() as session:
         assert session.scalar(select(Candidate)).evidence["adjudication"] == "unreviewed"
-    with pytest.raises(TraceProofError, match="different request"):
+    with pytest.raises(VeriFlowError, match="different request"):
         triage(store, bundle["bundle_id"], policy(max_output_tokens=2048), adapter, "key")
 
 
@@ -206,7 +206,7 @@ def test_budget_exhausted_and_no_reset(store, ready):
     adapter = FakeAdapter()
     result = triage(store, bundle["bundle_id"], policy(), adapter, "low")
     assert result["state"] == "budget_exhausted" and adapter.calls == 0
-    with pytest.raises(TraceProofError, match="already fixed"):
+    with pytest.raises(VeriFlowError, match="already fixed"):
         set_budget(store, run, 100000)
 
 
@@ -293,7 +293,7 @@ triage(Store(Path(sys.argv[1])),sys.argv[2],ModelConfig(provider='replay',model=
 def test_classification_and_transmission_policy(store, ready):
     run, bundle = ready
     set_budget(store, run, 100000)
-    with pytest.raises(TraceProofError, match="classification"):
+    with pytest.raises(VeriFlowError, match="classification"):
         triage(
             store, bundle["bundle_id"], policy(allowed_classifications=[]), FakeAdapter(), "deny"
         )
@@ -304,7 +304,7 @@ def test_classification_and_transmission_policy(store, ready):
         allowed_endpoint_hosts=["example.com"],
         input_micro_usd_per_1k=1000,
     )
-    with pytest.raises(TraceProofError, match="disabled"):
+    with pytest.raises(VeriFlowError, match="disabled"):
         triage(store, bundle["bundle_id"], config, OpenAIAdapter(config), "deny")
     assert triage_report(store, run)["total"] == 0
 
@@ -352,7 +352,7 @@ def test_openai_payload_and_reply_contract(ready):
     assert parse_openai_response(json.dumps(doc)).status == "refused"
     doc["output"][0]["content"] = [{"type": "output_text", "text": "not json"}]
     assert parse_openai_response(json.dumps(doc)).status == "invalid_output"
-    with pytest.raises(TraceProofError, match="redirect"):
+    with pytest.raises(VeriFlowError, match="redirect"):
         NoRedirect().redirect_request(None, None, 302, "", {}, "https://evil.test")
 
 
@@ -386,7 +386,7 @@ def test_bundle_tampering_detected(store, ready):
     with store.transaction() as session:
         record = session.get(EvidenceBundle, bundle["bundle_id"])
         record.content = {**record.content, "classification": "public"}
-    with pytest.raises(TraceProofError, match="digest"):
+    with pytest.raises(VeriFlowError, match="digest"):
         get_bundle(store, bundle["bundle_id"])
 
 

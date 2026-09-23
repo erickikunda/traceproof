@@ -6,7 +6,7 @@ from test_triage import evidence_fixture as evidence_fixture
 from typer.testing import CliRunner
 
 from veriflow.cli import app
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.persistence import Run, Snapshot
 from veriflow.sbom_export import export_sbom
 
@@ -88,14 +88,14 @@ def test_reverification_detects_a_changed_tree(store, scanned):
     source.chmod(0o600)
     source.write_text("def f(x):\n    return x\n")
     assert export_sbom(store, repo, snapshot_id)
-    with pytest.raises(TraceProofError, match="digest"):
+    with pytest.raises(VeriFlowError, match="digest"):
         export_sbom(store, repo, snapshot_id, verify=True)
 
 
 def test_other_repository_cannot_export(store, scanned):
     repo, run, _, _ = scanned
     snapshot_id = snapshot_of(store, run)
-    with pytest.raises(TraceProofError, match="belong"):
+    with pytest.raises(VeriFlowError, match="belong"):
         export_sbom(store, "other-repo", snapshot_id)
     result = CliRunner().invoke(
         app, ["--state-dir", str(store.root), "get-sbom", "other-repo", snapshot_id]
@@ -105,21 +105,21 @@ def test_other_repository_cannot_export(store, scanned):
 
 def test_unknown_snapshot_is_refused(store, scanned):
     repo, _, _, _ = scanned
-    with pytest.raises(TraceProofError, match="belong"):
+    with pytest.raises(VeriFlowError, match="belong"):
         export_sbom(store, repo, "0" * 64)
 
 
 def test_component_limit_refuses_a_partial_document(store, scanned, monkeypatch):
     repo, run, _, _ = scanned
     monkeypatch.setattr("veriflow.sbom_export.MAX_SBOM_COMPONENTS", 0)
-    with pytest.raises(TraceProofError, match="component limit"):
+    with pytest.raises(VeriFlowError, match="component limit"):
         export_sbom(store, repo, snapshot_of(store, run))
 
 
 def test_byte_limit_refuses_a_partial_document(store, scanned, monkeypatch):
     repo, run, _, _ = scanned
     monkeypatch.setattr("veriflow.sbom_export.MAX_SBOM_BYTES", 1)
-    with pytest.raises(TraceProofError, match="8 MiB"):
+    with pytest.raises(VeriFlowError, match="8 MiB"):
         export_sbom(store, repo, snapshot_of(store, run))
 
 
@@ -129,5 +129,5 @@ def test_invalid_manifest_record_is_refused(store, scanned):
     with store.transaction() as session:
         record = session.get(Snapshot, snapshot_id)
         record.manifest = {**record.manifest, "files": [{"path": "../escape", "sha256": "x"}]}
-    with pytest.raises(TraceProofError, match="invalid"):
+    with pytest.raises(VeriFlowError, match="invalid"):
         export_sbom(store, repo, snapshot_id)

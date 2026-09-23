@@ -591,7 +591,7 @@ See [Slice 60](slice-60.md).
 
 Slice 59 separates CodeQL process execution from integrity checks and publication.
 All 484 tests pass. Joern is the preferred qualification candidate; it is not installed
-or runnable through TraceProof yet. Plan §18 supersedes the earlier queue: complete
+or runnable through VeriFlow yet. Plan §18 supersedes the earlier queue: complete
 engine-neutral contracts, qualify Java/Spring then C#/Rust early, compare Opengrep,
 and resume language expansion. C and C++ follow the existing language work plan.
 See [Slice 59](slice-59.md) for scope and remaining boundaries.
@@ -780,7 +780,7 @@ Java 21 JDK. Offline Spring is NOT qualified: the vulnerable case produces zero
 candidates with blocked inferred Maven downloads and unresolved annotations. Historical
 macOS Spring runs fetched dependencies despite source-only input. Next: pinned Java
 profiles and offline Spring requalification. Full builds and Linux C# remain open.
-Container suite selection and package inventories use TraceProof's virtual environment.
+Container suite selection and package inventories use VeriFlow's virtual environment.
 
 Slice 50 supplies pinned local Maven-layout JAR profiles for Java, records profile
 identity in reuse/reports and rechecks integrity after extraction. Six pinned Spring

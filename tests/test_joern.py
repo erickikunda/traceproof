@@ -7,7 +7,7 @@ from test_slice03 import captured_source as captured_source
 from veriflow import joern
 from veriflow.bundles import build_bundle
 from veriflow.claims import bundle_engine, requirements
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.reports import publish_report
 from veriflow.scanning import scan_report
 
@@ -34,7 +34,7 @@ def output(file="App.java", line=1):
 def test_invalid_flow_references_rejected(tmp_path, file, line):
     (tmp_path / "App.java").write_text("class App {}\n")
     manifest = SimpleNamespace(files=[SimpleNamespace(path="App.java")])
-    with pytest.raises(TraceProofError):
+    with pytest.raises(VeriFlowError):
         joern.to_sarif(output(file, line), tmp_path, manifest)
 
 
@@ -62,7 +62,7 @@ def test_durable_discovery_and_failure(
         assert not (root / "source/pom.xml").exists()
         assert (root / "source/go.mod").exists() == (language == "go")
         if failed:
-            raise TraceProofError("stage failed")
+            raise VeriFlowError("stage failed")
         if name == "analyze":
             doc = json.loads(output())
             if language != "java":
@@ -141,13 +141,13 @@ def test_coverage_never_implies_parse_completeness(tmp_path, sources, sinks, flo
 def test_invalid_coverage_counters_rejected(key, value):
     doc = json.loads(output())
     doc[key] = value
-    with pytest.raises(TraceProofError):
+    with pytest.raises(VeriFlowError):
         joern.decode_output(json.dumps(doc).encode())
 
 
 def test_graph_inventory_cannot_claim_foreign_source(tmp_path):
     doc = {"represented_java_files": ["../App.java"]}
-    with pytest.raises(TraceProofError, match="unexpected source"):
+    with pytest.raises(VeriFlowError, match="unexpected source"):
         joern.discovery_coverage(doc, tmp_path, [SimpleNamespace(path="App.java")])
 
 
@@ -155,5 +155,5 @@ def test_graph_inventory_cannot_claim_foreign_source(tmp_path):
     "language,repair", [("unknown", None), ("csharp", None), ("python", "repair")]
 )
 def test_invalid_profile_combination_rejected(store, language, repair):
-    with pytest.raises(TraceProofError, match="language/repair"):
+    with pytest.raises(VeriFlowError, match="language/repair"):
         joern.discover(store, "unused", "/unused", language=language, repair_dir=repair)

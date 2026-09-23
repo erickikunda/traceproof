@@ -28,7 +28,7 @@ profiles remain available for some languages but add neither a new CWE family no
 HTTP source coverage. Automatic false-positive dismissal and runtime exploitability are
 not qualified by these advisory policies.
 
-Evidence: src/traceproof/queries/joern-*.sc, profile/rule selection in joern.py,
+Evidence: src/veriflow/queries/joern-*.sc, profile/rule selection in joern.py,
 language-specific claim/parser modules, and the [language register](scanner-language-assessment.md).
 The [readiness checkpoint](../development/slice-105.md) records policy names and fixture scope.
 Slices 124–125 validate packaging/handoff for existing profiles; they do not widen detection.
@@ -36,7 +36,7 @@ Slices 124–125 validate packaging/handoff for existing profiles; they do not w
 CodeQL remains the reference backend where permitted. Trusted .ql/.qls input can yield
 additional candidates, but the configured suite determines those checks and existing gates
 do not automatically gain the corresponding triage semantics. This assessment does not
-count every installed CodeQL query as validated TraceProof coverage. Opengrep is an assessed
+count every installed CodeQL query as validated VeriFlow coverage. Opengrep is an assessed
 potential supplement, not a currently integrated broad-coverage backend.
 
 ## Delivered expansion — Slice 128

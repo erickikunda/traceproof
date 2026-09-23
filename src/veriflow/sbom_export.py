@@ -7,7 +7,7 @@ from sqlalchemy import select
 from veriflow.bundles import canonical
 from veriflow.dependency_discovery import discover_dependencies
 from veriflow.dependency_usage import discover_usage
-from veriflow.domain import SnapshotManifest, TraceProofError
+from veriflow.domain import SnapshotManifest, VeriFlowError
 from veriflow.go_symbols import evaluate_symbols
 from veriflow.osv_database import prepare
 from veriflow.osv_matching import match_components
@@ -26,14 +26,14 @@ def recorded_manifest(store, repo_id, snapshot_id):
             select(Snapshot).where(Snapshot.id == snapshot_id, Snapshot.repo_id == repo_id)
         )
         if snapshot is None:
-            raise TraceProofError("Snapshot does not belong to repository")
+            raise VeriFlowError("Snapshot does not belong to repository")
         record = snapshot.manifest
     try:
         manifest = SnapshotManifest.model_validate(record)
     except ValueError:
-        raise TraceProofError("Snapshot manifest record is invalid; no SBOM was produced") from None
+        raise VeriFlowError("Snapshot manifest record is invalid; no SBOM was produced") from None
     if manifest.snapshot_id != snapshot_id:
-        raise TraceProofError("Snapshot manifest record does not match its identity")
+        raise VeriFlowError("Snapshot manifest record does not match its identity")
     return manifest
 
 
@@ -43,7 +43,7 @@ def reverified_manifest(store, repo_id, snapshot_id):
     recorded = recorded_manifest(store, repo_id, snapshot_id)
     manifest = ArtifactStore(store.root).verify(snapshot_id)
     if manifest.model_dump(mode="json") != recorded.model_dump(mode="json"):
-        raise TraceProofError("Snapshot manifest differs from its admitted database record")
+        raise VeriFlowError("Snapshot manifest differs from its admitted database record")
     return manifest
 
 
@@ -307,7 +307,7 @@ def snapshot_tree(store, snapshot_id):
 
     tree = ArtifactStore(store.root).path(snapshot_id) / "tree"
     if tree.is_symlink() or not tree.is_dir():
-        raise TraceProofError("Snapshot source tree is unavailable; check local retention")
+        raise VeriFlowError("Snapshot source tree is unavailable; check local retention")
     return tree
 
 
@@ -346,16 +346,16 @@ def export_sbom(
     """Re-encode a recorded snapshot manifest; declared packages are candidates only."""
     store.require_initialized()
     if database is not None and not packages:
-        raise TraceProofError("Matching OSV records requires --packages")
+        raise VeriFlowError("Matching OSV records requires --packages")
     if usage and not packages:
-        raise TraceProofError("Import evidence requires --packages")
+        raise VeriFlowError("Import evidence requires --packages")
     manifest = (
         reverified_manifest(store, repo_id, snapshot_id)
         if verify
         else recorded_manifest(store, repo_id, snapshot_id)
     )
     if len(manifest.files) > MAX_SBOM_COMPONENTS:
-        raise TraceProofError("Snapshot exceeds the SBOM component limit; no partial SBOM written")
+        raise VeriFlowError("Snapshot exceeds the SBOM component limit; no partial SBOM written")
     tree = snapshot_tree(store, snapshot_id) if packages else None
     discovery = discover_dependencies(manifest, tree) if packages else None
     evidence = discover_usage(manifest, tree, discovery["components"]) if usage else None
@@ -379,5 +379,5 @@ def export_sbom(
         )
     )
     if len(encoded) > MAX_SBOM_BYTES:
-        raise TraceProofError("SBOM exceeds the 8 MiB limit; no partial SBOM was written")
+        raise VeriFlowError("SBOM exceeds the 8 MiB limit; no partial SBOM was written")
     return encoded

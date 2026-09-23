@@ -7,7 +7,7 @@ from urllib.parse import urlsplit
 from pydantic import Field, ValidationError
 
 from veriflow.artifacts import open_scoped_source
-from veriflow.domain import Contract, Digest, FileRecord, Identifier, TraceProofError
+from veriflow.domain import Contract, Digest, FileRecord, Identifier, VeriFlowError
 from veriflow.git_acquisition import validate_remote
 
 
@@ -58,7 +58,7 @@ def admit(spec, root):
     with open_scoped_source(spec.acquisition_receipt, root) as source:
         raw = source.read(1024 * 1024 + 1)
     if len(raw) > 1024 * 1024 or hashlib.sha256(raw).hexdigest() != spec.acquisition_sha256:
-        raise TraceProofError("Acquisition receipt size or digest mismatch")
+        raise VeriFlowError("Acquisition receipt size or digest mismatch")
     try:
         data = json.loads(raw)
         if not isinstance(data, dict):
@@ -80,7 +80,7 @@ def admit(spec, root):
             ):
                 raise ValueError()
     except (ValidationError, ValueError):
-        raise TraceProofError("Acquisition receipt identity or structure mismatch") from None
+        raise VeriFlowError("Acquisition receipt identity or structure mismatch") from None
     return spec.model_copy(update={"acquisition_data": receipt.model_dump(mode="json")})
 
 
@@ -93,12 +93,12 @@ def verify_snapshot(spec, manifest):
             receipt.archive_sha256 != manifest.archive_sha256
             or receipt.size != manifest.archive_size_bytes
         ):
-            raise TraceProofError("Captured archive differs from GCS receipt")
+            raise VeriFlowError("Captured archive differs from GCS receipt")
         return
     expected = {f.path: (f.size_bytes, f.sha256) for f in receipt.files}
     actual = {f.path: (f.size_bytes, f.sha256) for f in manifest.files}
     if expected != actual:
-        raise TraceProofError("Captured source differs from acquisition receipt file inventory")
+        raise VeriFlowError("Captured source differs from acquisition receipt file inventory")
 
 
 def summary(spec, bound=False):

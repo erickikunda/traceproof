@@ -1,4 +1,4 @@
-# TraceProof POC readiness checkpoint — Slice 105
+# VeriFlow POC readiness checkpoint — Slice 105
 
 **Assessment date:** 11 September 2026. **Code baseline:** completed Slice 104 working tree.
 This checkpoint supersedes the next-step recommendations in Slice 95 and older language

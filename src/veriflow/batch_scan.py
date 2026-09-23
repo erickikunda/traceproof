@@ -3,7 +3,7 @@
 from collections import Counter
 
 from veriflow.codeql_resources import resource_settings
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.history import validate_page
 from veriflow.import_controls import control_status
 from veriflow.intake import import_status
@@ -38,7 +38,7 @@ def scan_import(
     advisory=None,
 ):
     if advisory is not None and engine != "joern":
-        raise TraceProofError("Scan advisory options require engine joern")
+        raise VeriFlowError("Scan advisory options require engine joern")
     resources = resource_settings(threads, ram_mb)
     if engine == "joern":
         from veriflow.joern_pipeline import validate_options
@@ -59,13 +59,13 @@ def scan_import(
         if query is None or any(
             x is not None for x in (joern_home, joern_repair_dir, rust_home, joern_profile)
         ):
-            raise TraceProofError("CodeQL requires queries and does not accept Joern tooling")
+            raise VeriFlowError("CodeQL requires queries and does not accept Joern tooling")
         validate_selection(language, java_profile)
     else:
-        raise TraceProofError("Unsupported scanner engine")
+        raise VeriFlowError("Unsupported scanner engine")
     validate_page(offset, limit)
     if not 1 <= extraction_timeout <= 3600 or not 1 <= query_timeout <= 3600:
-        raise TraceProofError("Stage timeouts must be between 1 and 3600 seconds")
+        raise VeriFlowError("Stage timeouts must be between 1 and 3600 seconds")
     if engine == "codeql":
         query = query_entry(store, query)
     intake = import_status(store, import_id)
@@ -108,7 +108,7 @@ def scan_import(
                 joern_profile=joern_profile,
                 **({"advisory": advisory} if advisory is not None else {}),
             )
-        except TraceProofError as exc:
+        except VeriFlowError as exc:
             # Expected row failures remain explicit; infrastructure errors stop the command.
             result = {"status": "row_error", "error": str(exc), "report_id": None}
         results.append({**row, **result})

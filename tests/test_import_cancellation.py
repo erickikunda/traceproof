@@ -7,7 +7,7 @@ from typer.testing import CliRunner
 from veriflow import batch_scan
 from veriflow.artifacts import ArtifactStore
 from veriflow.cli import app
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.import_controls import control_status, set_control
 from veriflow.intake import import_status, process, submit
 
@@ -34,7 +34,7 @@ def test_cancellation_is_terminal_and_idempotent(store, archive, manifest, pause
     assert first.exit_code == repeated.exit_code == 0
     assert json.loads(first.output) == json.loads(repeated.output)
     for target in ["active", "paused", "cancelled"]:
-        with pytest.raises(TraceProofError, match="cannot be resumed"):
+        with pytest.raises(VeriFlowError, match="cannot be resumed"):
             set_control(store, batch, target, "new-key", "Change", revision + 1)
     result = process(store, ArtifactStore(store.root), batch)
     assert result["items"][0]["state"] == "ready" and result["items"][0]["attempts"] == 0

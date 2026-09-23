@@ -5,7 +5,7 @@ from test_dependency_discovery import properties_of
 from test_dependency_discovery import snapshot as snapshot
 
 from veriflow.dependency_usage import npm_package, npm_specifiers
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.sbom_export import export_sbom
 
 LOCK = {
@@ -168,7 +168,7 @@ def test_usage_is_opt_in_and_requires_packages(store, snapshot):
         for c in default["components"]
         if c["type"] == "library"
     )
-    with pytest.raises(TraceProofError, match="requires --packages"):
+    with pytest.raises(VeriFlowError, match="requires --packages"):
         export_sbom(store, repo, snapshot_id, usage=True)
 
 

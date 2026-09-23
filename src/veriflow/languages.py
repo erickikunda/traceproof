@@ -4,7 +4,7 @@ from collections import Counter
 from dataclasses import dataclass
 from pathlib import PurePosixPath
 
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 
 
 @dataclass(frozen=True)
@@ -57,7 +57,7 @@ EXTENSIONS = {
 
 def adapter_for(language):
     if language not in ADAPTERS:
-        raise TraceProofError(
+        raise VeriFlowError(
             "Implemented extraction languages are python, java, csharp, javascript and typescript"
         )
     return ADAPTERS[language]
@@ -73,7 +73,7 @@ def select_language(manifest, requested):
     )
     if len(detected) != 1 or detected[0] not in ADAPTERS:
         names = ", ".join(detected) or "none"
-        raise TraceProofError(
+        raise VeriFlowError(
             f"Automatic selection requires one supported source language; detected: {names}. "
             "Choose an explicit language for partial coverage."
         )
@@ -83,7 +83,7 @@ def select_language(manifest, requested):
 def validate_selection(language, java_profile):
     if language == "auto":
         if java_profile not in {"dependency-free", "source-only"}:
-            raise TraceProofError("Unknown Java profile")
+            raise VeriFlowError("Unknown Java profile")
     else:
         validate_profile(language, java_profile)
 
@@ -113,7 +113,7 @@ def validate_profile(language, java_profile):
     if java_profile not in {"dependency-free", "source-only"} or (
         language != "java" and java_profile != "dependency-free"
     ):
-        raise TraceProofError(
+        raise VeriFlowError(
             "Java profile must be dependency-free or source-only; source-only requires java"
         )
 
@@ -122,7 +122,7 @@ def validate_extraction_scope(manifest, language, java_profile="dependency-free"
     validate_profile(language, java_profile)
     scope = language_scope(manifest, language)
     if not scope["selected_file_count"]:
-        raise TraceProofError("Snapshot contains no files for the selected language")
+        raise VeriFlowError("Snapshot contains no files for the selected language")
     if language in {"javascript", "typescript"}:
         scope.update(
             dependency_resolution="not_qualified",
@@ -174,7 +174,7 @@ def validate_extraction_scope(manifest, language, java_profile="dependency-free"
             or PurePosixPath(file.path).suffix.lower() in {".jar", ".kt"}
             for file in manifest.files
         ):
-            raise TraceProofError(
+            raise VeriFlowError(
                 "Java dependency-free profile does not support build descriptors, JARs or Kotlin"
             )
     return scope

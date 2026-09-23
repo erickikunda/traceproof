@@ -12,7 +12,7 @@ from test_triage import policy
 from veriflow import joern, pipeline
 from veriflow.bundles import build_bundle
 from veriflow.claims import assess_evidence
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.joern_claims import RULE_POLICIES, assess_review_evidence, review_preflight
 from veriflow.reports import get_report
 from veriflow.scan_advisory import AdvisoryOptions
@@ -151,7 +151,7 @@ def test_cost_and_idempotency(store, express_bundle, monkeypatch, stop):
 def test_main_workflow_and_report(store, express_bundle, tmp_path):
     b = express_bundle
     advisory = AdvisoryOptions(policy(), adapter_for(b), "express-workflow", selected(b))
-    with pytest.raises(TraceProofError, match="profile"):
+    with pytest.raises(VeriFlowError, match="profile"):
         advisory.validate_scope("python", None)
     set_budget(store, b["run_id"], 100000)
     result = pipeline.scan_run(

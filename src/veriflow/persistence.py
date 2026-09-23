@@ -11,7 +11,7 @@ from sqlalchemy import JSON, BigInteger, ForeignKey, String, UniqueConstraint, c
 from sqlalchemy.engine import URL
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 
 
 class Base(DeclarativeBase):
@@ -214,7 +214,7 @@ class Store:
 
     def require_initialized(self) -> None:
         if not self.database.is_file():
-            raise TraceProofError("State is not initialized; run veriflow init first")
+            raise VeriFlowError("State is not initialized; run veriflow init first")
 
     @contextmanager
     def transaction(self):
@@ -238,7 +238,7 @@ def exclusive_worker(root: Path):
         try:
             fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError as exc:
-            raise TraceProofError("A local worker already owns this state directory") from exc
+            raise VeriFlowError("A local worker already owns this state directory") from exc
         try:
             yield
         finally:

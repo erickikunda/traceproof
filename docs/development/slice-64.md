@@ -10,7 +10,7 @@ No CodeqlAttempt is fabricated. The standard backend registry/scan-run remains C
 The normalizer preserves recorded flow ordering and native Joern rule identity. It rejects
 foreign/traversing paths, invalid line references and malformed/oversized results. Snapshot,
 copied source and query integrity are checked after execution. It never fabricates omitted
-flow nodes. Query code has one canonical packaged location under `traceproof/queries`;
+flow nodes. Query code has one canonical packaged location under `veriflow/queries`;
 the earlier feasibility runner now uses the same file.
 
 All successful results are partial/discovery-only. This is still the fixture-scoped source

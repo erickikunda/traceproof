@@ -49,14 +49,14 @@ def test_csharp_copy_omits_project_and_binary_inputs(store, archive, manifest, m
 def test_csharp_requires_explicit_download_opt_in(store, archive, manifest):
     import pytest
 
-    from veriflow.domain import TraceProofError
+    from veriflow.domain import VeriFlowError
 
     with zipfile.ZipFile(archive, "w") as out:
         out.writestr("C.cs", "class C {}")
     run = captured(store, archive, manifest)
     with (
         exclusive_worker(store.root),
-        pytest.raises(TraceProofError, match="allow-csharp-downloads"),
+        pytest.raises(VeriFlowError, match="allow-csharp-downloads"),
     ):
         extract(store, run, language="auto")
     assert not (store.root / "codeql").exists()

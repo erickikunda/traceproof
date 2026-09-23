@@ -7,7 +7,7 @@ from pathlib import Path, PurePosixPath
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator, model_validator
 
 from veriflow.bundles import MAX_BUNDLE_BYTES, MAX_SOURCE_BYTES, canonical, get_bundle
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 from veriflow.evidence import read_evidence
 from veriflow.indexing import verified_source
 from veriflow.persistence import EvidenceBundle, exclusive_worker
@@ -49,23 +49,23 @@ def read_expansion(path):
             raise ValueError()
         return [ExpansionItem.model_validate(item) for item in document]
     except (ValidationError, ValueError, TypeError):
-        raise TraceProofError(
+        raise VeriFlowError(
             "Invalid expansion request; expected 1–4 bounded source ranges"
         ) from None
 
 
 def expand_bundle(store, parent_id, requests):
     if not 1 <= len(requests) <= 4 or any(not isinstance(item, ExpansionItem) for item in requests):
-        raise TraceProofError("Expansion requires 1–4 validated source ranges")
+        raise VeriFlowError("Expansion requires 1–4 validated source ranges")
     store.require_initialized()
     with exclusive_worker(store.root):
         parent = get_bundle(store, parent_id)
         depth = parent.get("expansion_depth", 0)
         if depth >= MAX_DEPTH:
-            raise TraceProofError("Maximum expansion depth reached")
+            raise VeriFlowError("Maximum expansion depth reached")
         _, manifest, tree = verified_source(store, parent["run_id"])
         if manifest.snapshot_id != parent["snapshot_id"]:
-            raise TraceProofError("Expansion must use the original snapshot")
+            raise VeriFlowError("Expansion must use the original snapshot")
         snippets = [dict(item) for item in parent["snippets"]]
         for item in requests:
             if any(
@@ -96,7 +96,7 @@ def expand_bundle(store, parent_id, requests):
             len(snippets) > MAX_SNIPPETS
             or sum(len(item["text"].encode()) for item in snippets) > MAX_SOURCE_BYTES
         ):
-            raise TraceProofError("Expanded evidence exceeds the snippet/source budget")
+            raise VeriFlowError("Expanded evidence exceeds the snippet/source budget")
         content = {key: value for key, value in parent.items() if key != "bundle_id"}
         content.update(
             parent_bundle_id=parent_id,
@@ -107,7 +107,7 @@ def expand_bundle(store, parent_id, requests):
         )
         # Context cannot silently erase extraction/coverage gaps inherited from the parent.
         if len(canonical(content)) > MAX_BUNDLE_BYTES:
-            raise TraceProofError("Expanded evidence exceeds the 32 KiB envelope budget")
+            raise VeriFlowError("Expanded evidence exceeds the 32 KiB envelope budget")
         verified_source(store, parent["run_id"])
         identity = hashlib.sha256(canonical(content)).hexdigest()
         with store.transaction() as session:

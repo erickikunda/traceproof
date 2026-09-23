@@ -1,6 +1,6 @@
 # Slice 130 — Flask request-to-URL SSRF candidates
 
-Adds python-flask-ssrf-v1 / traceproof/joern-python-flask-ssrf-v1, CWE-918. Reuses isolated
+Adds python-flask-ssrf-v1 / veriflow/joern-python-flask-ssrf-v1, CWE-918. Reuses isolated
 Flask source modeling and versioned native flow contracts. Adds top-level requests import/
 alias validation and conservative get URL endpoint selection; local-module/rebinding
 checks prevent obvious client lookalikes. Existing command and file-path modes remain

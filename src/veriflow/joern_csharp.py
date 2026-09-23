@@ -6,7 +6,7 @@ import os
 from pathlib import Path
 
 from veriflow.csharp_locations import validate_locations
-from veriflow.domain import TraceProofError
+from veriflow.domain import VeriFlowError
 
 PATCHED_SHA256 = "81bd230f4a7b6cfd12da1ce4135251003cb7563ad72b82c18aeef643603c05a0"
 
@@ -51,17 +51,17 @@ def repaired_frontend(store, home, repair):
             "publisher_authenticated": False,
         }
     except (OSError, ValueError, KeyError, TypeError, AttributeError):
-        raise TraceProofError("Invalid or modified operator C# repair build") from None
+        raise VeriFlowError("Invalid or modified operator C# repair build") from None
 
 
 def map_output(doc, source, selected, *, require_query_source=False):
     records = {r.path: r for r in selected}
     mapped, audit = [], []
     if len(doc["paths"]) > 10_000:
-        raise TraceProofError("Too many C# paths")
+        raise VeriFlowError("Too many C# paths")
     for flow in doc["paths"]:
         if not isinstance(flow, list) or not 1 <= len(flow) <= 256:
-            raise TraceProofError("Invalid C# flow size")
+            raise VeriFlowError("Invalid C# flow size")
         results, nodes = [], []
         for node in flow:
             try:
@@ -78,7 +78,7 @@ def map_output(doc, source, selected, *, require_query_source=False):
                     framework_facts=True,
                 )
             except (ValueError, TypeError, KeyError):
-                raise TraceProofError("Invalid C# source reference") from None
+                raise VeriFlowError("Invalid C# source reference") from None
             results.append(result)
             if result["status"] == "parsed" and result["nodes"][0]["status"] == "validated_span":
                 span = result["nodes"][0]["span"]

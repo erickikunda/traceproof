@@ -13,7 +13,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
 from veriflow.artifacts import ArtifactStore, open_scoped_source
-from veriflow.domain import IntakeSpec, ItemState, RunState, TraceProofError
+from veriflow.domain import IntakeSpec, ItemState, RunState, VeriFlowError
 from veriflow.import_controls import current_control
 from veriflow.persistence import ImportBatch, ImportItem, Repository, Run, Snapshot, Store
 
@@ -27,14 +27,14 @@ def now() -> str:
 
 def submit(store: Store, csv_path: Path, input_root: Path, key: str) -> str:
     if not key.strip() or len(key) > 200:
-        raise TraceProofError("Idempotency key must contain 1–200 characters")
+        raise VeriFlowError("Idempotency key must contain 1–200 characters")
     root = input_root.resolve(strict=True)
     if not root.is_dir():
-        raise TraceProofError("Input root must be a directory")
+        raise VeriFlowError("Input root must be a directory")
     with csv_path.open("rb") as source:
         raw = source.read(MAX_CSV_BYTES + 1)
     if len(raw) > MAX_CSV_BYTES:
-        raise TraceProofError("CSV exceeds 1 MiB limit")
+        raise VeriFlowError("CSV exceeds 1 MiB limit")
     request_hash = hashlib.sha256(raw + b"\x00" + str(root).encode()).hexdigest()
     try:
         text = raw.decode("utf-8-sig")
@@ -42,30 +42,30 @@ def submit(store: Store, csv_path: Path, input_root: Path, key: str) -> str:
         headers = reader.fieldnames
         required = {"repo_id", "source_type", "source_uri", "owner", "classification"}
         if not headers or len(headers) != len(set(headers)):
-            raise TraceProofError("CSV must have unique column names")
+            raise VeriFlowError("CSV must have unique column names")
         if not required.issubset(headers) or not set(headers).issubset(
             set(IntakeSpec.model_fields) - {"acquisition_data"}
         ):
-            raise TraceProofError(
+            raise VeriFlowError(
                 "CSV columns must include repo_id, source_type, source_uri, owner, classification; "
                 "optional fields: sha256, scan_profile, acquisition_receipt, acquisition_sha256"
             )
         rows = []
         for number, row in enumerate(reader, start=2):
             if len(rows) >= MAX_ROWS:
-                raise TraceProofError("CSV exceeds 1,000 data rows")
+                raise VeriFlowError("CSV exceeds 1,000 data rows")
             rows.append((number, row))
         if not rows:
-            raise TraceProofError("CSV has no data rows")
+            raise VeriFlowError("CSV has no data rows")
     except (UnicodeError, csv.Error) as exc:
-        raise TraceProofError("CSV must be valid UTF-8 with well-formed quoted fields") from exc
+        raise VeriFlowError("CSV must be valid UTF-8 with well-formed quoted fields") from exc
 
     try:
         with store.transaction() as session:
             existing = session.scalar(select(ImportBatch).where(ImportBatch.idempotency_key == key))
             if existing is not None:
                 if existing.request_sha256 != request_hash:
-                    raise TraceProofError(
+                    raise VeriFlowError(
                         "Idempotency key was already used for a different request"
                     )
                 return existing.id
@@ -83,7 +83,7 @@ def submit(store: Store, csv_path: Path, input_root: Path, key: str) -> str:
                 error = None
                 try:
                     if None in row or any(value is None for value in row.values()):
-                        raise TraceProofError("CSV row has a different field count from its header")
+                        raise VeriFlowError("CSV row has a different field count from its header")
                     normalized = {k: v for k, v in row.items() if v.strip()}
                     spec = IntakeSpec.model_validate(normalized)
                     from veriflow.acquisition_provenance import admit
@@ -96,7 +96,7 @@ def submit(store: Store, csv_path: Path, input_root: Path, key: str) -> str:
                         spec.owner,
                         spec.classification,
                     ):
-                        raise TraceProofError(
+                        raise VeriFlowError(
                             "Repository metadata conflicts with its existing registration"
                         )
                     if repo is None:
@@ -114,7 +114,7 @@ def submit(store: Store, csv_path: Path, input_root: Path, key: str) -> str:
                         f"{'.'.join(map(str, item['loc']))}: {item['msg']}"
                         for item in exc.errors(include_input=False, include_url=False)
                     )
-                except TraceProofError as exc:
+                except VeriFlowError as exc:
                     error = str(exc)
                 except OSError:
                     error = "Source is unavailable, not regular, or contains a symbolic link"
@@ -150,14 +150,14 @@ def submit(store: Store, csv_path: Path, input_root: Path, key: str) -> str:
             existing = session.scalar(select(ImportBatch).where(ImportBatch.idempotency_key == key))
             if existing is not None and existing.request_sha256 == request_hash:
                 return existing.id
-        raise TraceProofError("Concurrent import conflict; retry with the same key") from None
+        raise VeriFlowError("Concurrent import conflict; retry with the same key") from None
 
 
 def import_status(store: Store, import_id: str) -> dict:
     with store.transaction() as session:
         batch = session.get(ImportBatch, import_id)
         if batch is None:
-            raise TraceProofError("Import not found")
+            raise VeriFlowError("Import not found")
         items = session.scalars(
             select(ImportItem)
             .where(ImportItem.import_id == import_id)
@@ -189,7 +189,7 @@ def run_status(store: Store, run_id: str) -> dict:
     with store.transaction() as session:
         run = session.get(Run, run_id)
         if run is None:
-            raise TraceProofError("Run not found")
+            raise VeriFlowError("Run not found")
         index = (
             session.scalar(
                 select(SourceIndex).where(
@@ -226,7 +226,7 @@ def process(store: Store, artifacts: ArtifactStore, import_id: str, max_items: i
     with store.transaction() as session:
         batch = session.get(ImportBatch, import_id)
         if batch is None:
-            raise TraceProofError("Import not found")
+            raise VeriFlowError("Import not found")
         root = Path(batch.input_root)
         if current_control(session, import_id)["state"] != "active":
             return import_status(store, import_id)
@@ -267,7 +267,7 @@ def process(store: Store, artifacts: ArtifactStore, import_id: str, max_items: i
             from veriflow.acquisition_provenance import verify_snapshot
 
             verify_snapshot(spec, manifest)
-        except TraceProofError as exc:
+        except VeriFlowError as exc:
             with store.transaction() as session:
                 item = session.get(ImportItem, item_id)
                 item.state, item.error = ItemState.FAILED, str(exc)

@@ -12,7 +12,7 @@ from typing import Protocol
 
 from pydantic import ValidationError
 
-from veriflow.domain import IntakeSpec, TraceProofError
+from veriflow.domain import IntakeSpec, VeriFlowError
 
 
 @dataclass(frozen=True)
@@ -57,14 +57,14 @@ def acquire_archive(
         or not 1 <= max_bytes <= 1024 * 1024 * 1024
         or not 1 <= timeout <= 900
     ):
-        raise TraceProofError(
+        raise VeriFlowError(
             "Require approved bucket, object, generation, SHA-256 and bounded limits"
         )
     suffix = next(
         (suffix for suffix in (".tar.gz", ".tgz", ".tar", ".zip") if name.endswith(suffix)), None
     )
     if suffix is None:
-        raise TraceProofError("GCS object must name a supported TAR/ZIP archive")
+        raise VeriFlowError("GCS object must name a supported TAR/ZIP archive")
     output = Path(output).absolute()
     try:
         spec = IntakeSpec(
@@ -76,11 +76,11 @@ def acquire_archive(
             sha256=expected_sha256,
         )
     except ValidationError:
-        raise TraceProofError("Invalid acquisition metadata") from None
+        raise VeriFlowError("Invalid acquisition metadata") from None
     try:
         output.mkdir(mode=0o700)
     except FileExistsError:
-        raise TraceProofError("Acquisition output already exists") from None
+        raise VeriFlowError("Acquisition output already exists") from None
     receipt = dict(
         schema_version="1",
         kind="gcs",
@@ -98,17 +98,17 @@ def acquire_archive(
     try:
         version = reader.stat(bucket, name, generation)
         if (version.bucket, version.name, version.generation) != (bucket, name, generation):
-            raise TraceProofError("GCS object version mismatch")
+            raise VeriFlowError("GCS object version mismatch")
         if not 0 < version.size <= max_bytes:
-            raise TraceProofError("GCS object exceeds size limit or is empty")
+            raise VeriFlowError("GCS object exceeds size limit or is empty")
         digest, total = hashlib.sha256(), 0
         with archive.open("xb") as target:
             for chunk in reader.chunks(version):
                 if not isinstance(chunk, bytes) or not chunk or len(chunk) > 1024 * 1024:
-                    raise TraceProofError("Invalid or oversized archive stream chunk")
+                    raise VeriFlowError("Invalid or oversized archive stream chunk")
                 total += len(chunk)
                 if total > version.size or time.monotonic() > deadline:
-                    raise TraceProofError("GCS acquisition exceeded size or time limit")
+                    raise VeriFlowError("GCS acquisition exceeded size or time limit")
                 target.write(chunk)
                 digest.update(chunk)
         if (
@@ -116,7 +116,7 @@ def acquire_archive(
             or total != version.size
             or digest.hexdigest() != expected_sha256
         ):
-            raise TraceProofError("GCS archive size, digest or deadline mismatch")
+            raise VeriFlowError("GCS archive size, digest or deadline mismatch")
         receipt.update(
             state="acquired",
             archive_sha256=digest.hexdigest(),
@@ -144,8 +144,8 @@ def acquire_archive(
         archive.unlink(missing_ok=True)
         (output / "archives.csv").unlink(missing_ok=True)
         receipt["error_type"] = type(exc).__name__
-        if isinstance(exc, TraceProofError):
+        if isinstance(exc, VeriFlowError):
             raise
-        raise TraceProofError("GCS acquisition failed; no scan input published") from None
+        raise VeriFlowError("GCS acquisition failed; no scan input published") from None
     finally:
         (output / "acquisition.json").write_text(json.dumps(receipt, indent=2))
