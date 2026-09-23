@@ -5,9 +5,9 @@ from test_dependency_discovery import snapshot as snapshot
 from test_osv_matching import LOCK, osv
 from test_osv_matching import database as database
 
-from traceproof.domain import TraceProofError
-from traceproof.osv_database import cache_path, prepare, read_profile
-from traceproof.sbom_export import export_sbom
+from veriflow.domain import TraceProofError
+from veriflow.osv_database import cache_path, prepare, read_profile
+from veriflow.sbom_export import export_sbom
 
 RECORD = osv("GHSA-cache", "npm", "lodash", versions=["4.17.20"])
 
@@ -15,8 +15,8 @@ RECORD = osv("GHSA-cache", "npm", "lodash", versions=["4.17.20"])
 def verifications(document):
     """Pull the verification marker from either document shape."""
     properties = document.get("metadata", {}).get("properties", [])
-    found = [p["value"] for p in properties if p["name"] == "traceproof:osv_database_verification"]
-    coverage = document.get("traceproof", {}).get("osv_coverage", {})
+    found = [p["value"] for p in properties if p["name"] == "veriflow:osv_database_verification"]
+    coverage = document.get("veriflow", {}).get("osv_coverage", {})
     return found or [coverage["database_verification"]]
 
 
@@ -31,7 +31,7 @@ def verification_of(store, repo, snapshot_id, path, **options):
         export_sbom(store, repo, snapshot_id, packages=True, database=path, **options)
     )
     properties = {p["name"]: p["value"] for p in document["metadata"]["properties"]}
-    return properties["traceproof:osv_database_verification"], document.get("vulnerabilities", [])
+    return properties["veriflow:osv_database_verification"], document.get("vulnerabilities", [])
 
 
 def test_cache_is_opt_in(store, database, tmp_path):
@@ -157,7 +157,7 @@ def test_cache_options_reach_both_commands(store, snapshot, database):
     """The CLI wiring is exercised here; calling export_sbom directly would not catch it."""
     from typer.testing import CliRunner
 
-    from traceproof.cli import app
+    from veriflow.cli import app
 
     repo, snapshot_id = snapshot({"package-lock.json": LOCK})
     path = database([RECORD])
@@ -191,7 +191,7 @@ def test_every_declared_cli_option_is_accepted(store):
     """Guards against an option that exists in the function but never reaches the command."""
     from typer.testing import CliRunner
 
-    from traceproof.cli import app
+    from veriflow.cli import app
 
     for command, expected in (
         (

@@ -1,16 +1,16 @@
 # Retains the qualified toolchain; installs the current locked application at build time.
-FROM traceproof:joern-rust-advisory-linux-poc@sha256:357f345efc791b0da986aeb39d04fa57f682d53043412f3d8ee2ccfbc205e723
+FROM veriflow:joern-rust-advisory-linux-poc@sha256:357f345efc791b0da986aeb39d04fa57f682d53043412f3d8ee2ccfbc205e723
 USER 0
 COPY containers/requirements.lock /tmp/requirements.lock
-RUN /opt/traceproof-venv/bin/pip install --no-cache-dir --require-hashes --only-binary=:all: -r /tmp/requirements.lock
-COPY dist/traceproof-0.1.0-py3-none-any.whl /tmp/traceproof-0.1.0-py3-none-any.whl
-RUN /opt/traceproof-venv/bin/pip install --no-index --no-deps --force-reinstall /tmp/traceproof-0.1.0-py3-none-any.whl && \
-    /opt/traceproof-venv/bin/pip check && \
-    sha256sum /tmp/traceproof-0.1.0-py3-none-any.whl /tmp/requirements.lock > /opt/traceproof/application-inputs.sha256
+RUN /opt/veriflow-venv/bin/pip install --no-cache-dir --require-hashes --only-binary=:all: -r /tmp/requirements.lock
+COPY dist/veriflow-0.1.0-py3-none-any.whl /tmp/veriflow-0.1.0-py3-none-any.whl
+RUN /opt/veriflow-venv/bin/pip install --no-index --no-deps --force-reinstall /tmp/veriflow-0.1.0-py3-none-any.whl && \
+    /opt/veriflow-venv/bin/pip check && \
+    sha256sum /tmp/veriflow-0.1.0-py3-none-any.whl /tmp/requirements.lock > /opt/veriflow/application-inputs.sha256
 
-COPY containers/ocp_smoke.py /opt/traceproof/ocp_smoke.py
-COPY containers/ocp-smoke-rust-profiles.json /opt/traceproof/ocp-smoke-profiles.json
-COPY containers/ocp_archive_batch.py /opt/traceproof/ocp_archive_batch.py
+COPY containers/ocp_smoke.py /opt/veriflow/ocp_smoke.py
+COPY containers/ocp-smoke-rust-profiles.json /opt/veriflow/ocp-smoke-profiles.json
+COPY containers/ocp_archive_batch.py /opt/veriflow/ocp_archive_batch.py
 USER 1001:0
-ENTRYPOINT ["/opt/traceproof-venv/bin/python", "/opt/traceproof/ocp_smoke.py"]
+ENTRYPOINT ["/opt/veriflow-venv/bin/python", "/opt/veriflow/ocp_smoke.py"]
 CMD []

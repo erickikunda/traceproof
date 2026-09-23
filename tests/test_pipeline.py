@@ -5,11 +5,11 @@ from test_reports import scanned as scanned
 from test_triage import evidence_fixture as evidence_fixture
 from typer.testing import CliRunner
 
-from traceproof import pipeline, scanner_backends
-from traceproof.cli import app
-from traceproof.domain import TraceProofError
-from traceproof.persistence import ScanAttempt
-from traceproof.reports import get_report, publish_report, report_history
+from veriflow import pipeline, scanner_backends
+from veriflow.cli import app
+from veriflow.domain import TraceProofError
+from veriflow.persistence import ScanAttempt
+from veriflow.reports import get_report, publish_report, report_history
 
 
 @pytest.fixture

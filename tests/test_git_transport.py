@@ -2,9 +2,9 @@ import subprocess
 
 import pytest
 
-from traceproof.domain import TraceProofError
-from traceproof.git_acquisition import Git, acquire
-from traceproof.git_transport import configure, transport_settings
+from veriflow.domain import TraceProofError
+from veriflow.git_acquisition import Git, acquire
+from veriflow.git_transport import configure, transport_settings
 
 
 @pytest.mark.parametrize(

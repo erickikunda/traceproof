@@ -4,11 +4,11 @@ import pytest
 from test_reports import scanned as scanned
 from test_triage import evidence_fixture as evidence_fixture
 
-from traceproof import pipeline
-from traceproof.domain import TraceProofError
-from traceproof.languages import adapter_for, language_scope, validate_extraction_scope
-from traceproof.persistence import ScanAttempt
-from traceproof.reports import get_report, publish_report, render_report
+from veriflow import pipeline
+from veriflow.domain import TraceProofError
+from veriflow.languages import adapter_for, language_scope, validate_extraction_scope
+from veriflow.persistence import ScanAttempt
+from veriflow.reports import get_report, publish_report, render_report
 
 
 def manifest(*paths):
@@ -126,7 +126,7 @@ def test_skip_existing_does_not_cross_java_profiles(store, scanned, tmp_path, mo
     ],
 )
 def test_auto_selects_single_supported_language(paths, expected):
-    from traceproof.languages import select_language
+    from veriflow.languages import select_language
 
     assert select_language(manifest(*paths), "auto") == expected
 
@@ -135,7 +135,7 @@ def test_auto_selects_single_supported_language(paths, expected):
     "paths", [["a.py", "C.java"], ["C.java", "web.ts"], ["main.go"], ["README.md"]]
 )
 def test_auto_rejects_mixed_unsupported_or_empty_inventory(paths):
-    from traceproof.languages import select_language
+    from veriflow.languages import select_language
 
     with pytest.raises(TraceProofError, match="Automatic selection"):
         select_language(manifest(*paths), "auto")
@@ -150,7 +150,7 @@ def test_auto_skip_resolves_to_existing_language(store, scanned, tmp_path):
 
 
 def test_csharp_selection_and_explicit_scope():
-    from traceproof.languages import select_language
+    from veriflow.languages import select_language
 
     snapshot = manifest("Controllers/Lookup.cs", "App.csproj", "View.cshtml", "dependency.dll")
     assert select_language(snapshot, "auto") == "csharp"
@@ -177,7 +177,7 @@ def test_csharp_reports_do_not_inherit_python_readiness(store, scanned):
 
 @pytest.mark.parametrize("language,filename", [("javascript", "app.js"), ("typescript", "app.ts")])
 def test_js_ts_distinct_scope_and_automatic_selection(language, filename):
-    from traceproof.languages import select_language
+    from veriflow.languages import select_language
 
     snapshot = manifest(filename, "package.json", "tsconfig.json")
     assert select_language(snapshot, "auto") == language

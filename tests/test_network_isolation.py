@@ -3,8 +3,8 @@ import sys
 
 import pytest
 
-from traceproof.domain import TraceProofError
-from traceproof.network_isolation import offline_command, validate_offline
+from veriflow.domain import TraceProofError
+from veriflow.network_isolation import offline_command, validate_offline
 
 
 @pytest.mark.parametrize(
@@ -17,7 +17,7 @@ def test_offline_requires_unambiguous_pinned_csharp(language, profile, downloads
 
 
 def test_unsupported_host_fails_closed(monkeypatch):
-    monkeypatch.setattr("traceproof.network_isolation.sys.platform", "linux")
+    monkeypatch.setattr("veriflow.network_isolation.sys.platform", "linux")
     with pytest.raises(TraceProofError, match="macOS"):
         offline_command(["/usr/bin/true"])
 
@@ -38,7 +38,7 @@ assert r.returncode != 0 and 'PermissionError: [Errno 1]' in r.stderr, r.stderr
 
 
 def test_gate_refuses_to_execute_when_network_not_denied(tmp_path):
-    from traceproof.network_isolation import GATE
+    from veriflow.network_isolation import GATE
 
     marker = tmp_path / "executed"
     # Substitute only the probe to simulate unexpectedly working network access.

@@ -1,15 +1,15 @@
 # Qualified local ARM64 Joern/grammar base. Bank registry mirroring remains required.
-FROM traceproof:joern-argv-advisory-linux-poc@sha256:e8b52d9a2549b3f1174a6b1ac5918dae60fe74e51c0f9c48ab8c14af5da82153
+FROM veriflow:joern-argv-advisory-linux-poc@sha256:e8b52d9a2549b3f1174a6b1ac5918dae60fe74e51c0f9c48ab8c14af5da82153
 USER 0
 COPY containers/requirements.lock /tmp/requirements.lock
-RUN /opt/traceproof-venv/bin/pip install --no-cache-dir --require-hashes --only-binary=:all: -r /tmp/requirements.lock
-COPY dist/traceproof-0.1.0-py3-none-any.whl /tmp/traceproof-0.1.0-py3-none-any.whl
-RUN /opt/traceproof-venv/bin/pip install --no-index --no-deps --force-reinstall /tmp/traceproof-0.1.0-py3-none-any.whl && \
-    /opt/traceproof-venv/bin/pip check && \
-    sha256sum /tmp/traceproof-0.1.0-py3-none-any.whl /tmp/requirements.lock > /opt/traceproof/application-inputs.sha256
+RUN /opt/veriflow-venv/bin/pip install --no-cache-dir --require-hashes --only-binary=:all: -r /tmp/requirements.lock
+COPY dist/veriflow-0.1.0-py3-none-any.whl /tmp/veriflow-0.1.0-py3-none-any.whl
+RUN /opt/veriflow-venv/bin/pip install --no-index --no-deps --force-reinstall /tmp/veriflow-0.1.0-py3-none-any.whl && \
+    /opt/veriflow-venv/bin/pip check && \
+    sha256sum /tmp/veriflow-0.1.0-py3-none-any.whl /tmp/requirements.lock > /opt/veriflow/application-inputs.sha256
 
-COPY containers/ocp_smoke.py containers/ocp-smoke-profiles.json /opt/traceproof/
-COPY containers/ocp_archive_batch.py /opt/traceproof/ocp_archive_batch.py
+COPY containers/ocp_smoke.py containers/ocp-smoke-profiles.json /opt/veriflow/
+COPY containers/ocp_archive_batch.py /opt/veriflow/ocp_archive_batch.py
 USER 1001:0
-ENTRYPOINT ["/opt/traceproof-venv/bin/python", "/opt/traceproof/ocp_smoke.py"]
+ENTRYPOINT ["/opt/veriflow-venv/bin/python", "/opt/veriflow/ocp_smoke.py"]
 CMD []

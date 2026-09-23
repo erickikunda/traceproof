@@ -7,16 +7,16 @@ import pytest
 from conftest import row
 from typer.testing import CliRunner
 
-from traceproof.artifacts import ArtifactStore
-from traceproof.calls import call_context
-from traceproof.cli import app
-from traceproof.domain import TraceProofError
-from traceproof.evidence import source_evidence
-from traceproof.indexing import build_index, coverage_report, verified_source
-from traceproof.intake import process, submit
-from traceproof.persistence import CodeqlAttempt, ScanAttempt, SourceIndex
-from traceproof.sarif import MAX_SARIF_BYTES, normalize
-from traceproof.scanning import analyze, scan_report
+from veriflow.artifacts import ArtifactStore
+from veriflow.calls import call_context
+from veriflow.cli import app
+from veriflow.domain import TraceProofError
+from veriflow.evidence import source_evidence
+from veriflow.indexing import build_index, coverage_report, verified_source
+from veriflow.intake import process, submit
+from veriflow.persistence import CodeqlAttempt, ScanAttempt, SourceIndex
+from veriflow.sarif import MAX_SARIF_BYTES, normalize
+from veriflow.scanning import analyze, scan_report
 
 
 @pytest.fixture
@@ -224,7 +224,7 @@ sys.exit(7 if {mode!r} == 'failed' else 0)
 """)
     fake.chmod(0o700)
     monkeypatch.setenv("TEST_SECRET", "do-not-forward")
-    monkeypatch.setattr("traceproof.codeql_scanner.shutil.which", lambda _: str(fake))
+    monkeypatch.setattr("veriflow.codeql_scanner.shutil.which", lambda _: str(fake))
     report = analyze(store, extraction_id, query, timeout=1)
     assert report["status"] == status
     assert report["candidate_count"] == count

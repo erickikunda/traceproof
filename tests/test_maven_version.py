@@ -1,6 +1,6 @@
 import pytest
 
-from traceproof.maven_version import MavenVersion, comparable_qualifier, maven_key
+from veriflow.maven_version import MavenVersion, comparable_qualifier, maven_key
 
 # Ordering vectors from Maven's own ComparableVersionTest.
 QUALIFIER_ORDER = [

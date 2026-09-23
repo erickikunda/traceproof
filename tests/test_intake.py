@@ -7,11 +7,11 @@ from conftest import row
 from sqlalchemy import func, inspect, select
 from typer.testing import CliRunner
 
-from traceproof.artifacts import ArtifactStore
-from traceproof.cli import app
-from traceproof.domain import TraceProofError
-from traceproof.intake import import_status, process, run_status, submit
-from traceproof.persistence import ImportItem, Run, Snapshot, exclusive_worker
+from veriflow.artifacts import ArtifactStore
+from veriflow.cli import app
+from veriflow.domain import TraceProofError
+from veriflow.intake import import_status, process, run_status, submit
+from veriflow.persistence import ImportItem, Run, Snapshot, exclusive_worker
 
 
 def run_worker(store, batch):
@@ -147,9 +147,9 @@ def test_process_death_after_artifact_publication_recovers(store, archive, manif
     program = """
 import os, sys
 from pathlib import Path
-from traceproof.persistence import Store, exclusive_worker
-from traceproof.artifacts import ArtifactStore
-from traceproof.intake import process
+from veriflow.persistence import Store, exclusive_worker
+from veriflow.artifacts import ArtifactStore
+from veriflow.intake import process
 store = Store(Path(sys.argv[1]))
 artifacts = ArtifactStore(store.root)
 capture = artifacts.capture

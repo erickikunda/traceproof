@@ -11,12 +11,12 @@ from test_reports import scanned as scanned
 from test_triage import evidence_fixture as evidence_fixture
 from typer.testing import CliRunner
 
-from traceproof.bundles import canonical
-from traceproof.cli import app
-from traceproof.domain import TraceProofError
-from traceproof.evaluation import evaluate_benchmark, render_scorecard, weakness_metrics
-from traceproof.indexing import build_index
-from traceproof.persistence import (
+from veriflow.bundles import canonical
+from veriflow.cli import app
+from veriflow.domain import TraceProofError
+from veriflow.evaluation import evaluate_benchmark, render_scorecard, weakness_metrics
+from veriflow.indexing import build_index
+from veriflow.persistence import (
     Candidate,
     Run,
     ScanAttempt,
@@ -24,7 +24,7 @@ from traceproof.persistence import (
     TriageCall,
     exclusive_worker,
 )
-from traceproof.reports import publish_report
+from veriflow.reports import publish_report
 
 
 def csv_rows(report, format):
@@ -312,7 +312,7 @@ def test_plan_pin_and_duplicates_rejected(evaluation):
 
 
 def test_bounded_matching(evaluation, monkeypatch):
-    monkeypatch.setattr("traceproof.evaluation.MAX_PAIR_CHECKS", 0)
+    monkeypatch.setattr("veriflow.evaluation.MAX_PAIR_CHECKS", 0)
     with pytest.raises(TraceProofError, match="bounded"):
         evaluation[3]()
 

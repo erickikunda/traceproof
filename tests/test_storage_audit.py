@@ -6,10 +6,10 @@ from test_reports import scanned as scanned
 from test_triage import evidence_fixture as evidence_fixture
 from typer.testing import CliRunner
 
-from traceproof.cli import app
-from traceproof.domain import TraceProofError
-from traceproof.persistence import exclusive_worker
-from traceproof.storage_audit import storage_audit
+from veriflow.cli import app
+from veriflow.domain import TraceProofError
+from veriflow.persistence import exclusive_worker
+from veriflow.storage_audit import storage_audit
 
 
 def test_references_sizes_and_no_deletion(store, scanned):

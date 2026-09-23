@@ -1,8 +1,8 @@
 import hashlib
 from pathlib import Path
 
-from traceproof.csharp_locations import validate_locations
-from traceproof.csharp_parser import parse
+from veriflow.csharp_locations import validate_locations
+from veriflow.csharp_parser import parse
 
 
 def facts(source, nodes, digest=None):

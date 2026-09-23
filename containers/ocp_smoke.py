@@ -8,11 +8,11 @@ import os
 import re
 from pathlib import Path
 
-from traceproof.artifacts import ArtifactStore, open_scoped_source
-from traceproof.intake import process, submit
-from traceproof.persistence import Store
-from traceproof.pipeline import scan_run
-from traceproof.reports import get_report, render_report
+from veriflow.artifacts import ArtifactStore, open_scoped_source
+from veriflow.intake import process, submit
+from veriflow.persistence import Store
+from veriflow.pipeline import scan_run
+from veriflow.reports import get_report, render_report
 
 PROFILES = json.loads(Path(__file__).with_name("ocp-smoke-profiles.json").read_text())
 
@@ -72,7 +72,7 @@ def run(input_root, work_root, reports_root, execution_id, joern_home, language=
             raise ValueError("Input admission failed")
         tool_options = {}
         if language == "csharp":
-            tool_options["joern_repair_dir"] = Path("/opt/traceproof/csharp-repair")
+            tool_options["joern_repair_dir"] = Path("/opt/veriflow/csharp-repair")
         elif language == "rust":
             tool_options["rust_home"] = Path("/opt/rust")
         scanned = scan_run(

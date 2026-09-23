@@ -5,9 +5,9 @@ import zipfile
 
 import pytest
 
-from traceproof.domain import TraceProofError
-from traceproof.osv_acquisition import acquire_osv
-from traceproof.osv_database import build_index, load_profile
+from veriflow.domain import TraceProofError
+from veriflow.osv_acquisition import acquire_osv
+from veriflow.osv_database import build_index, load_profile
 
 HOSTS = ["osv-vulnerabilities.storage.googleapis.com"]
 SOURCE = "https://osv-vulnerabilities.storage.googleapis.com"
@@ -125,25 +125,25 @@ def test_unexpected_member_aborts_rather_than_skips(acquire, member):
 
 
 def test_oversized_record_is_refused(acquire, monkeypatch):
-    monkeypatch.setattr("traceproof.osv_acquisition.MAX_RECORD_BYTES", 10)
+    monkeypatch.setattr("veriflow.osv_acquisition.MAX_RECORD_BYTES", 10)
     with pytest.raises(TraceProofError, match="per-record byte limit"):
         acquire({"npm": archive([record("GHSA-a")])})
 
 
 def test_record_limit_is_refused(acquire, monkeypatch):
-    monkeypatch.setattr("traceproof.osv_acquisition.MAX_RECORDS", 1)
+    monkeypatch.setattr("veriflow.osv_acquisition.MAX_RECORDS", 1)
     with pytest.raises(TraceProofError, match="record limit"):
         acquire({"npm": archive([record("GHSA-a"), record("GHSA-b")])})
 
 
 def test_expanded_byte_limit_is_refused(acquire, monkeypatch):
-    monkeypatch.setattr("traceproof.osv_acquisition.MAX_EXPANDED_BYTES", 5)
+    monkeypatch.setattr("veriflow.osv_acquisition.MAX_EXPANDED_BYTES", 5)
     with pytest.raises(TraceProofError, match="expanded byte limit"):
         acquire({"npm": archive([record("GHSA-a")])})
 
 
 def test_compression_ratio_is_refused(acquire, monkeypatch):
-    monkeypatch.setattr("traceproof.osv_acquisition.MAX_COMPRESSION_RATIO", 1)
+    monkeypatch.setattr("veriflow.osv_acquisition.MAX_COMPRESSION_RATIO", 1)
     with pytest.raises(TraceProofError, match="compression ratio"):
         acquire({"npm": archive([{**record("GHSA-a"), "summary": "x" * 20000}])})
 

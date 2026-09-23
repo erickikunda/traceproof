@@ -5,12 +5,12 @@ from pathlib import Path
 import pytest
 from test_slice03 import captured_source as captured_source
 
-from traceproof import joern
-from traceproof.bundles import build_bundle
-from traceproof.claims import assess_evidence, requirements
-from traceproof.joern_claims import RULE, assess_spring_evidence
-from traceproof.models import Decision
-from traceproof.scanning import scan_report
+from veriflow import joern
+from veriflow.bundles import build_bundle
+from veriflow.claims import assess_evidence, requirements
+from veriflow.joern_claims import RULE, assess_spring_evidence
+from veriflow.models import Decision
+from veriflow.scanning import scan_report
 
 
 def review_decision(bundle):
@@ -131,7 +131,7 @@ def test_misleading_or_missing_evidence_withheld(audited_bundle, change):
 
 
 def test_changed_native_file_and_legacy_attempt_cannot_get_validated_audit(store, audited_bundle):
-    from traceproof.persistence import ScanAttempt
+    from veriflow.persistence import ScanAttempt
 
     b = audited_bundle
     root = store.root / "scans" / b["attempt_id"]
@@ -156,7 +156,7 @@ def test_changed_native_file_and_legacy_attempt_cannot_get_validated_audit(store
 def test_cli_review_requires_explicit_policy(store, audited_bundle, tmp_path, policy, expected):
     from typer.testing import CliRunner
 
-    from traceproof.cli import app
+    from veriflow.cli import app
 
     path = tmp_path / "decision.json"
     path.write_text(review_decision(audited_bundle).model_dump_json())
@@ -188,7 +188,7 @@ def test_cli_review_requires_explicit_policy(store, audited_bundle, tmp_path, po
 def test_native_audit_rechecks_pinned_output_relationships(store, audited_bundle, change, reason):
     import hashlib
 
-    from traceproof.persistence import ScanAttempt
+    from veriflow.persistence import ScanAttempt
 
     b = audited_bundle
     path = store.root / "scans" / b["attempt_id"] / "flows.json"

@@ -4,12 +4,12 @@ import pytest
 from conftest import row
 from typer.testing import CliRunner
 
-from traceproof.cli import app
-from traceproof.domain import TraceProofError
-from traceproof.import_controls import set_control
-from traceproof.import_history import import_history
-from traceproof.intake import submit
-from traceproof.persistence import ImportBatch
+from veriflow.cli import app
+from veriflow.domain import TraceProofError
+from veriflow.import_controls import set_control
+from veriflow.import_history import import_history
+from veriflow.intake import submit
+from veriflow.persistence import ImportBatch
 
 
 def test_states_counts_filtering_and_ties(store, archive, manifest):

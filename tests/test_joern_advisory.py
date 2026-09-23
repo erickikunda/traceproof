@@ -7,12 +7,12 @@ from test_joern_claims import review_decision
 from test_slice03 import captured_source as captured_source
 from test_triage import FakeAdapter, policy
 
-from traceproof import batch_triage
-from traceproof.domain import TraceProofError
-from traceproof.joern_claims import POLICY, spring_preflight
-from traceproof.models import Reply, Usage, request_body
-from traceproof.reports import publish_report
-from traceproof.triage import set_budget, triage, triage_report
+from veriflow import batch_triage
+from veriflow.domain import TraceProofError
+from veriflow.joern_claims import POLICY, spring_preflight
+from veriflow.models import Reply, Usage, request_body
+from veriflow.reports import publish_report
+from veriflow.triage import set_budget, triage, triage_report
 
 
 def adapter_for(bundle, verdict="needs_review"):
@@ -54,7 +54,7 @@ def test_gates_cost_accounting_and_no_automatic_retry(store, audited_bundle, mon
     if failure == "preflight":
         altered = deepcopy(b)
         altered.pop("joern_native_audit")
-        monkeypatch.setattr("traceproof.triage.get_bundle", lambda *args: altered)
+        monkeypatch.setattr("veriflow.triage.get_bundle", lambda *args: altered)
     elif failure == "timeout":
         adapter.error = TimeoutError("transport uncertain")
     elif failure == "quote":
@@ -130,7 +130,7 @@ def test_request_identity_and_batch_policy_separation(store, audited_bundle):
 
 @pytest.mark.parametrize("provider", ["openai", "anthropic", "ollama"])
 def test_explicit_provider_prompt_contract_without_network(audited_bundle, provider):
-    from traceproof.models import ModelConfig
+    from veriflow.models import ModelConfig
 
     local = provider == "ollama"
     config = ModelConfig(
@@ -151,7 +151,7 @@ def test_explicit_provider_prompt_contract_without_network(audited_bundle, provi
 def test_cli_explicit_replay_advisory(store, audited_bundle, tmp_path):
     from typer.testing import CliRunner
 
-    from traceproof.cli import app
+    from veriflow.cli import app
 
     b = audited_bundle
     set_budget(store, b["run_id"], 100000)
@@ -183,7 +183,7 @@ def test_changed_preflight_does_not_reuse_prior_advice(store, audited_bundle, mo
     adapter = adapter_for(b)
     triage(store, b["bundle_id"], policy(), adapter, "same", review_policy=POLICY)
     monkeypatch.setattr(
-        "traceproof.joern_claims.review_preflight",
+        "veriflow.joern_claims.review_preflight",
         lambda bundle, policy: {
             "passed": False,
             "status": "insufficient_native_evidence",

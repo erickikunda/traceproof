@@ -153,7 +153,7 @@ def main():
             )
             secret.chmod(0o600)
             command = [
-                "traceproof",
+                "veriflow",
                 "acquire-git",
                 url,
                 "refs/heads/main",
@@ -187,7 +187,7 @@ def main():
             writer.writerow(["fixture", url, "refs/heads/main", "poc", "synthetic"])
         secret.write_text(json.dumps(dict(url=url, username="fixture", password="synthetic-token")))
         run(
-            "traceproof",
+            "veriflow",
             "acquire-git-csv",
             str(manifest),
             str(root / "batch"),
@@ -202,7 +202,7 @@ def main():
             json.loads((root / "batch/acquisition-batch.json").read_text())["state"] == "acquired"
         )
         run(
-            "traceproof",
+            "veriflow",
             "acquire-git",
             url,
             "refs/heads/main",

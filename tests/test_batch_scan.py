@@ -7,10 +7,10 @@ from test_reports import scanned as scanned
 from test_triage import evidence_fixture as evidence_fixture
 from typer.testing import CliRunner
 
-from traceproof import batch_scan, pipeline
-from traceproof.cli import app
-from traceproof.domain import TraceProofError
-from traceproof.intake import submit
+from veriflow import batch_scan, pipeline
+from veriflow.cli import app
+from veriflow.domain import TraceProofError
+from veriflow.intake import submit
 
 
 def test_mixed_rows_pagination_and_explicit_rescan(store, archive, manifest, tmp_path, monkeypatch):

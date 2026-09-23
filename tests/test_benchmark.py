@@ -8,11 +8,11 @@ from test_reports import scanned as scanned
 from test_triage import evidence_fixture as evidence_fixture
 from typer.testing import CliRunner
 
-from traceproof.benchmark import check_benchmark
-from traceproof.bundles import canonical
-from traceproof.cli import app
-from traceproof.domain import TraceProofError
-from traceproof.persistence import Run, Snapshot, TriageCall
+from veriflow.benchmark import check_benchmark
+from veriflow.bundles import canonical
+from veriflow.cli import app
+from veriflow.domain import TraceProofError
+from veriflow.persistence import Run, Snapshot, TriageCall
 
 
 @pytest.fixture

@@ -1,6 +1,6 @@
 import hashlib
 
-from traceproof.csharp_locations import MAX_SOURCE_BYTES, validate_locations
+from veriflow.csharp_locations import MAX_SOURCE_BYTES, validate_locations
 
 
 def check(source, nodes, digest=None):

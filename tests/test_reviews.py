@@ -7,12 +7,12 @@ from test_reports import scanned as scanned
 from test_triage import evidence_fixture as evidence_fixture
 from typer.testing import CliRunner
 
-from traceproof.bundles import build_bundle
-from traceproof.cli import app
-from traceproof.domain import TraceProofError
-from traceproof.persistence import Candidate, OperatorReview, TriageCall
-from traceproof.reports import get_report, publish_report, render_report
-from traceproof.reviews import ReviewRequest, read_review, record_review, review_history
+from veriflow.bundles import build_bundle
+from veriflow.cli import app
+from veriflow.domain import TraceProofError
+from veriflow.persistence import Candidate, OperatorReview, TriageCall
+from veriflow.reports import get_report, publish_report, render_report
+from veriflow.reviews import ReviewRequest, read_review, record_review, review_history
 
 
 @pytest.fixture
@@ -93,7 +93,7 @@ def test_unknown_evidence_and_bundle_fail_without_writes(store, review_fixture):
 
 
 def test_partial_bundle_allows_deferral_but_not_definitive_assertion(store, evidence_fixture):
-    from traceproof.persistence import Run
+    from veriflow.persistence import Run
 
     run, attempt, fingerprint, _ = evidence_fixture(flow_count=20)
     with store.transaction() as session:

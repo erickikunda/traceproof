@@ -6,7 +6,7 @@ import json
 import pytest
 from pydantic import ValidationError
 
-from traceproof import models
+from veriflow import models
 
 
 def policy(**changes):

@@ -81,9 +81,9 @@ def main():
             base
             + [
                 "--entrypoint",
-                "/opt/traceproof-venv/bin/python",
+                "/opt/veriflow-venv/bin/python",
                 image,
-                "/opt/traceproof/runtime_probe.py",
+                "/opt/veriflow/runtime_probe.py",
             ],
             capture_output=True,
             text=True,

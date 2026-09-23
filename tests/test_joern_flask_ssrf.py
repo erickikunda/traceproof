@@ -1,6 +1,6 @@
 import pytest
 
-from traceproof.joern_flask import endpoints, parse_isolated
+from veriflow.joern_flask import endpoints, parse_isolated
 
 BASE = (
     b"from flask import request\nimport requests\n"

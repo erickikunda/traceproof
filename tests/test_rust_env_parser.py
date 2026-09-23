@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from traceproof.rust_env_parser import parse, parse_isolated
+from veriflow.rust_env_parser import parse, parse_isolated
 
 BASE = (Path(__file__).parent / "fixtures/joern-rust-env/vulnerable/main.rs").read_bytes()
 ALIASED = (Path(__file__).parent / "fixtures/joern-rust-env/renamed/main.rs").read_bytes()
@@ -71,5 +71,5 @@ def test_bounds_and_invalid_input(monkeypatch):
     assert parse(b"\xff")["status"] == "encoding_error"
     assert parse(b"fn (")["status"] == "syntax_error"
     assert parse(b"x" * (1024 * 1024 + 1))["status"] == "size_limit"
-    monkeypatch.setattr("traceproof.rust_env_parser.MAX_NODES", 2)
+    monkeypatch.setattr("veriflow.rust_env_parser.MAX_NODES", 2)
     assert parse(BASE)["status"] == "node_limit"

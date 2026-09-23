@@ -5,11 +5,11 @@ import pytest
 from test_git_acquisition import source_repo as source_repo
 from typer.testing import CliRunner
 
-from traceproof import git_batch
-from traceproof.artifacts import ArtifactStore
-from traceproof.cli import app
-from traceproof.domain import TraceProofError
-from traceproof.intake import process, submit
+from veriflow import git_batch
+from veriflow.artifacts import ArtifactStore
+from veriflow.cli import app
+from veriflow.domain import TraceProofError
+from veriflow.intake import process, submit
 
 
 def manifest(tmp_path, rows):

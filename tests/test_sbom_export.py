@@ -5,10 +5,10 @@ from test_reports import scanned as scanned
 from test_triage import evidence_fixture as evidence_fixture
 from typer.testing import CliRunner
 
-from traceproof.cli import app
-from traceproof.domain import TraceProofError
-from traceproof.persistence import Run, Snapshot
-from traceproof.sbom_export import export_sbom
+from veriflow.cli import app
+from veriflow.domain import TraceProofError
+from veriflow.persistence import Run, Snapshot
+from veriflow.sbom_export import export_sbom
 
 
 def snapshot_of(store, run_id):
@@ -62,11 +62,11 @@ def test_no_vulnerability_or_package_claim(store, scanned):
     assert all(c["type"] == "file" for c in document["components"])
     assert not any("purl" in c for c in document["components"])
     properties = {p["name"]: p["value"] for p in document["metadata"]["properties"]}
-    assert properties["traceproof:package_resolution"] == "none"
-    assert properties["traceproof:transitive_dependencies"] == "not_resolved"
-    assert properties["traceproof:vulnerability_analysis"] == "not_included"
-    assert properties["traceproof:license_inventory"] == "not_established"
-    assert properties["traceproof:manifest_verification"] == "recorded"
+    assert properties["veriflow:package_resolution"] == "none"
+    assert properties["veriflow:transitive_dependencies"] == "not_resolved"
+    assert properties["veriflow:vulnerability_analysis"] == "not_included"
+    assert properties["veriflow:license_inventory"] == "not_established"
+    assert properties["veriflow:manifest_verification"] == "recorded"
 
 
 def test_reverification_is_opt_in_and_reported(store, scanned):
@@ -74,7 +74,7 @@ def test_reverification_is_opt_in_and_reported(store, scanned):
     snapshot_id = snapshot_of(store, run)
     document = json.loads(export_sbom(store, repo, snapshot_id, verify=True))
     properties = {p["name"]: p["value"] for p in document["metadata"]["properties"]}
-    assert properties["traceproof:manifest_verification"] == "reverified"
+    assert properties["veriflow:manifest_verification"] == "reverified"
     recorded = json.loads(export_sbom(store, repo, snapshot_id))
     assert [c["bom-ref"] for c in document["components"]] == [
         c["bom-ref"] for c in recorded["components"]
@@ -111,14 +111,14 @@ def test_unknown_snapshot_is_refused(store, scanned):
 
 def test_component_limit_refuses_a_partial_document(store, scanned, monkeypatch):
     repo, run, _, _ = scanned
-    monkeypatch.setattr("traceproof.sbom_export.MAX_SBOM_COMPONENTS", 0)
+    monkeypatch.setattr("veriflow.sbom_export.MAX_SBOM_COMPONENTS", 0)
     with pytest.raises(TraceProofError, match="component limit"):
         export_sbom(store, repo, snapshot_of(store, run))
 
 
 def test_byte_limit_refuses_a_partial_document(store, scanned, monkeypatch):
     repo, run, _, _ = scanned
-    monkeypatch.setattr("traceproof.sbom_export.MAX_SBOM_BYTES", 1)
+    monkeypatch.setattr("veriflow.sbom_export.MAX_SBOM_BYTES", 1)
     with pytest.raises(TraceProofError, match="8 MiB"):
         export_sbom(store, repo, snapshot_of(store, run))
 

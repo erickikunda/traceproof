@@ -8,12 +8,12 @@ from test_reports import scanned as scanned
 from test_triage import evidence_fixture as evidence_fixture
 from typer.testing import CliRunner
 
-from traceproof.acceptance import FIXTURES, check_case, run_acceptance
-from traceproof.cli import app
-from traceproof.domain import TraceProofError
-from traceproof.indexing import build_index
-from traceproof.persistence import Run, ScanAttempt, SourceIndex, exclusive_worker
-from traceproof.reports import get_report, publish_report, render_report
+from veriflow.acceptance import FIXTURES, check_case, run_acceptance
+from veriflow.cli import app
+from veriflow.domain import TraceProofError
+from veriflow.indexing import build_index
+from veriflow.persistence import Run, ScanAttempt, SourceIndex, exclusive_worker
+from veriflow.reports import get_report, publish_report, render_report
 
 
 def test_missing_then_published_index_changes_report_readiness(store, scanned):
@@ -122,7 +122,7 @@ def test_legacy_report_formats_show_unknown_readiness(store, scanned):
 
 @pytest.mark.parametrize("passed,exit_code", [(True, 0), (False, 1)])
 def test_acceptance_cli_failure_is_nonzero(monkeypatch, passed, exit_code):
-    monkeypatch.setattr("traceproof.acceptance.run_acceptance", lambda *args: {"passed": passed})
+    monkeypatch.setattr("veriflow.acceptance.run_acceptance", lambda *args: {"passed": passed})
     result = CliRunner().invoke(app, ["acceptance-run", "unused-output", "unused-query.ql"])
     assert result.exit_code == exit_code
     assert '"passed"' in result.output

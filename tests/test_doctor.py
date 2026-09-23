@@ -3,13 +3,13 @@ import sqlite3
 
 from typer.testing import CliRunner
 
-from traceproof.cli import app
-from traceproof.doctor import diagnose
-from traceproof.persistence import Store
+from veriflow.cli import app
+from veriflow.doctor import diagnose
+from veriflow.persistence import Store
 
 
 def test_missing_state_not_created(tmp_path, monkeypatch):
-    monkeypatch.setattr("traceproof.doctor.shutil.which", lambda name: None)
+    monkeypatch.setattr("veriflow.doctor.shutil.which", lambda name: None)
     root = tmp_path / "missing"
     store = Store(root)
     result = diagnose(store)
@@ -19,7 +19,7 @@ def test_missing_state_not_created(tmp_path, monkeypatch):
 
 
 def test_schema_and_query_checks(store, tmp_path, monkeypatch):
-    monkeypatch.setattr("traceproof.doctor.shutil.which", lambda name: "/approved/codeql")
+    monkeypatch.setattr("veriflow.doctor.shutil.which", lambda name: "/approved/codeql")
     query = tmp_path / "query.ql"
     query.write_text("// not compiled by preflight")
     assert diagnose(store, query)["status"] == "preflight_passed"
@@ -33,21 +33,21 @@ def test_schema_and_query_checks(store, tmp_path, monkeypatch):
 
 
 def test_bad_database_and_source_query_rejected(store, tmp_path, monkeypatch):
-    monkeypatch.setattr("traceproof.doctor.shutil.which", lambda name: "/approved/codeql")
+    monkeypatch.setattr("veriflow.doctor.shutil.which", lambda name: "/approved/codeql")
     source = store.root / "artifacts" / "source.ql"
     source.parent.mkdir()
     source.write_text("// untrusted source")
     assert diagnose(store, source)["status"] == "blocked"
     bad_root = tmp_path / "bad"
     bad_root.mkdir()
-    (bad_root / "traceproof.db").write_bytes(b"not a sqlite database")
+    (bad_root / "veriflow.db").write_bytes(b"not a sqlite database")
     bad = Store(bad_root)
     assert diagnose(bad)["status"] == "blocked"
     bad.close()
 
 
 def test_cli_blocked_exit_and_no_credentials_in_output(store, monkeypatch):
-    monkeypatch.setattr("traceproof.doctor.shutil.which", lambda name: None)
+    monkeypatch.setattr("veriflow.doctor.shutil.which", lambda name: None)
     monkeypatch.setenv("TRACEPROOF_OPENAI_API_KEY", "synthetic-secret-never-print")
     result = CliRunner().invoke(app, ["--state-dir", str(store.root), "doctor"])
     assert result.exit_code == 1

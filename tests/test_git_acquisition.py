@@ -5,11 +5,11 @@ import zipfile
 import pytest
 from typer.testing import CliRunner
 
-from traceproof import git_acquisition as acquisition
-from traceproof.artifacts import ArtifactStore
-from traceproof.cli import app
-from traceproof.domain import TraceProofError
-from traceproof.intake import process, submit
+from veriflow import git_acquisition as acquisition
+from veriflow.artifacts import ArtifactStore
+from veriflow.cli import app
+from veriflow.domain import TraceProofError
+from veriflow.intake import process, submit
 
 
 @pytest.mark.parametrize(

@@ -7,11 +7,11 @@ from test_evaluation import evaluation as evaluation
 from test_reports import scanned as scanned
 from test_triage import evidence_fixture as evidence_fixture
 
-from traceproof.domain import TraceProofError
-from traceproof.evaluation import JOERN_RULES, JoernEvaluationPlan, render_scorecard
+from veriflow.domain import TraceProofError
+from veriflow.evaluation import JOERN_RULES, JoernEvaluationPlan, render_scorecard
 
 
-def audit_plan(plan, rule="traceproof/joern-python-lookup-system-v1"):
+def audit_plan(plan, rule="veriflow/joern-python-lookup-system-v1"):
     plan.pop("codeql_version")
     plan.update(
         schema_version="2",

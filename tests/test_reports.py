@@ -9,12 +9,12 @@ from test_triage import FakeAdapter, policy
 from test_triage import evidence_fixture as evidence_fixture
 from typer.testing import CliRunner
 
-from traceproof.bundles import build_bundle
-from traceproof.cli import app
-from traceproof.domain import TraceProofError
-from traceproof.persistence import Candidate, PublishedReport, Run, ScanAttempt
-from traceproof.reports import get_report, publish_report, render_report, report_history
-from traceproof.triage import set_budget, triage
+from veriflow.bundles import build_bundle
+from veriflow.cli import app
+from veriflow.domain import TraceProofError
+from veriflow.persistence import Candidate, PublishedReport, Run, ScanAttempt
+from veriflow.reports import get_report, publish_report, render_report, report_history
+from veriflow.triage import set_budget, triage
 
 
 @pytest.fixture
@@ -69,8 +69,8 @@ def test_new_failed_attempt_never_falls_back(store, scanned):
 
 
 def test_explicit_completed_selection_discloses_newer_work(store, scanned):
-    from traceproof.indexing import build_index
-    from traceproof.reports import resolve_report
+    from veriflow.indexing import build_index
+    from veriflow.reports import resolve_report
 
     repo, run, attempt, _ = scanned
     build_index(store, run)
@@ -125,7 +125,7 @@ def test_explicit_completed_selection_discloses_newer_work(store, scanned):
 
 
 def test_selection_rejects_invalid_mode_and_missing_repo(store, scanned):
-    from traceproof.reports import resolve_report
+    from veriflow.reports import resolve_report
 
     repo, _, _, _ = scanned
     assert resolve_report(store, repo, "latest-completed")["selected_report_id"] is None
@@ -232,7 +232,7 @@ def test_zero_candidates_is_not_clean_and_csv_retains_scan(store, scanned):
 
 
 def test_report_size_limit_is_atomic(store, scanned, monkeypatch):
-    monkeypatch.setattr("traceproof.reports.MAX_REPORT_BYTES", 20)
+    monkeypatch.setattr("veriflow.reports.MAX_REPORT_BYTES", 20)
     with pytest.raises(TraceProofError, match="8 MiB"):
         publish_report(store, scanned[0])
     with store.transaction() as session:

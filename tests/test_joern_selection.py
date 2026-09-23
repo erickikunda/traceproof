@@ -2,8 +2,8 @@ from types import SimpleNamespace
 
 import pytest
 
-from traceproof import joern_pipeline, joern_selection
-from traceproof.domain import TraceProofError
+from veriflow import joern_pipeline, joern_selection
+from veriflow.domain import TraceProofError
 
 
 def manifest(*paths):
@@ -70,8 +70,8 @@ def test_cli_omitted_language_and_profile_dispatch_auto(monkeypatch, tmp_path):
 
     from typer.testing import CliRunner
 
-    from traceproof import pipeline
-    from traceproof.cli import app
+    from veriflow import pipeline
+    from veriflow.cli import app
 
     received = {}
 

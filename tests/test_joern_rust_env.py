@@ -3,9 +3,9 @@ import json
 import pytest
 from test_slice03 import captured_source as captured_source
 
-from traceproof import joern, pipeline
-from traceproof.domain import TraceProofError
-from traceproof.scanning import scan_report
+from veriflow import joern, pipeline
+from veriflow.domain import TraceProofError
+from veriflow.scanning import scan_report
 
 
 @pytest.mark.parametrize("language,extension", [("rust", "rs")])
@@ -15,7 +15,7 @@ def test_rust_env_profile_publication_and_retry(
     filename = f"app.{extension}"
     from test_joern_rust import BASE
 
-    from traceproof import joern_rust
+    from veriflow import joern_rust
 
     run = captured_source(
         {filename: "fn main() {}\n", "Cargo.toml": BASE.replace("main.rs", filename)}
@@ -32,7 +32,7 @@ def test_rust_env_profile_publication_and_retry(
                     {
                         "schema_version": "2",
                         "engine_id": "joern",
-                        "rule_id": "traceproof/joern-rust-env-shell-v1",
+                        "rule_id": "veriflow/joern-rust-env-shell-v1",
                         f"represented_{language}_files": [filename],
                         "source_count": 1,
                         "sink_count": 1,

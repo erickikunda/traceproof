@@ -12,13 +12,13 @@ from pydantic import ValidationError
 from sqlalchemy import func, select
 from typer.testing import CliRunner
 
-from traceproof.artifacts import ArtifactStore
-from traceproof.bundles import build_bundle, get_bundle
-from traceproof.cli import app
-from traceproof.domain import TraceProofError
-from traceproof.indexing import verified_source
-from traceproof.intake import now, process, submit
-from traceproof.models import (
+from veriflow.artifacts import ArtifactStore
+from veriflow.bundles import build_bundle, get_bundle
+from veriflow.cli import app
+from veriflow.domain import TraceProofError
+from veriflow.indexing import verified_source
+from veriflow.intake import now, process, submit
+from veriflow.models import (
     Decision,
     ModelConfig,
     NoRedirect,
@@ -28,9 +28,9 @@ from traceproof.models import (
     parse_openai_response,
     request_body,
 )
-from traceproof.persistence import Candidate, EvidenceBundle, ScanAttempt, TriageCall
-from traceproof.sarif import normalize
-from traceproof.triage import cost_micro_usd, set_budget, triage, triage_report
+from veriflow.persistence import Candidate, EvidenceBundle, ScanAttempt, TriageCall
+from veriflow.sarif import normalize
+from veriflow.triage import cost_micro_usd, set_budget, triage, triage_report
 
 
 @pytest.fixture
@@ -271,9 +271,9 @@ def test_process_death_preserves_reservation_and_never_retries(store, ready):
     program = """
 import os, sys
 from pathlib import Path
-from traceproof.persistence import Store
-from traceproof.models import ModelConfig
-from traceproof.triage import triage
+from veriflow.persistence import Store
+from veriflow.models import ModelConfig
+from veriflow.triage import triage
 class Die:
     identity = 'test-fixture'
     def invoke(self, body): os._exit(42)
@@ -402,7 +402,7 @@ def live_policy():
 
 
 def test_https_request_is_bounded_and_secret_not_in_body(monkeypatch, ready):
-    from traceproof import models
+    from veriflow import models
 
     _, bundle = ready
     config = live_policy()
@@ -426,7 +426,7 @@ def test_https_request_is_bounded_and_secret_not_in_body(monkeypatch, ready):
 
 
 def test_live_child_has_total_timeout_and_minimal_environment(monkeypatch, ready):
-    from traceproof import models
+    from veriflow import models
 
     _, bundle = ready
     config = live_policy()
@@ -464,7 +464,7 @@ def test_false_positive_suggestion_requires_counterevidence(store, ready):
 
 
 def test_unicode_separators_do_not_shift_source_lines(store, evidence_fixture):
-    from traceproof.evidence import source_evidence
+    from veriflow.evidence import source_evidence
 
     source = "# comment\u2028still line one\ndef f(): pass\n"
     run, attempt, fingerprint, _ = evidence_fixture(source=source)

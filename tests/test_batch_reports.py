@@ -9,12 +9,12 @@ from test_reports import scanned as scanned
 from test_triage import evidence_fixture as evidence_fixture
 from typer.testing import CliRunner
 
-from traceproof.batch_reports import import_reports, render_import_reports
-from traceproof.cli import app
-from traceproof.domain import TraceProofError
-from traceproof.intake import submit
-from traceproof.persistence import ImportItem, PublishedReport, Run, ScanAttempt
-from traceproof.reports import publish_report
+from veriflow.batch_reports import import_reports, render_import_reports
+from veriflow.cli import app
+from veriflow.domain import TraceProofError
+from veriflow.intake import submit
+from veriflow.persistence import ImportItem, PublishedReport, Run, ScanAttempt
+from veriflow.reports import publish_report
 
 
 def test_exact_import_run_and_no_stale_fallback(store, scanned):

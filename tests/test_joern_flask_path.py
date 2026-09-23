@@ -1,4 +1,4 @@
-from traceproof.joern_flask import endpoints, parse_isolated
+from veriflow.joern_flask import endpoints, parse_isolated
 
 
 def test_file_sink_and_legacy_separation():

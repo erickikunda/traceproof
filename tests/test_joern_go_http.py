@@ -3,9 +3,9 @@ import json
 import pytest
 from test_slice03 import captured_source as captured_source
 
-from traceproof import joern, pipeline
-from traceproof.domain import TraceProofError
-from traceproof.scanning import scan_report
+from veriflow import joern, pipeline
+from veriflow.domain import TraceProofError
+from veriflow.scanning import scan_report
 
 
 @pytest.mark.parametrize("language,extension", [("go", "go")])
@@ -25,7 +25,7 @@ def test_go_http_profile_publication_and_retry(
                     {
                         "schema_version": "2",
                         "engine_id": "joern",
-                        "rule_id": "traceproof/joern-go-http-shell-v1",
+                        "rule_id": "veriflow/joern-go-http-shell-v1",
                         f"represented_{language}_files": [filename],
                         "source_count": 1,
                         "sink_count": 1,

@@ -4,10 +4,10 @@ import pytest
 from sqlalchemy import event
 from typer.testing import CliRunner
 
-from traceproof.cli import app
-from traceproof.domain import TraceProofError
-from traceproof.history import run_history, scan_history
-from traceproof.persistence import Repository, Run, ScanAttempt
+from veriflow.cli import app
+from veriflow.domain import TraceProofError
+from veriflow.history import run_history, scan_history
+from veriflow.persistence import Repository, Run, ScanAttempt
 
 
 @pytest.fixture

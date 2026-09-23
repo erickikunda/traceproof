@@ -2,9 +2,9 @@ import pytest
 from test_triage import FakeAdapter, policy
 from test_triage import evidence_fixture as evidence_fixture
 
-from traceproof.bundles import build_bundle
-from traceproof.domain import TraceProofError
-from traceproof.triage import set_budget, triage, triage_report
+from veriflow.bundles import build_bundle
+from veriflow.domain import TraceProofError
+from veriflow.triage import set_budget, triage, triage_report
 
 
 def test_zero_cost_calls_are_bounded_and_replays_still_retrieve(store, evidence_fixture):

@@ -5,11 +5,11 @@ import pytest
 from test_slice03 import captured_source as captured_source
 from typer.testing import CliRunner
 
-from traceproof import joern, pipeline
-from traceproof.cli import app
-from traceproof.domain import TraceProofError
-from traceproof.joern_pipeline import selected_language
-from traceproof.persistence import ScanAttempt
+from veriflow import joern, pipeline
+from veriflow.cli import app
+from veriflow.domain import TraceProofError
+from veriflow.joern_pipeline import selected_language
+from veriflow.persistence import ScanAttempt
 
 
 @pytest.mark.parametrize(

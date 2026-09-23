@@ -5,7 +5,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-root = Path("/opt/traceproof")
+root = Path("/opt/veriflow")
 work = Path("/work/acceptance")
 work.mkdir()
 common = [

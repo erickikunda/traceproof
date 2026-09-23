@@ -8,14 +8,14 @@ from test_triage import FakeAdapter, policy
 from test_triage import evidence_fixture as evidence_fixture
 from typer.testing import CliRunner
 
-from traceproof.bundles import MAX_BUNDLE_BYTES, build_bundle, canonical, get_bundle
-from traceproof.claims import EvidenceClaim, assess_evidence, requirements
-from traceproof.cli import app
-from traceproof.domain import TraceProofError
-from traceproof.expansion import ExpansionItem, expand_bundle, read_expansion
-from traceproof.models import Decision, Reply, Usage, request_body
-from traceproof.persistence import EvidenceBundle, TriageCall
-from traceproof.triage import set_budget, triage
+from veriflow.bundles import MAX_BUNDLE_BYTES, build_bundle, canonical, get_bundle
+from veriflow.claims import EvidenceClaim, assess_evidence, requirements
+from veriflow.cli import app
+from veriflow.domain import TraceProofError
+from veriflow.expansion import ExpansionItem, expand_bundle, read_expansion
+from veriflow.models import Decision, Reply, Usage, request_body
+from veriflow.persistence import EvidenceBundle, TriageCall
+from veriflow.triage import set_budget, triage
 
 SOURCE = "def f():\n    return eval(request.args['expr'])\n"
 QUOTE = "return eval(request.args['expr'])"

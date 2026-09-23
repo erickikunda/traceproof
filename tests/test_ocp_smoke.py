@@ -111,7 +111,7 @@ def test_published_failure_is_not_success(tmp_path, monkeypatch, analysis_status
     "language", ["java", "python", "javascript", "typescript", "go", "c", "cpp"]
 )
 def test_language_reaches_scan_and_export(tmp_path, monkeypatch, language):
-    from traceproof.joern_claims import PROFILES
+    from veriflow.joern_claims import PROFILES
 
     known = {(p[0], p[1]) for p in PROFILES.values()}
     assert (language, smoke.PROFILES[language]) in known
@@ -168,7 +168,7 @@ def test_unavailable_toolchain_rejected_before_state(tmp_path, language):
 @pytest.mark.parametrize(
     "language,tool,path",
     [
-        ("csharp", "joern_repair_dir", "/opt/traceproof/csharp-repair"),
+        ("csharp", "joern_repair_dir", "/opt/veriflow/csharp-repair"),
         ("rust", "rust_home", "/opt/rust"),
     ],
 )
@@ -191,7 +191,7 @@ def test_specialized_image_preserves_tool_checks(tmp_path, monkeypatch, language
     monkeypatch.setattr(smoke, "process", lambda *a: {"items": [{"run_id": "run"}]})
 
     def reject_tool(*args, **kwargs):
-        from traceproof.domain import TraceProofError
+        from veriflow.domain import TraceProofError
 
         assert kwargs[tool] == Path(path)
         assert kwargs["language"] == language
@@ -200,7 +200,7 @@ def test_specialized_image_preserves_tool_checks(tmp_path, monkeypatch, language
         raise TraceProofError("Simulated invalid trusted tool identity")
 
     monkeypatch.setattr(smoke, "scan_run", reject_tool)
-    from traceproof.domain import TraceProofError
+    from veriflow.domain import TraceProofError
 
     with pytest.raises(TraceProofError):
         smoke.run(
@@ -244,7 +244,7 @@ def test_manifest_selection_failures_never_scan(tmp_path, monkeypatch, shape):
     if shape == "directory":
         (inputs / "archives.csv").mkdir()
     monkeypatch.setattr(smoke, "scan_run", lambda *a, **k: pytest.fail("Unexpected scan"))
-    from traceproof.domain import TraceProofError
+    from veriflow.domain import TraceProofError
 
     with pytest.raises((ValueError, OSError, TraceProofError)):
         smoke.run(inputs, work, reports, "test", Path("/tools"))

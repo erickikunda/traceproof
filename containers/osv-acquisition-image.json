@@ -13,7 +13,7 @@
     ]
   },
   "entrypoint": [
-    "traceproof",
+    "veriflow",
     "acquire-osv"
   ],
   "full_export_validations": [
@@ -47,7 +47,7 @@
   "images": [
     {
       "architecture": "arm64",
-      "build_inputs": "828facb9fbba2f98ef2a579600204c431b8374b7701df001e0de4bab48793d9d  /tmp/traceproof-0.1.0-py3-none-any.whl\n59edc8148280b5021a505a745076b53b9f2fc1b265b68e704441aca9b7c4a75b  /tmp/requirements.lock\n",
+      "build_inputs": "828facb9fbba2f98ef2a579600204c431b8374b7701df001e0de4bab48793d9d  /tmp/veriflow-0.1.0-py3-none-any.whl\n59edc8148280b5021a505a745076b53b9f2fc1b265b68e704441aca9b7c4a75b  /tmp/requirements.lock\n",
       "execution": "native host",
       "image_id": "sha256:3d6cc49a982aab8a9a90100315192c2987db52f81648c1e034d05949cc034587",
       "observed": {
@@ -65,7 +65,7 @@
     },
     {
       "architecture": "amd64",
-      "build_inputs": "828facb9fbba2f98ef2a579600204c431b8374b7701df001e0de4bab48793d9d  /tmp/traceproof-0.1.0-py3-none-any.whl\n59edc8148280b5021a505a745076b53b9f2fc1b265b68e704441aca9b7c4a75b  /tmp/requirements.lock\n",
+      "build_inputs": "828facb9fbba2f98ef2a579600204c431b8374b7701df001e0de4bab48793d9d  /tmp/veriflow-0.1.0-py3-none-any.whl\n59edc8148280b5021a505a745076b53b9f2fc1b265b68e704441aca9b7c4a75b  /tmp/requirements.lock\n",
       "execution": "qemu emulation on an arm64 host",
       "image_id": "sha256:e3b5f088415fbfbb3a83bc418751f22d07a367e3acf82437afaaf030235a3696",
       "observed": {

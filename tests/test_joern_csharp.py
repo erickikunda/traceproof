@@ -5,10 +5,10 @@ from types import SimpleNamespace
 import pytest
 from test_slice03 import captured_source as captured_source
 
-from traceproof import joern, joern_csharp
-from traceproof.domain import TraceProofError
-from traceproof.reports import publish_report
-from traceproof.scanning import scan_report
+from veriflow import joern, joern_csharp
+from veriflow.domain import TraceProofError
+from veriflow.reports import publish_report
+from veriflow.scanning import scan_report
 
 
 def test_whole_ambiguous_path_withheld(tmp_path):
@@ -51,7 +51,7 @@ def test_csharp_durable_discovery_and_raw_mapping(store, captured_source, tmp_pa
                     {
                         "schema_version": "2",
                         "engine_id": "joern",
-                        "rule_id": "traceproof/joern-csharp-lookup-commandtext-v1",
+                        "rule_id": "veriflow/joern-csharp-lookup-commandtext-v1",
                         "represented_csharp_files": ["A.cs"],
                         "source_count": 1,
                         "sink_count": 1,

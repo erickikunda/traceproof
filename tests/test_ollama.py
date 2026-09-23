@@ -6,9 +6,9 @@ import pytest
 from pydantic import ValidationError
 from test_triage import evidence_fixture as evidence_fixture
 
-from traceproof import models
-from traceproof.bundles import build_bundle
-from traceproof.triage import set_budget, triage
+from veriflow import models
+from veriflow.bundles import build_bundle
+from veriflow.triage import set_budget, triage
 
 
 def policy(**changes):

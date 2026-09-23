@@ -2,10 +2,10 @@
 FROM registry.access.redhat.com/ubi9/python-312@sha256:b29b44b014b0fad4b6c047abad7cbe42b4107cfe349075318eea8ba6475cbd69 AS python-deps
 USER 0
 COPY containers/requirements.lock /tmp/requirements.lock
-RUN python3.12 -m venv /opt/traceproof-venv && \
-    /opt/traceproof-venv/bin/pip install --no-cache-dir --require-hashes --only-binary=:all: -r /tmp/requirements.lock
-COPY dist/traceproof-0.1.0-py3-none-any.whl /tmp/traceproof-0.1.0-py3-none-any.whl
-RUN /opt/traceproof-venv/bin/pip install --no-cache-dir --no-deps /tmp/traceproof-0.1.0-py3-none-any.whl
+RUN python3.12 -m venv /opt/veriflow-venv && \
+    /opt/veriflow-venv/bin/pip install --no-cache-dir --require-hashes --only-binary=:all: -r /tmp/requirements.lock
+COPY dist/veriflow-0.1.0-py3-none-any.whl /tmp/veriflow-0.1.0-py3-none-any.whl
+RUN /opt/veriflow-venv/bin/pip install --no-cache-dir --no-deps /tmp/veriflow-0.1.0-py3-none-any.whl
 
 FROM registry.access.redhat.com/ubi9/python-312@sha256:b29b44b014b0fad4b6c047abad7cbe42b4107cfe349075318eea8ba6475cbd69 AS codeql
 USER 0
@@ -21,8 +21,8 @@ USER 0
 ARG JDK_SHA256
 COPY work/container-inputs/jdk-linux-arm64.tar.gz /tmp/jdk.tar.gz
 RUN test -n "$JDK_SHA256" && echo "$JDK_SHA256  /tmp/jdk.tar.gz" | sha256sum -c - && \
-    mkdir /opt/traceproof-jdk && tar -xzf /tmp/jdk.tar.gz -C /opt/traceproof-jdk --strip-components=1 && \
-    chmod -R a+rX /opt/traceproof-jdk && rm /tmp/jdk.tar.gz
+    mkdir /opt/veriflow-jdk && tar -xzf /tmp/jdk.tar.gz -C /opt/veriflow-jdk --strip-components=1 && \
+    chmod -R a+rX /opt/veriflow-jdk && rm /tmp/jdk.tar.gz
 
 FROM registry.access.redhat.com/ubi9/python-312@sha256:b29b44b014b0fad4b6c047abad7cbe42b4107cfe349075318eea8ba6475cbd69 AS dotnet
 USER 0
@@ -34,42 +34,42 @@ RUN test -n "$DOTNET_SHA512" && echo "$DOTNET_SHA512  /tmp/dotnet.tar.gz" | sha5
 
 FROM registry.access.redhat.com/ubi9/python-312@sha256:b29b44b014b0fad4b6c047abad7cbe42b4107cfe349075318eea8ba6475cbd69
 USER 0
-COPY --from=dotnet /opt/dotnet /opt/traceproof/csharp-dependencies/dotnet
-COPY work/container-inputs/net48 /opt/traceproof/csharp-dependencies/net48
-COPY --from=jdk /opt/traceproof-jdk /opt/traceproof-jdk
-COPY --from=python-deps /opt/traceproof-venv /opt/traceproof-venv
+COPY --from=dotnet /opt/dotnet /opt/veriflow/csharp-dependencies/dotnet
+COPY work/container-inputs/net48 /opt/veriflow/csharp-dependencies/net48
+COPY --from=jdk /opt/veriflow-jdk /opt/veriflow-jdk
+COPY --from=python-deps /opt/veriflow-venv /opt/veriflow-venv
 COPY --from=codeql /opt/codeql-bundle /opt/codeql-bundle
-COPY containers/java-profile.json /opt/traceproof/dependencies/java-profile.json
-COPY work/container-inputs/java-repository /opt/traceproof/dependencies/java-repository
-COPY containers/runtime_probe.py /opt/traceproof/runtime_probe.py
-COPY scripts/validate_java.py scripts/validate_spring.py scripts/validate_csharp.py scripts/validate_csharp_classic.py scripts/validate_csharp_core.py scripts/validate_csharp_minimal.py scripts/validate_csharp_webapi.py scripts/validate_csharp_mvc.py scripts/validate_javascript.py scripts/validate_typescript.py scripts/pin_csharp_dependencies.py /opt/traceproof/scripts/
-COPY tests/fixtures/csharp /opt/traceproof/tests/fixtures/csharp
-COPY tests/fixtures/csharp-classic /opt/traceproof/tests/fixtures/csharp-classic
-COPY tests/fixtures/csharp-minimal /opt/traceproof/tests/fixtures/csharp-minimal
-COPY tests/fixtures/csharp-mvc /opt/traceproof/tests/fixtures/csharp-mvc
-COPY tests/fixtures/csharp-webapi /opt/traceproof/tests/fixtures/csharp-webapi
-COPY tests/fixtures/csharp-core /opt/traceproof/tests/fixtures/csharp-core
-COPY containers/prepare_classic_profile.py /opt/traceproof/prepare_classic_profile.py
-COPY containers/mvc-packages.json /opt/traceproof/mvc-packages.json
-COPY work/container-inputs/mvc /opt/traceproof/csharp-dependencies/mvc
-COPY containers/webapi-packages.json /opt/traceproof/webapi-packages.json
-COPY work/container-inputs/webapi /opt/traceproof/csharp-dependencies/webapi
-COPY containers/prepare_core_profile.py /opt/traceproof/prepare_core_profile.py
-COPY containers/net48-inventory.json /opt/traceproof/net48-inventory.json
-RUN /opt/traceproof-venv/bin/python -c "import json; from pathlib import Path; from traceproof.csharp_dependencies import inventory; assert inventory(Path('/opt/traceproof/csharp-dependencies/net48')) == json.loads(Path('/opt/traceproof/net48-inventory.json').read_text())"
-RUN /opt/traceproof-venv/bin/python /opt/traceproof/scripts/pin_csharp_dependencies.py /opt/traceproof/csharp-dependencies --sdk dotnet --references net48 --sdk-version 10.0.100 --codeql-version 2.27.0
-RUN /opt/traceproof-venv/bin/python /opt/traceproof/prepare_core_profile.py
-RUN /opt/traceproof-venv/bin/python /opt/traceproof/prepare_classic_profile.py webapi
-RUN /opt/traceproof-venv/bin/python /opt/traceproof/prepare_classic_profile.py mvc
-COPY tests/fixtures/javascript /opt/traceproof/tests/fixtures/javascript
-COPY tests/fixtures/typescript /opt/traceproof/tests/fixtures/typescript
-COPY tests/fixtures/java /opt/traceproof/tests/fixtures/java
-COPY tests/fixtures/spring /opt/traceproof/tests/fixtures/spring
+COPY containers/java-profile.json /opt/veriflow/dependencies/java-profile.json
+COPY work/container-inputs/java-repository /opt/veriflow/dependencies/java-repository
+COPY containers/runtime_probe.py /opt/veriflow/runtime_probe.py
+COPY scripts/validate_java.py scripts/validate_spring.py scripts/validate_csharp.py scripts/validate_csharp_classic.py scripts/validate_csharp_core.py scripts/validate_csharp_minimal.py scripts/validate_csharp_webapi.py scripts/validate_csharp_mvc.py scripts/validate_javascript.py scripts/validate_typescript.py scripts/pin_csharp_dependencies.py /opt/veriflow/scripts/
+COPY tests/fixtures/csharp /opt/veriflow/tests/fixtures/csharp
+COPY tests/fixtures/csharp-classic /opt/veriflow/tests/fixtures/csharp-classic
+COPY tests/fixtures/csharp-minimal /opt/veriflow/tests/fixtures/csharp-minimal
+COPY tests/fixtures/csharp-mvc /opt/veriflow/tests/fixtures/csharp-mvc
+COPY tests/fixtures/csharp-webapi /opt/veriflow/tests/fixtures/csharp-webapi
+COPY tests/fixtures/csharp-core /opt/veriflow/tests/fixtures/csharp-core
+COPY containers/prepare_classic_profile.py /opt/veriflow/prepare_classic_profile.py
+COPY containers/mvc-packages.json /opt/veriflow/mvc-packages.json
+COPY work/container-inputs/mvc /opt/veriflow/csharp-dependencies/mvc
+COPY containers/webapi-packages.json /opt/veriflow/webapi-packages.json
+COPY work/container-inputs/webapi /opt/veriflow/csharp-dependencies/webapi
+COPY containers/prepare_core_profile.py /opt/veriflow/prepare_core_profile.py
+COPY containers/net48-inventory.json /opt/veriflow/net48-inventory.json
+RUN /opt/veriflow-venv/bin/python -c "import json; from pathlib import Path; from veriflow.csharp_dependencies import inventory; assert inventory(Path('/opt/veriflow/csharp-dependencies/net48')) == json.loads(Path('/opt/veriflow/net48-inventory.json').read_text())"
+RUN /opt/veriflow-venv/bin/python /opt/veriflow/scripts/pin_csharp_dependencies.py /opt/veriflow/csharp-dependencies --sdk dotnet --references net48 --sdk-version 10.0.100 --codeql-version 2.27.0
+RUN /opt/veriflow-venv/bin/python /opt/veriflow/prepare_core_profile.py
+RUN /opt/veriflow-venv/bin/python /opt/veriflow/prepare_classic_profile.py webapi
+RUN /opt/veriflow-venv/bin/python /opt/veriflow/prepare_classic_profile.py mvc
+COPY tests/fixtures/javascript /opt/veriflow/tests/fixtures/javascript
+COPY tests/fixtures/typescript /opt/veriflow/tests/fixtures/typescript
+COPY tests/fixtures/java /opt/veriflow/tests/fixtures/java
+COPY tests/fixtures/spring /opt/veriflow/tests/fixtures/spring
 RUN mkdir -p /work /inputs /reports && chmod 0770 /work /reports && \
     chgrp 0 /work /reports
-ENV PATH="/opt/traceproof-venv/bin:/opt/codeql-bundle/codeql:/opt/traceproof-jdk/bin:/usr/local/bin:/usr/bin:/bin" \
+ENV PATH="/opt/veriflow-venv/bin:/opt/codeql-bundle/codeql:/opt/veriflow-jdk/bin:/usr/local/bin:/usr/bin:/bin" \
     BASH_ENV=/dev/null HOME=/work TMPDIR=/tmp PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 WORKDIR /work
 USER 1001:0
-ENTRYPOINT ["traceproof"]
+ENTRYPOINT ["veriflow"]
 CMD ["--help"]

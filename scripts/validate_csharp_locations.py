@@ -4,7 +4,7 @@ import argparse
 import json
 from pathlib import Path
 
-from traceproof.csharp_locations import validate_locations
+from veriflow.csharp_locations import validate_locations
 
 
 def main():

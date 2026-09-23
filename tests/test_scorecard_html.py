@@ -5,7 +5,7 @@ from test_evaluation import evaluation as evaluation
 from test_reports import scanned as scanned
 from test_triage import evidence_fixture as evidence_fixture
 
-from traceproof.evaluation import render_scorecard
+from veriflow.evaluation import render_scorecard
 
 
 class Tags(HTMLParser):

@@ -3,9 +3,9 @@ import zipfile
 import pytest
 from test_indexing import captured
 
-from traceproof.java_index import build_java_index, parse_isolated
-from traceproof.java_parser import MAX_BYTES, parse
-from traceproof.persistence import exclusive_worker
+from veriflow.java_index import build_java_index, parse_isolated
+from veriflow.java_parser import MAX_BYTES, parse
+from veriflow.persistence import exclusive_worker
 
 
 def test_declarations_and_calls_ignore_comments_and_strings():
@@ -53,7 +53,7 @@ def test_snapshot_index_reuse_and_failed_file_coverage(store, archive, manifest,
         assert result["java_files"] == 2 and result["parsed_java_files"] == 1
         assert result["semantic_resolution"] == "not_qualified"
         monkeypatch.setattr(
-            "traceproof.java_index.parse_isolated", lambda _: pytest.fail("reparsed")
+            "veriflow.java_index.parse_isolated", lambda _: pytest.fail("reparsed")
         )
         assert build_java_index(store, run) == result
 
@@ -61,7 +61,7 @@ def test_snapshot_index_reuse_and_failed_file_coverage(store, archive, manifest,
 def test_runner_blocks_invalid_java_before_extraction(
     store, archive, manifest, tmp_path, monkeypatch
 ):
-    from traceproof.pipeline import scan_run
+    from veriflow.pipeline import scan_run
 
     with zipfile.ZipFile(archive, "w") as out:
         out.writestr("Bad.java", "class Bad {")
@@ -69,7 +69,7 @@ def test_runner_blocks_invalid_java_before_extraction(
     query = tmp_path / "query.ql"
     query.write_text("// test query")
     monkeypatch.setattr(
-        "traceproof.scanner_backends.extract", lambda *a, **k: pytest.fail("extracted")
+        "veriflow.scanner_backends.extract", lambda *a, **k: pytest.fail("extracted")
     )
     result = scan_run(store, run, query, language="java")
     assert result["status"] == "blocked"

@@ -6,10 +6,10 @@ from test_reports import scanned as scanned
 from test_triage import evidence_fixture as evidence_fixture
 from typer.testing import CliRunner
 
-from traceproof.cli import app
-from traceproof.domain import TraceProofError
-from traceproof.persistence import BenchmarkScorecard
-from traceproof.scorecards import get_scorecard, publish_scorecard, scorecard_history
+from veriflow.cli import app
+from veriflow.domain import TraceProofError
+from veriflow.persistence import BenchmarkScorecard
+from veriflow.scorecards import get_scorecard, publish_scorecard, scorecard_history
 
 
 def test_publish_reuse_history_and_input_free_retrieval(store, evaluation, tmp_path):

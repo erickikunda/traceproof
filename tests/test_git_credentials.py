@@ -8,10 +8,10 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
 import pytest
 
-from traceproof.domain import TraceProofError
-from traceproof.git_acquisition import Git, acquire
-from traceproof.git_credentials import credential_environment, read_credentials
-from traceproof.git_transport import configure, transport_settings
+from veriflow.domain import TraceProofError
+from veriflow.git_acquisition import Git, acquire
+from veriflow.git_credentials import credential_environment, read_credentials
+from veriflow.git_transport import configure, transport_settings
 
 
 def test_wrong_repository_fails_before_output(tmp_path):

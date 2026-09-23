@@ -4,8 +4,8 @@ from pathlib import Path
 import pytest
 from test_indexing import captured
 
-from traceproof.codeql import extract
-from traceproof.persistence import exclusive_worker
+from veriflow.codeql import extract
+from veriflow.persistence import exclusive_worker
 
 
 def test_source_only_copy_contains_no_build_files(store, archive, manifest, monkeypatch):
@@ -16,7 +16,7 @@ def test_source_only_copy_contains_no_build_files(store, archive, manifest, monk
         out.writestr("gradlew", "untrusted wrapper")
         out.writestr("lib/dep.jar", "untrusted jar")
     run = captured(store, archive, manifest)
-    monkeypatch.setattr("traceproof.codeql.shutil.which", lambda _: None)
+    monkeypatch.setattr("veriflow.codeql.shutil.which", lambda _: None)
     with exclusive_worker(store.root):
         result = extract(store, run, language="auto", java_profile="source-only")
     root = Path(result["database_path"]).parent / "source"
@@ -37,7 +37,7 @@ def test_csharp_copy_omits_project_and_binary_inputs(store, archive, manifest, m
         out.writestr("dep.dll", "untrusted binary")
         out.writestr("View.cshtml", "unqualified view")
     run = captured(store, archive, manifest)
-    monkeypatch.setattr("traceproof.codeql.shutil.which", lambda _: None)
+    monkeypatch.setattr("veriflow.codeql.shutil.which", lambda _: None)
     with exclusive_worker(store.root):
         result = extract(store, run, language="auto", allow_csharp_downloads=True)
     root = Path(result["database_path"]).parent / "source"
@@ -49,7 +49,7 @@ def test_csharp_copy_omits_project_and_binary_inputs(store, archive, manifest, m
 def test_csharp_requires_explicit_download_opt_in(store, archive, manifest):
     import pytest
 
-    from traceproof.domain import TraceProofError
+    from veriflow.domain import TraceProofError
 
     with zipfile.ZipFile(archive, "w") as out:
         out.writestr("C.cs", "class C {}")
@@ -73,7 +73,7 @@ def test_js_ts_source_copy_omits_configuration_and_other_language(
         out.writestr("tsconfig.json", '{"extends":"untrusted"}')
         out.writestr("index.html", "<script>unqualified</script>")
     run = captured(store, archive, manifest)
-    monkeypatch.setattr("traceproof.codeql.shutil.which", lambda _: None)
+    monkeypatch.setattr("veriflow.codeql.shutil.which", lambda _: None)
     with exclusive_worker(store.root):
         result = extract(store, run, language=language)
     root = Path(result["database_path"]).parent / "source"

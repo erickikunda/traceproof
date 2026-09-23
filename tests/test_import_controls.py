@@ -4,13 +4,13 @@ import pytest
 from conftest import row
 from typer.testing import CliRunner
 
-from traceproof import batch_scan
-from traceproof.artifacts import ArtifactStore
-from traceproof.cli import app
-from traceproof.domain import TraceProofError
-from traceproof.import_controls import control_status, set_control
-from traceproof.intake import import_status, process, submit
-from traceproof.persistence import Run, exclusive_worker
+from veriflow import batch_scan
+from veriflow.artifacts import ArtifactStore
+from veriflow.cli import app
+from veriflow.domain import TraceProofError
+from veriflow.import_controls import control_status, set_control
+from veriflow.intake import import_status, process, submit
+from veriflow.persistence import Run, exclusive_worker
 
 
 def test_pause_resume_idempotency_and_cli(store, archive, manifest):

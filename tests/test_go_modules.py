@@ -4,7 +4,7 @@ import pytest
 from test_dependency_discovery import properties_of
 from test_dependency_discovery import snapshot as snapshot
 
-from traceproof.sbom_export import export_sbom
+from veriflow.sbom_export import export_sbom
 
 BASIC = """module github.com/example/app
 
@@ -41,20 +41,20 @@ def test_block_and_single_requirements_are_read(store, snapshot):
     assert gin["group"] == "github.com/gin-gonic" and gin["name"] == "gin"
     assert gin["version"] == "v1.9.1"
     # Go has no lockfile; go.mod states a version, it does not pin a build.
-    assert properties_of(gin)["traceproof:resolution"] == "declared_version"
+    assert properties_of(gin)["veriflow:resolution"] == "declared_version"
 
 
 def test_indirect_requirements_are_marked_not_dropped(store, snapshot):
     repo, snapshot_id = snapshot({"go.mod": BASIC})
     found = libraries(store, repo, snapshot_id)
     crypto = properties_of(found["pkg:golang/golang.org/x/crypto@v0.14.0"])
-    assert crypto["traceproof:declared_scopes"] == "indirect"
+    assert crypto["veriflow:declared_scopes"] == "indirect"
     gin = properties_of(found["pkg:golang/github.com/gin-gonic/gin@v1.9.1"])
-    assert gin["traceproof:declared_scopes"] == "direct"
-    notes = coverage_of(store, repo, snapshot_id)["traceproof:ecosystem_notes"]
+    assert gin["veriflow:declared_scopes"] == "direct"
+    notes = coverage_of(store, repo, snapshot_id)["veriflow:ecosystem_notes"]
     assert "go_indirect_requirements=1" in notes
     # Reading a recorded indirect entry is not resolving a closure.
-    assert coverage_of(store, repo, snapshot_id)["traceproof:inheritance_resolved"] == "false"
+    assert coverage_of(store, repo, snapshot_id)["veriflow:inheritance_resolved"] == "false"
 
 
 def test_replaced_module_never_carries_its_declared_version(store, snapshot):
@@ -68,13 +68,13 @@ def test_replaced_module_never_carries_its_declared_version(store, snapshot):
     old = found["pkg:golang/github.com/old/pkg"]
     # A replaced requirement is not what a build resolves.
     assert "version" not in old
-    assert properties_of(old)["traceproof:resolution"] == "replaced"
+    assert properties_of(old)["veriflow:resolution"] == "replaced"
     target = found["pkg:golang/github.com/new/pkg@v2.0.0"]
-    assert properties_of(target)["traceproof:version_source"] == "replacement_target"
-    assert properties_of(target)["traceproof:declared_scopes"] == "replacement"
+    assert properties_of(target)["veriflow:version_source"] == "replacement_target"
+    assert properties_of(target)["veriflow:declared_scopes"] == "replacement"
     assert (
         "go_replaced_requirements=1"
-        in coverage_of(store, repo, snapshot_id)["traceproof:ecosystem_notes"]
+        in coverage_of(store, repo, snapshot_id)["veriflow:ecosystem_notes"]
     )
 
 
@@ -101,11 +101,11 @@ def test_local_replacement_yields_no_registry_component(store, snapshot):
     )
     repo, snapshot_id = snapshot({"go.mod": source})
     found = libraries(store, repo, snapshot_id)
-    assert properties_of(found["pkg:golang/github.com/old/pkg"])["traceproof:resolution"] == (
+    assert properties_of(found["pkg:golang/github.com/old/pkg"])["veriflow:resolution"] == (
         "replaced"
     )
     assert not any("vendored" in purl for purl in found)
-    notes = coverage_of(store, repo, snapshot_id)["traceproof:ecosystem_notes"]
+    notes = coverage_of(store, repo, snapshot_id)["veriflow:ecosystem_notes"]
     assert "go_local_replacements=1" in notes
 
 
@@ -132,7 +132,7 @@ def test_excluded_versions_are_counted_not_emitted(store, snapshot):
     assert not any("bad" in purl for purl in found)
     assert (
         "go_excluded_versions=1"
-        in coverage_of(store, repo, snapshot_id)["traceproof:ecosystem_notes"]
+        in coverage_of(store, repo, snapshot_id)["veriflow:ecosystem_notes"]
     )
 
 
@@ -171,7 +171,7 @@ def test_comments_do_not_become_requirements(store, snapshot):
     found = libraries(store, repo, snapshot_id)
     assert set(found) == {"pkg:golang/github.com/real/pkg@v1.0.0"}
     assert (
-        properties_of(found["pkg:golang/github.com/real/pkg@v1.0.0"])["traceproof:declared_scopes"]
+        properties_of(found["pkg:golang/github.com/real/pkg@v1.0.0"])["veriflow:declared_scopes"]
         == "direct"
     )
 
@@ -181,8 +181,8 @@ def test_vendored_go_mod_is_ignored(store, snapshot):
         {"go.mod": BASIC, "vendor/github.com/x/y/go.mod": "module github.com/x/y\n"}
     )
     coverage = coverage_of(store, repo, snapshot_id)
-    assert coverage["traceproof:excluded_declarations_ignored"] == "1"
-    assert coverage["traceproof:dependency_files_parsed"] == "go=1"
+    assert coverage["veriflow:excluded_declarations_ignored"] == "1"
+    assert coverage["veriflow:dependency_files_parsed"] == "go=1"
 
 
 def test_go_import_evidence_is_exact(store, snapshot):
@@ -194,12 +194,12 @@ def test_go_import_evidence_is_exact(store, snapshot):
     found = libraries(store, repo, snapshot_id, usage=True)
     gin = properties_of(found["pkg:golang/github.com/gin-gonic/gin@v1.9.1"])
     # A package below the module path is still that module.
-    assert gin["traceproof:usage_state"] == "import_observed"
-    assert gin["traceproof:usage_basis"] == "module_path_exact"
+    assert gin["veriflow:usage_state"] == "import_observed"
+    assert gin["veriflow:usage_basis"] == "module_path_exact"
     other = properties_of(found["pkg:golang/github.com/other/pkg@v1.2.3"])
-    assert other["traceproof:usage_state"] == "import_observed"
+    assert other["veriflow:usage_state"] == "import_observed"
     crypto = properties_of(found["pkg:golang/golang.org/x/crypto@v0.14.0"])
-    assert crypto["traceproof:usage_state"] == "not_observed"
+    assert crypto["veriflow:usage_state"] == "not_observed"
 
 
 def test_go_prefix_match_does_not_cross_a_path_boundary(store, snapshot):
@@ -210,7 +210,7 @@ def test_go_prefix_match_does_not_cross_a_path_boundary(store, snapshot):
         }
     )
     found = libraries(store, repo, snapshot_id, usage=True)
-    assert properties_of(found["pkg:golang/github.com/a/b@v1.0.0"])["traceproof:usage_state"] == (
+    assert properties_of(found["pkg:golang/github.com/a/b@v1.0.0"])["veriflow:usage_state"] == (
         "not_observed"
     )
 

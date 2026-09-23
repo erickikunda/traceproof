@@ -6,8 +6,8 @@ import zipfile
 import pytest
 from conftest import row
 
-from traceproof.artifacts import ArtifactStore
-from traceproof.domain import ArchiveLimits, IntakeSpec, TraceProofError
+from veriflow.artifacts import ArtifactStore
+from veriflow.domain import ArchiveLimits, IntakeSpec, TraceProofError
 
 
 @pytest.mark.parametrize("kind", ["zip", "tar", "tar.gz"])

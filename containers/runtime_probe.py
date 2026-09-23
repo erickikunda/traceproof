@@ -13,7 +13,7 @@ assert os.getuid() != 0
 assert int(status["CapEff"].strip(), 16) == 0
 assert status["NoNewPrivs"].strip() == "1"
 try:
-    Path("/opt/traceproof/forbidden-write").write_text("probe")
+    Path("/opt/veriflow/forbidden-write").write_text("probe")
 except OSError as exc:
     assert exc.errno in (errno.EROFS, errno.EACCES), exc
 else:
@@ -27,7 +27,7 @@ else:
 assert not Path("/var/run/docker.sock").exists()
 assert not Path("/var/run/secrets/kubernetes.io/serviceaccount/token").exists()
 for root in ("/work", "/tmp", "/reports"):
-    probe = Path(root) / "traceproof-write-probe"
+    probe = Path(root) / "veriflow-write-probe"
     probe.write_text("ok")
     probe.unlink()
 print(

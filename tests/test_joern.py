@@ -4,12 +4,12 @@ from types import SimpleNamespace
 import pytest
 from test_slice03 import captured_source as captured_source
 
-from traceproof import joern
-from traceproof.bundles import build_bundle
-from traceproof.claims import bundle_engine, requirements
-from traceproof.domain import TraceProofError
-from traceproof.reports import publish_report
-from traceproof.scanning import scan_report
+from veriflow import joern
+from veriflow.bundles import build_bundle
+from veriflow.claims import bundle_engine, requirements
+from veriflow.domain import TraceProofError
+from veriflow.reports import publish_report
+from veriflow.scanning import scan_report
 
 
 def output(file="App.java", line=1):
@@ -70,11 +70,11 @@ def test_durable_discovery_and_failure(
                 doc["rule_id"] = (
                     joern.PYTHON_RULE
                     if language == "python"
-                    else "traceproof/joern-go-lookup-command-v1"
+                    else "veriflow/joern-go-lookup-command-v1"
                     if language == "go"
-                    else f"traceproof/joern-{language}-lookup-system-v1"
+                    else f"veriflow/joern-{language}-lookup-system-v1"
                     if language in {"c", "cpp"}
-                    else f"traceproof/joern-{language}-lookup-eval-v1"
+                    else f"veriflow/joern-{language}-lookup-eval-v1"
                 )
                 doc[f"represented_{language}_files"] = [filename]
                 doc["paths"][0][0]["file"] = filename

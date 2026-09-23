@@ -5,10 +5,10 @@ from test_reports import scanned as scanned
 from test_triage import evidence_fixture as evidence_fixture
 from typer.testing import CliRunner
 
-from traceproof.cli import app
-from traceproof.domain import TraceProofError
-from traceproof.history import extraction_history
-from traceproof.persistence import CodeqlAttempt
+from veriflow.cli import app
+from veriflow.domain import TraceProofError
+from veriflow.history import extraction_history
+from veriflow.persistence import CodeqlAttempt
 
 
 def test_attempt_history_ordering_fields_and_cli(store, scanned):

@@ -6,10 +6,10 @@ import pytest
 from test_reports import scanned as scanned
 from test_triage import evidence_fixture as evidence_fixture
 
-from traceproof import codeql, scanning
-from traceproof.codeql_resources import resource_settings
-from traceproof.domain import TraceProofError
-from traceproof.persistence import ScanAttempt
+from veriflow import codeql, scanning
+from veriflow.codeql_resources import resource_settings
+from veriflow.domain import TraceProofError
+from veriflow.persistence import ScanAttempt
 
 
 @pytest.mark.parametrize(

@@ -6,8 +6,8 @@ import zipfile
 
 import pytest
 
-from traceproof.domain import TraceProofError
-from traceproof.gcs_acquisition import ObjectVersion, acquire_archive
+from veriflow.domain import TraceProofError
+from veriflow.gcs_acquisition import ObjectVersion, acquire_archive
 
 
 class Reader:
