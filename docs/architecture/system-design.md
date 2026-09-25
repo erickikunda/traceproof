@@ -3,7 +3,7 @@
 **System design, version 0.3 — 11 September 2026**
 **Implementation checkpoint:** through Slice 131. This document separates the implemented laptop POC from the proposed enterprise architecture. It is not an approved Wells Fargo architecture.
 
-**Revision 0.3:** Records the Joern-first scanner strategy, bounded nine-language profiles, optional advisory policies, Ollama, separate Git acquisition and offline archive scanning, durable provenance, and local OpenShift preparation. PostgreSQL orchestration, Redis coordination, GCS, hosted API, bank OCP execution and fleet qualification remain future work. The [implementation plan](../plans/implementation-plan.md) governs delivery order; [progress](../development/progress.md) and slice records retain acceptance evidence. Section 0 is the current checkpoint; production mechanisms in later sections are design requirements unless explicitly marked implemented.
+**Revision 0.4:** Records the Joern-first scanner strategy, bounded nine-language profiles, optional advisory policies, the planned opt-in hybrid LLM discovery and governed rule-gap feedback loop, Ollama, separate Git acquisition and offline archive scanning, durable provenance, and local OpenShift preparation. PostgreSQL orchestration, Redis coordination, GCS, hosted API, bank OCP execution and fleet qualification remain future work. The [implementation plan](../plans/implementation-plan.md) governs delivery order; [progress](../development/progress.md) and slice records retain acceptance evidence. Section 0 is the current checkpoint; production mechanisms in later sections are design requirements unless explicitly marked implemented.
 
 ## 0. Leadership walkthrough
 
@@ -628,6 +628,14 @@ An LLM may propose a missing model. It cannot promote a sanitizer/barrier into t
 Start with a **15% reservation of the investigation token budget for exploration**, adjustable only through versioned profile policy. Sample lower-ranked surfaces as well as high-risk ones; record sampling probabilities so evaluation can estimate selection bias. This percentage is a proposed experiment, not an established optimum.
 
 Do not use a cheap model’s dismissal as a permanent exclusion. It may rank candidates, identify required context or recommend escalation. Maintain random audits of dismissals and nonselected areas. Preserve deterministic candidates regardless of whether the LLM agrees.
+
+The opt-in hybrid discovery contract and its governed path from a confirmed exploratory gap to
+a reviewed deterministic rule are specified in
+[Hybrid deterministic and LLM candidate discovery](hybrid-llm-discovery.md). The LLM stage is
+additive: it cannot suppress deterministic candidates, activate generated queries, or convert
+incomplete exploration into a clean result. Exact and batch CLI approval create a new immutable
+approved rule-registry version after confirmation, digest, fixture, test and reviewer checks;
+future scans may use it, while existing scans retain their pinned rule-set identity.
 
 Cross-repository flow is a later capability: join service/API/message contracts using versioned deployment manifests and identity assumptions. Mark speculative joins as inferred. Source from two unrelated commits does not establish a real deployed attack path.
 

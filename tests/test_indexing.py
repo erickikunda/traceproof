@@ -8,7 +8,7 @@ from conftest import row
 from sqlalchemy import func, select
 from typer.testing import CliRunner
 
-from veriflow import indexing
+from veriflow import indexing, joern_indexing
 from veriflow.artifacts import ArtifactStore
 from veriflow.cli import app
 from veriflow.codeql import extract, extraction_status
@@ -225,3 +225,58 @@ def test_subprocess_timeout_becomes_coverage_gap(monkeypatch):
 
     monkeypatch.setattr(indexing.subprocess, "run", timeout)
     assert indexing.parse_isolated(b"x = 1")["status"] == "timeout"
+
+
+def test_joern_backend_and_neutral_comparison(store, archive, manifest, tmp_path, monkeypatch):
+    run_id = captured(store, archive, manifest)
+    home = tmp_path / "joern"
+    (home / "lib").mkdir(parents=True)
+    (home / "lib" / "io.joern.joern-cli-4.0.625.jar").touch()
+    for executable in ("pysrc2cpg", "joern"):
+        (home / executable).touch()
+
+    def fake_stage(command, root, name, timeout):
+        assert timeout == 30
+        if name == "prepare":
+            (root / "cpg.bin").write_bytes(b"fixture-cpg")
+        else:
+            (root / "inventory.json").write_text(
+                json.dumps(
+                    {
+                        "schema_version": "1",
+                        "engine_id": "joern",
+                        "language": "python",
+                        "represented_files": [str(root / "source/project/app.py")],
+                        "symbols": [
+                            {
+                                "file": str(root / "source/project/app.py"),
+                                "name": "project.app.greet",
+                                "simple_name": "greet",
+                                "line": 1,
+                                "end_line": 2,
+                                "kind": "function",
+                                "async": False,
+                            }
+                        ],
+                        "calls": [],
+                    }
+                )
+            )
+
+    monkeypatch.setattr(joern_indexing, "stage", fake_stage)
+    joern = indexing.build_index(store, run_id, "joern", home, 30)
+    assert joern["index_backend"] == "joern"
+    assert joern["python_index_gate"] == "ready"
+    assert (
+        indexing.query_index(store, run_id, index_id=joern["index_id"])["items"][0]["simple_name"]
+        == "greet"
+    )
+    comparison = indexing.compare_indexes(store, run_id, home, 30)
+    assert comparison["snapshot_id"] == joern["snapshot_id"]
+    assert comparison["comparison"]["exact_symbol_overlap"] == 1
+    assert comparison["interpretation"].startswith("Neutral")
+
+
+def test_index_backend_validation(store):
+    with pytest.raises(VeriFlowError, match="syntax or joern"):
+        indexing.build_index(store, "unused", "unknown")

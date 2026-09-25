@@ -37,8 +37,12 @@ def test_migration_repeatable(store):
         "evidence_bundles",
         "triage_budgets",
         "triage_calls",
+        "discovery_calls",
         "published_reports",
         "operator_reviews",
+        "rule_drafts",
+        "rule_registries",
+        "rule_approvals",
         "benchmark_scorecards",
     }
     with store.engine.connect() as conn:

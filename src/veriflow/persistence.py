@@ -146,6 +146,20 @@ class TriageCall(Base):
     result: Mapped[dict] = mapped_column(JSON)
 
 
+class DiscoveryCall(Base):
+    __tablename__ = "discovery_calls"
+    __table_args__ = (UniqueConstraint("run_id", "request_key"),)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    run_id: Mapped[str] = mapped_column(ForeignKey("runs.id"), index=True)
+    attempt_id: Mapped[str] = mapped_column(ForeignKey("scan_attempts.id"), index=True)
+    request_key: Mapped[str] = mapped_column(String(200))
+    request_sha256: Mapped[str] = mapped_column(String(64))
+    created_at: Mapped[str] = mapped_column(String(40))
+    state: Mapped[str] = mapped_column(String(40))
+    charged_micro_usd: Mapped[int] = mapped_column(BigInteger)
+    result: Mapped[dict] = mapped_column(JSON)
+
+
 class PublishedReport(Base):
     __tablename__ = "published_reports"
     __table_args__ = (
@@ -172,6 +186,38 @@ class OperatorReview(Base):
     revision: Mapped[int]
     request_key: Mapped[str] = mapped_column(String(200))
     request_sha256: Mapped[str] = mapped_column(String(64))
+    content: Mapped[dict] = mapped_column(JSON)
+
+
+class RuleDraft(Base):
+    __tablename__ = "rule_drafts"
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    candidate_id: Mapped[str] = mapped_column(ForeignKey("candidates.id"), index=True)
+    created_at: Mapped[str] = mapped_column(String(40))
+    state: Mapped[str] = mapped_column(String(30))
+    content: Mapped[dict] = mapped_column(JSON)
+
+
+class RuleRegistry(Base):
+    __tablename__ = "rule_registries"
+    __table_args__ = (UniqueConstraint("version"),)
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    version: Mapped[int]
+    created_at: Mapped[str] = mapped_column(String(40))
+    content: Mapped[dict] = mapped_column(JSON)
+
+
+class RuleApproval(Base):
+    __tablename__ = "rule_approvals"
+    __table_args__ = (
+        UniqueConstraint("draft_id"),
+        UniqueConstraint("request_key"),
+    )
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    draft_id: Mapped[str] = mapped_column(ForeignKey("rule_drafts.id"), index=True)
+    registry_id: Mapped[str] = mapped_column(ForeignKey("rule_registries.id"))
+    request_key: Mapped[str] = mapped_column(String(200))
+    created_at: Mapped[str] = mapped_column(String(40))
     content: Mapped[dict] = mapped_column(JSON)
 
 
