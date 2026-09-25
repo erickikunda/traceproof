@@ -49,9 +49,13 @@ def _build_bundle(store, attempt_id, candidate_fingerprint):
                 Candidate.attempt_id == attempt_id, Candidate.fingerprint == candidate_fingerprint
             )
         )
-        if attempt is None or candidate is None:
-            raise VeriFlowError("Scan candidate not found")
+    if attempt is None or candidate is None:
+        raise VeriFlowError("Scan candidate not found")
     run, manifest, tree = verified_source(store, attempt.run_id)
+    if candidate.evidence.get("origin") == "llm_discovery":
+        return _build_llm_bundle(
+            store, attempt, candidate, run, manifest, tree, candidate_fingerprint
+        )
     raw_path = store.root / "scans" / attempt.id / "results.sarif"
     if (
         Path(attempt.report["raw_sarif_path"]).resolve() != raw_path.resolve()
@@ -214,6 +218,95 @@ def _build_bundle(store, attempt_id, candidate_fingerprint):
             result,
             policy=RULE_POLICIES[content["rule_id"]],
         )
+    if len(canonical(content)) > MAX_BUNDLE_BYTES:
+        raise VeriFlowError("Evidence bundle exceeds the 32 KiB envelope limit")
+    verified_source(store, run.id)
+    identity = hashlib.sha256(canonical(content)).hexdigest()
+    with store.transaction() as session:
+        if session.get(EvidenceBundle, identity) is None:
+            session.add(EvidenceBundle(id=identity, candidate_id=candidate.id, content=content))
+    return get_bundle(store, identity)
+
+
+def _build_llm_bundle(store, attempt, candidate, run, manifest, tree, candidate_fingerprint):
+    """Build snapshot-bound evidence without pretending the proposal came from SARIF."""
+    proposal = candidate.evidence.get("llm_discovery", {})
+    locations = proposal.get("locations", [])
+    if not locations or len(locations) > MAX_LOCATIONS:
+        raise VeriFlowError("LLM discovery candidate has invalid location count")
+    records = {record.path: record for record in manifest.files}
+    snippets, gaps, source_bytes = [], [], 0
+    for position, location in enumerate(locations):
+        try:
+            record = records.get(location["path"])
+            if (
+                record is None
+                or record.sha256 != location["sha256"]
+                or type(location["line"]) is not int
+                or type(location["end_line"]) is not int
+                or not 1 <= location["line"] <= location["end_line"]
+                or location["end_line"] - location["line"] >= 40
+            ):
+                raise VeriFlowError("unverified_location")
+            payload = (tree / record.path).read_bytes()
+            if hashlib.sha256(payload).hexdigest() != record.sha256:
+                raise VeriFlowError("source_integrity")
+            lines = payload.decode("utf-8").splitlines(keepends=True)
+            if location["end_line"] > len(lines):
+                raise VeriFlowError("range_limit")
+            start = max(1, location["line"] - 3)
+            end = min(len(lines), location["end_line"] + 3)
+            text = "".join(lines[start - 1 : end])
+            size = len(text.encode())
+            if source_bytes + size > MAX_SOURCE_BYTES:
+                raise VeriFlowError("source_budget")
+            source_bytes += size
+            snippets.append(
+                {
+                    "id": f"E{position + 1}",
+                    "role": location["role"],
+                    "snapshot_id": manifest.snapshot_id,
+                    "path": record.path,
+                    "sha256": record.sha256,
+                    "line": location["line"],
+                    "end_line": location["end_line"],
+                    "excerpt_line": start,
+                    "excerpt_end_line": end,
+                    "source_line_count": len(lines),
+                    "text": text,
+                }
+            )
+        except VeriFlowError as exc:
+            if str(exc) == "source_integrity":
+                raise
+            gaps.append(f"location_{position}:{exc}")
+        except (KeyError, TypeError, UnicodeError):
+            gaps.append(f"location_{position}:invalid")
+    content = {
+        "schema_version": "1",
+        "builder_version": BUILDER_VERSION,
+        "engine_id": "llm_discovery",
+        "expansion_depth": 0,
+        "run_id": run.id,
+        "repo_id": run.repo_id,
+        "snapshot_id": manifest.snapshot_id,
+        "classification": manifest.classification,
+        "attempt_id": attempt.id,
+        "candidate_fingerprint": candidate_fingerprint,
+        "rule_id": candidate.evidence["rule_id"],
+        "message": candidate.evidence["message"][:2048],
+        "suppressed": False,
+        "sarif_sha256": None,
+        "discovery_proposal_sha256": proposal.get("proposal_sha256"),
+        "cwe": candidate.evidence.get("cwe"),
+        "snippets": snippets,
+        "gaps": gaps,
+        "status": "partial" if gaps or not snippets else "ready",
+        "locations_total": len(locations),
+        "locations_considered": len(locations),
+        "trust": "untrusted_source_and_model_proposal",
+        "reachability_proven": False,
+    }
     if len(canonical(content)) > MAX_BUNDLE_BYTES:
         raise VeriFlowError("Evidence bundle exceeds the 32 KiB envelope limit")
     verified_source(store, run.id)

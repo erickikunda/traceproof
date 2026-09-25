@@ -15,6 +15,7 @@ from veriflow.domain import VeriFlowError
 from veriflow.intake import now
 from veriflow.persistence import (
     Candidate,
+    DiscoveryCall,
     EvidenceBundle,
     ImportItem,
     OperatorReview,
@@ -82,6 +83,19 @@ def projection(session, repo_id, run_id, attempt_id):
             .join(Candidate, EvidenceBundle.candidate_id == Candidate.id)
             .where(Candidate.attempt_id == attempt.id, TriageCall.run_id == run.id)
             .order_by(TriageCall.created_at, TriageCall.id),
+        )
+        if attempt
+        else []
+    )
+    discovery_calls = (
+        bounded(
+            session,
+            select(DiscoveryCall)
+            .where(
+                DiscoveryCall.attempt_id == attempt.id,
+                DiscoveryCall.run_id == run.id,
+            )
+            .order_by(DiscoveryCall.created_at, DiscoveryCall.id),
         )
         if attempt
         else []
@@ -171,6 +185,9 @@ def projection(session, repo_id, run_id, attempt_id):
                 "sha256": location.get("sha256"),
                 "location_status": evidence.get("location_status"),
                 "suppressed_by_tool": evidence.get("suppressed", False),
+                "origin": evidence.get("origin", "deterministic"),
+                "origins": evidence.get("origins", ["deterministic"]),
+                "cwe": evidence.get("cwe"),
                 "adjudication": "unreviewed",
                 "operator_review_state": reviews[-1]["state"] if reviews else "not_reviewed",
                 "operator_review_history": reviews,
@@ -216,6 +233,10 @@ def projection(session, repo_id, run_id, attempt_id):
         "analysis_status": scan.get("status", "not_started"),
         "execution_complete": scan.get("execution_complete", False),
         "candidate_count": candidate_count,
+        "deterministic_candidate_count": scan.get(
+            "deterministic_candidate_count", candidate_count
+        ),
+        "llm_candidate_count": scan.get("llm_candidate_count", 0),
         "candidate_rows": len(rows),
         "operator_review_counts": dict(Counter(row["operator_review_state"] for row in rows)),
         "verified_finding_count": None,
@@ -229,14 +250,30 @@ def projection(session, repo_id, run_id, attempt_id):
         "analysis_codeql_version": scan.get("analysis_codeql_version"),
         "sarif_sha256": scan.get("sarif_sha256"),
         "triage_call_count": len(calls),
+        "discovery_call_count": len(discovery_calls),
         "simulated_micro_usd": sum(
             c.charged_micro_usd for c in calls if c.result.get("simulated") is True
+        )
+        + sum(
+            c.charged_micro_usd
+            for c in discovery_calls
+            if c.result.get("simulated") is True
         ),
         "live_accounted_micro_usd": sum(
             c.charged_micro_usd for c in calls if c.result.get("simulated") is False
+        )
+        + sum(
+            c.charged_micro_usd
+            for c in discovery_calls
+            if c.result.get("simulated") is False
         ),
         "unknown_mode_micro_usd": sum(
             c.charged_micro_usd for c in calls if c.result.get("simulated") is None
+        )
+        + sum(
+            c.charged_micro_usd
+            for c in discovery_calls
+            if c.result.get("simulated") is None
         ),
         "cost_scope": "selected attempt only; accounted amounts are not provider invoices",
         "candidates": rows,

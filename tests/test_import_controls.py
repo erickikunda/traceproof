@@ -103,6 +103,10 @@ def test_upgrade_preserves_imports(store, archive, manifest):
     batch = submit(store, manifest([row(archive)]), archive.parent, "migration")
     before = import_status(store, batch)["items"]
     with store.engine.begin() as connection:
+        connection.exec_driver_sql("DROP TABLE rule_approvals")
+        connection.exec_driver_sql("DROP TABLE rule_registries")
+        connection.exec_driver_sql("DROP TABLE rule_drafts")
+        connection.exec_driver_sql("DROP TABLE discovery_calls")
         connection.exec_driver_sql("DROP TABLE import_controls")
         connection.exec_driver_sql("UPDATE alembic_version SET version_num='0008'")
     store.initialize()

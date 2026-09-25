@@ -21,7 +21,7 @@ from veriflow.scanner_backends import backend_for
 from veriflow.scanning import analyze, query_entry
 
 
-def scan_run(
+def _deterministic_scan_run(
     store,
     run_id,
     queries=None,
@@ -225,4 +225,47 @@ def scan_run(
         "report_id": report["report_id"],
         "candidate_count": report["candidate_count"],
         "reason": "Static review readiness only; not a clean security verdict",
+    }
+
+
+def scan_run(store, run_id, *args, llm_discovery=None, **kwargs):
+    """Run deterministic discovery first, then optional additive LLM exploration."""
+    result = _deterministic_scan_run(store, run_id, *args, **kwargs)
+    if llm_discovery is None:
+        return result
+    attempt_id = result.get("attempt_id")
+    if not attempt_id:
+        return {
+            **result,
+            "llm_discovery": {
+                "state": "skipped_deterministic_incomplete",
+                "provider_invocations": 0,
+                "live_model_calls": 0,
+            },
+            "hybrid_status": "partial",
+        }
+    from veriflow.llm_discovery import run_hybrid_discovery
+
+    try:
+        discovery = run_hybrid_discovery(store, attempt_id, llm_discovery)
+    except VeriFlowError as exc:
+        return {
+            **result,
+            "llm_discovery": {
+                "state": "failed",
+                "reason": str(exc),
+                "provider_invocations": 0,
+                "live_model_calls": 0,
+            },
+            "hybrid_status": "partial",
+        }
+    refreshed = publish_report(store, result["repo_id"], run_id, attempt_id)
+    return {
+        **result,
+        "model_calls": result.get("model_calls", 0) + discovery["provider_invocations"],
+        "live_model_calls": result.get("live_model_calls", 0) + discovery["live_model_calls"],
+        "report_id": refreshed["report_id"],
+        "candidate_count": refreshed["candidate_count"],
+        "llm_discovery": discovery,
+        "hybrid_status": "completed" if discovery["state"] == "completed" else "partial",
     }

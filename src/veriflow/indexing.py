@@ -53,7 +53,7 @@ def parse_isolated(source):
         return {"status": "timeout", "symbols": [], "calls": []}
 
 
-def build_index(store, run_id):
+def build_syntax_index(store, run_id):
     """Caller holds exclusive_worker. Completed file checkpoints survive process death."""
     run, manifest, tree = verified_source(store, run_id)
     with store.transaction() as session:
@@ -121,6 +121,7 @@ def build_index(store, run_id):
             "report_kind": "index_coverage",
             "index_id": index_id,
             "index_version": VERSION,
+            "index_backend": "syntax",
             "snapshot_id": manifest.snapshot_id,
             "classification": manifest.classification,
             "security_analysis_performed": False,
@@ -144,6 +145,17 @@ def build_index(store, run_id):
         }
         index.state = "published"
     return coverage_report(store, run_id)
+
+
+def build_index(store, run_id, backend="syntax", joern_home=None, timeout=300):
+    """Build one explicitly selected inventory backend; syntax remains the default."""
+    if backend == "syntax":
+        return build_syntax_index(store, run_id)
+    if backend == "joern":
+        from veriflow.joern_indexing import build_index as build_joern_index
+
+        return build_joern_index(store, run_id, joern_home, timeout)
+    raise VeriFlowError("Index backend must be syntax or joern")
 
 
 def published_index(session, snapshot_id, index_id=None):
@@ -179,12 +191,12 @@ def repository_report(store, repo_id, run_id=None, index_id=None):
     return coverage_report(store, selected, index_id)
 
 
-def query_index(store, run_id, kind="symbols", path=None, offset=0, limit=100):
+def query_index(store, run_id, kind="symbols", path=None, offset=0, limit=100, index_id=None):
     if kind not in {"symbols", "calls"} or not 1 <= limit <= 1000 or offset < 0:
         raise VeriFlowError("Invalid index query")
     run, snapshot = snapshot_for_run(store, run_id)
     with store.transaction() as session:
-        index = published_index(session, snapshot.id)
+        index = published_index(session, snapshot.id, index_id)
         query = select(IndexedFile).where(IndexedFile.index_id == index.id)
         if path is not None:
             query = query.where(IndexedFile.path == path)
@@ -213,6 +225,69 @@ def query_index(store, run_id, kind="symbols", path=None, offset=0, limit=100):
         "total": total,
         "offset": offset,
         "limit": limit,
+        "index_id": index.id,
+    }
+
+
+def compare_indexes(store, run_id, joern_home, timeout=300):
+    """Run both inventories against one snapshot and compare exact normalized records."""
+    syntax = build_index(store, run_id, "syntax")
+    joern = build_index(store, run_id, "joern", joern_home, timeout)
+
+    def records(index_id, kind):
+        result = query_index(store, run_id, kind, limit=1000, index_id=index_id)
+        if result["total"] > 1000:
+            raise VeriFlowError("Comparison inventory exceeds bounded 1000-record POC limit")
+        records = set()
+        for item in result["items"]:
+            evidence = item["evidence"]
+            common = {
+                "path": evidence["path"],
+                "line": item["line"],
+                "end_line": item["end_line"],
+            }
+            if kind == "symbols":
+                record = {
+                    **common,
+                    "name": item.get("simple_name", item["name"].rsplit(".", 1)[-1]),
+                    "kind": item["kind"],
+                }
+            else:
+                record = {
+                    **common,
+                    "caller": item["caller"].rsplit(".", 1)[-1],
+                    "expression": item["expression"],
+                }
+            records.add(json.dumps(record, sort_keys=True))
+        return records
+
+    syntax_symbols = records(syntax["index_id"], "symbols")
+    joern_symbols = records(joern["index_id"], "symbols")
+    syntax_calls = records(syntax["index_id"], "calls")
+    joern_calls = records(joern["index_id"], "calls")
+    return {
+        "schema_version": "1",
+        "report_kind": "index_backend_comparison",
+        "run_id": run_id,
+        "snapshot_id": syntax["snapshot_id"],
+        "baseline": syntax,
+        "candidate": joern,
+        "comparison": {
+            "parsed_python_file_delta": joern["parsed_python_files"]
+            - syntax["parsed_python_files"],
+            "function_count_delta": joern["function_count"] - syntax["function_count"],
+            "call_count_delta": joern["call_count"] - syntax["call_count"],
+            "exact_symbol_overlap": len(syntax_symbols & joern_symbols),
+            "syntax_only_symbols": len(syntax_symbols - joern_symbols),
+            "joern_only_symbols": len(joern_symbols - syntax_symbols),
+            "exact_call_overlap": len(syntax_calls & joern_calls),
+            "syntax_only_calls": len(syntax_calls - joern_calls),
+            "joern_only_calls": len(joern_calls - syntax_calls),
+        },
+        "interpretation": (
+            "Neutral inventory comparison only; count differences are not quality "
+            "or security verdicts."
+        ),
     }
 
 

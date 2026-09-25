@@ -256,6 +256,9 @@ class LiveAdapter:
         return Reply.model_validate_json(child.stdout)
 
     def _invoke_https(self, body):
+        return self.parse(self._request_raw(body))
+
+    def _request_raw(self, body):
         config = self.config
         if not config.allow_source_transmission:
             raise VeriFlowError("Live source transmission is disabled")
@@ -279,7 +282,7 @@ class LiveAdapter:
             raw = response.read(128 * 1024 + 1)
         if len(raw) > 128 * 1024:
             raise VeriFlowError("Provider output exceeds 128 KiB")
-        return self.parse(raw)
+        return raw
 
 
 class OpenAIAdapter(LiveAdapter):

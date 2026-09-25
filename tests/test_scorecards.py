@@ -92,6 +92,10 @@ def test_migration_from_six_preserves_existing_reports(store, evaluation):
     report = evaluation[3]()
     # Recreate the prior schema boundary in this isolated test database.
     with store.engine.begin() as conn:
+        conn.exec_driver_sql("DROP TABLE rule_approvals")
+        conn.exec_driver_sql("DROP TABLE rule_registries")
+        conn.exec_driver_sql("DROP TABLE rule_drafts")
+        conn.exec_driver_sql("DROP TABLE discovery_calls")
         conn.exec_driver_sql("DROP TABLE benchmark_scorecards")
         conn.exec_driver_sql("DROP TABLE import_controls")
         conn.exec_driver_sql("ALTER TABLE triage_budgets DROP COLUMN max_requests")
@@ -100,4 +104,4 @@ def test_migration_from_six_preserves_existing_reports(store, evaluation):
     store.initialize()
     assert evaluation[3]() == report
     result = CliRunner().invoke(app, ["--state-dir", str(store.root), "init"])
-    assert json.loads(result.output)["schema"] == "0009"
+    assert json.loads(result.output)["schema"] == "0011"

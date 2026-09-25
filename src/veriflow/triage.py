@@ -13,7 +13,7 @@ from veriflow.claims import GATE_VERSION, assess_evidence, bundle_engine, requir
 from veriflow.domain import VeriFlowError
 from veriflow.intake import now
 from veriflow.models import PROMPT_VERSION, Adapter, Decision, ModelConfig, request_body
-from veriflow.persistence import Run, TriageBudget, TriageCall, exclusive_worker
+from veriflow.persistence import DiscoveryCall, Run, TriageBudget, TriageCall, exclusive_worker
 
 
 def cost_micro_usd(input_tokens, output_tokens, config):
@@ -66,6 +66,11 @@ def triage_report(store, run_id, offset=0, limit=100):
                 TriageCall.run_id == run_id
             )
         )
+        discovery_charged = session.scalar(
+            select(func.coalesce(func.sum(DiscoveryCall.charged_micro_usd), 0)).where(
+                DiscoveryCall.run_id == run_id
+            )
+        )
         calls = list(
             session.scalars(
                 select(TriageCall)
@@ -78,18 +83,27 @@ def triage_report(store, run_id, offset=0, limit=100):
         total = session.scalar(
             select(func.count()).select_from(TriageCall).where(TriageCall.run_id == run_id)
         )
+        discovery_total = session.scalar(
+            select(func.count()).select_from(DiscoveryCall).where(DiscoveryCall.run_id == run_id)
+        )
         return {
             "schema_version": "1",
             "run_id": run_id,
             "report_kind": "triage_ledger",
             "budget_micro_usd": budget.limit_micro_usd,
-            "accounted_micro_usd": charged,
-            "remaining_micro_usd": max(0, budget.limit_micro_usd - charged),
-            "overrun_micro_usd": max(0, charged - budget.limit_micro_usd),
+            "accounted_micro_usd": charged + discovery_charged,
+            "remaining_micro_usd": max(
+                0, budget.limit_micro_usd - charged - discovery_charged
+            ),
+            "overrun_micro_usd": max(
+                0, charged + discovery_charged - budget.limit_micro_usd
+            ),
             "verified_finding_count": None,
             "total": total,
+            "discovery_call_count": discovery_total,
+            "request_count": total + discovery_total,
             "max_requests": budget.max_requests,
-            "remaining_requests": max(0, budget.max_requests - total),
+            "remaining_requests": max(0, budget.max_requests - total - discovery_total),
             "offset": offset,
             "limit": limit,
             "calls": [
@@ -171,12 +185,20 @@ def triage(
                 raise VeriFlowError("Configure a run triage budget before requesting triage")
             requests = session.scalar(
                 select(func.count()).select_from(TriageCall).where(TriageCall.run_id == run_id)
+            ) + session.scalar(
+                select(func.count())
+                .select_from(DiscoveryCall)
+                .where(DiscoveryCall.run_id == run_id)
             )
             if requests >= budget.max_requests:
                 raise VeriFlowError("Run triage request limit exhausted; no provider was invoked")
             spent = session.scalar(
                 select(func.coalesce(func.sum(TriageCall.charged_micro_usd), 0)).where(
                     TriageCall.run_id == run_id
+                )
+            ) + session.scalar(
+                select(func.coalesce(func.sum(DiscoveryCall.charged_micro_usd), 0)).where(
+                    DiscoveryCall.run_id == run_id
                 )
             )
             state = "running"

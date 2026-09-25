@@ -8,7 +8,13 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from veriflow.artifacts import ArtifactStore
 from veriflow.domain import VeriFlowError
-from veriflow.indexing import build_index, query_index, report_markdown, repository_report
+from veriflow.indexing import (
+    build_index,
+    compare_indexes,
+    query_index,
+    report_markdown,
+    repository_report,
+)
 from veriflow.intake import import_status, process, render_json, run_status, submit
 from veriflow.persistence import Store, exclusive_worker
 
@@ -52,19 +58,42 @@ def init(ctx: typer.Context):
 
     def operation():
         ctx.obj.initialize()
-        return {"state_dir": str(ctx.obj.root), "schema": "0009", "status": "initialized"}
+        return {"state_dir": str(ctx.obj.root), "schema": "0011", "status": "initialized"}
 
     perform(operation)
 
 
 @app.command("index-run")
-def index_run(ctx: typer.Context, run_id: str):
-    """Build or resume a Python syntax index; does not discover vulnerabilities."""
+def index_run(
+    ctx: typer.Context,
+    run_id: str,
+    backend: Annotated[str, typer.Option(help="Inventory backend: syntax or joern")] = "syntax",
+    joern_home: Annotated[Path | None, typer.Option(help="Pinned Joern CLI directory")] = None,
+    timeout: Annotated[int, typer.Option(min=1, max=3600)] = 300,
+):
+    """Build a selected Python inventory backend; no vulnerability discovery."""
 
     def operation():
         ctx.obj.require_initialized()
         with exclusive_worker(ctx.obj.root):
-            return build_index(ctx.obj, run_id)
+            return build_index(ctx.obj, run_id, backend, joern_home, timeout)
+
+    perform(operation)
+
+
+@app.command("compare-indexes")
+def compare_indexes_command(
+    ctx: typer.Context,
+    run_id: str,
+    joern_home: Annotated[Path, typer.Option(help="Pinned Joern CLI directory")],
+    timeout: Annotated[int, typer.Option(min=1, max=3600)] = 300,
+):
+    """Compare syntax and Joern Python inventories from the exact same snapshot."""
+
+    def operation():
+        ctx.obj.require_initialized()
+        with exclusive_worker(ctx.obj.root):
+            return compare_indexes(ctx.obj, run_id, joern_home, timeout)
 
     perform(operation)
 
@@ -109,6 +138,54 @@ def review_history_command(
     from veriflow.reviews import review_history
 
     perform(lambda: review_history(ctx.obj, repo_id, attempt_id, fingerprint, offset, limit))
+
+
+@app.command("create-rule-draft")
+def create_rule_draft_command(
+    ctx: typer.Context, repo_id: str, attempt_id: str, fingerprint: str, request: Path
+):
+    """Capture a tested rule proposal for a confirmed LLM-origin candidate."""
+    from veriflow.rule_registry import create_rule_draft, read_draft_request
+
+    perform(
+        lambda: create_rule_draft(
+            ctx.obj, repo_id, attempt_id, fingerprint, read_draft_request(request)
+        )
+    )
+
+
+@app.command("rule-draft-status")
+def rule_draft_status_command(ctx: typer.Context, draft_id: str):
+    """Retrieve and integrity-check one immutable rule draft."""
+    from veriflow.rule_registry import rule_draft_status
+
+    perform(lambda: rule_draft_status(ctx.obj, draft_id))
+
+
+@app.command("approve-rule-draft")
+def approve_rule_draft_command(
+    ctx: typer.Context, draft_id: str, approval: Path, key: str
+):
+    """Approve one tested draft into the next immutable registry version."""
+    from veriflow.rule_registry import approve_rule_draft, read_approval_request
+
+    perform(lambda: approve_rule_draft(ctx.obj, draft_id, read_approval_request(approval), key))
+
+
+@app.command("approve-rule-drafts")
+def approve_rule_drafts_command(ctx: typer.Context, manifest: Path):
+    """Process a bounded CSV of independent rule approvals."""
+    from veriflow.rule_registry import approve_rule_drafts
+
+    perform(lambda: approve_rule_drafts(ctx.obj, manifest))
+
+
+@app.command("rule-registry")
+def rule_registry_command(ctx: typer.Context, version: int | None = None):
+    """Retrieve the latest or an exact approved-rule registry version."""
+    from veriflow.rule_registry import registry_status
+
+    perform(lambda: registry_status(ctx.obj, version))
 
 
 @app.command("acceptance-run")
@@ -390,9 +467,10 @@ def index_query(
     path: str | None = None,
     offset: Annotated[int, typer.Option(min=0)] = 0,
     limit: Annotated[int, typer.Option(min=1, max=1000)] = 100,
+    index_id: str | None = None,
 ):
     """Retrieve paginated symbols or unresolved calls with immutable evidence references."""
-    perform(lambda: query_index(ctx.obj, run_id, kind, path, offset, limit))
+    perform(lambda: query_index(ctx.obj, run_id, kind, path, offset, limit, index_id))
 
 
 @app.command("repo-report")
@@ -520,8 +598,14 @@ def scan_run_command(
     replay: Path | None = None,
     advisory_offset: Annotated[int, typer.Option(min=0)] = 0,
     advisory_limit: Annotated[int, typer.Option(min=1, max=100)] = 1,
+    llm_discovery: bool = False,
+    llm_discovery_config: Path | None = None,
+    llm_discovery_replay: Path | None = None,
+    llm_discovery_key: str | None = None,
+    llm_discovery_max_excerpts: Annotated[int, typer.Option(min=1, max=12)] = 8,
 ):
-    """Scan and publish; Joern advisory requires explicit options and an existing budget."""
+    """Scan and publish, with optional replay-backed additive LLM discovery."""
+    from veriflow.llm_discovery import load_options
     from veriflow.pipeline import scan_run
     from veriflow.scan_advisory import load_advisory
 
@@ -552,6 +636,13 @@ def scan_run_command(
                 replay,
                 advisory_offset,
                 advisory_limit,
+            ),
+            llm_discovery=load_options(
+                llm_discovery,
+                llm_discovery_replay,
+                llm_discovery_key,
+                llm_discovery_max_excerpts,
+                llm_discovery_config,
             ),
         )
     )
@@ -691,6 +782,34 @@ def scan_report_command(
         return scan_report_markdown(report) if format == "markdown" else report
 
     perform(operation)
+
+
+@app.command("discovery-replay")
+def discovery_replay_command(
+    ctx: typer.Context,
+    attempt_id: str,
+    packet: Path,
+    response: Path,
+    request_key: Annotated[str, typer.Option(help="Unique idempotency key for this request")],
+):
+    """Validate replay proposals and persist snapshot-bound exploratory candidates."""
+    from veriflow.llm_discovery import replay_discovery
+
+    perform(lambda: replay_discovery(ctx.obj, attempt_id, packet, response, request_key))
+
+
+@app.command("discovery-report")
+def discovery_report_command(
+    ctx: typer.Context,
+    run_id: str,
+    attempt_id: str | None = None,
+    offset: Annotated[int, typer.Option(min=0)] = 0,
+    limit: Annotated[int, typer.Option(min=1, max=1000)] = 100,
+):
+    """Retrieve replay/live discovery provenance without invoking a model."""
+    from veriflow.llm_discovery import discovery_report
+
+    perform(lambda: discovery_report(ctx.obj, run_id, attempt_id, offset, limit))
 
 
 @app.command("build-bundle")

@@ -52,6 +52,17 @@ def bundle_engine(bundle):
 
 
 def requirements(rule_id, engine="codeql"):
+    if engine == "llm_discovery":
+        return {
+            "gate_version": GATE_VERSION,
+            "engine_id": engine,
+            "supported": True,
+            "policy": "exploratory-source-anchoring-v1",
+            "required": ["source", "sink", "flow", "guard"],
+            "negative_requires": "present guard and quoted counterevidence",
+            "modeled_source": "No source model; cite only retained packet evidence",
+            "scope": "quote and range consistency only; no semantic or reachability proof",
+        }
     return {
         "gate_version": GATE_VERSION,
         "engine_id": engine,
@@ -257,9 +268,85 @@ def assess_evidence(bundle, decision):
         return _assess_supported(bundle, decision, None)
     if bundle["status"] != "ready":
         return _assess_supported(bundle, decision, None)
+    if bundle_engine(bundle) == "llm_discovery":
+        return _assess_exploratory(bundle, decision)
     if bundle_engine(bundle) != "codeql":
         return {**_assess_supported(bundle, decision, None), "status": "unsupported_engine"}
     return _assess_supported(bundle, decision, POLICIES.get(bundle["rule_id"]))
+
+
+def _assess_exploratory(bundle, decision):
+    """Check citations and quotes only; this gate never proves a modeled flow."""
+    report = {
+        "gate_version": GATE_VERSION,
+        "rule_id": bundle["rule_id"],
+        "status": "insufficient_evidence",
+        "passed": False,
+        "checks": [],
+        "missing": [],
+        "unknowns": [],
+        "source_mappings": [],
+        "reachability_proven": False,
+        "scope": "exploratory quote/range consistency, not semantic or exploitability proof",
+    }
+    if decision.verdict == "abstain":
+        return {**report, "status": "abstained"}
+    if bundle["status"] != "ready":
+        return {**report, "status": "incomplete_bundle"}
+    snippets = {item["id"]: item for item in bundle["snippets"]}
+    satisfied = set()
+    for claim in decision.claims:
+        snippet = snippets.get(claim.evidence_id)
+        reason = None
+        if snippet is None or claim.evidence_id not in decision.evidence_ids:
+            reason = "unknown_or_uncited_evidence"
+        elif (
+            not claim.quote.strip()
+            or not claim.explanation.strip()
+            or not snippet["excerpt_line"]
+            <= claim.line
+            <= claim.end_line
+            <= snippet["excerpt_end_line"]
+            or claim.end_line - claim.line >= 40
+        ):
+            reason = "invalid_range_or_empty_claim"
+        else:
+            lines = io.StringIO(snippet["text"], newline="").readlines()
+            window = "".join(
+                lines[
+                    claim.line - snippet["excerpt_line"] : claim.end_line
+                    - snippet["excerpt_line"]
+                    + 1
+                ]
+            )
+            if claim.quote not in window:
+                reason = "quote_mismatch"
+            elif claim.assessment == "unknown" and claim.obligation != "guard":
+                reason = "positive_evidence_required"
+            else:
+                satisfied.add(claim.obligation)
+                if claim.assessment == "unknown":
+                    report["unknowns"].append("Guard effectiveness is unknown")
+        report["checks"].append(
+            {
+                "obligation": claim.obligation,
+                "evidence_id": claim.evidence_id,
+                "passed": reason is None,
+                "reason": reason,
+            }
+        )
+    needed = {"source", "sink", "flow", "guard"}
+    report["missing"] = sorted(needed - satisfied)
+    invalid = any(not check["passed"] for check in report["checks"])
+    report["status"] = (
+        "invalid_claims"
+        if invalid
+        else "insufficient_evidence"
+        if report["missing"]
+        else "exploratory_supported_for_review"
+    )
+    report["passed"] = report["status"] == "exploratory_supported_for_review"
+    return report
 
 
 def _assess_supported(bundle, decision, policy):
