@@ -4,13 +4,13 @@ import pytest
 from conftest import row
 from typer.testing import CliRunner
 
-from traceproof import batch_scan
-from traceproof.artifacts import ArtifactStore
-from traceproof.cli import app
-from traceproof.domain import TraceProofError
-from traceproof.import_controls import control_status, set_control
-from traceproof.intake import import_status, process, submit
-from traceproof.persistence import Run, exclusive_worker
+from veriflow import batch_scan
+from veriflow.artifacts import ArtifactStore
+from veriflow.cli import app
+from veriflow.domain import VeriFlowError
+from veriflow.import_controls import control_status, set_control
+from veriflow.intake import import_status, process, submit
+from veriflow.persistence import Run, exclusive_worker
 
 
 def test_pause_resume_idempotency_and_cli(store, archive, manifest):
@@ -19,9 +19,9 @@ def test_pause_resume_idempotency_and_cli(store, archive, manifest):
     first = set_control(store, batch, "paused", "pause", "Maintenance", 0)
     assert set_control(store, batch, "paused", "pause", "Maintenance", 0) == first
     assert process(store, ArtifactStore(store.root), batch)["items"][0]["state"] == "ready"
-    with pytest.raises(TraceProofError, match="revision"):
+    with pytest.raises(VeriFlowError, match="revision"):
         set_control(store, batch, "active", "resume", "Ready", 0)
-    with pytest.raises(TraceProofError, match="different"):
+    with pytest.raises(VeriFlowError, match="different"):
         set_control(store, batch, "active", "pause", "Ready", 1)
     result = CliRunner().invoke(
         app,
@@ -103,6 +103,10 @@ def test_upgrade_preserves_imports(store, archive, manifest):
     batch = submit(store, manifest([row(archive)]), archive.parent, "migration")
     before = import_status(store, batch)["items"]
     with store.engine.begin() as connection:
+        connection.exec_driver_sql("DROP TABLE rule_approvals")
+        connection.exec_driver_sql("DROP TABLE rule_registries")
+        connection.exec_driver_sql("DROP TABLE rule_drafts")
+        connection.exec_driver_sql("DROP TABLE discovery_calls")
         connection.exec_driver_sql("DROP TABLE import_controls")
         connection.exec_driver_sql("UPDATE alembic_version SET version_num='0008'")
     store.initialize()

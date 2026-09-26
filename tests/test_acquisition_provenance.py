@@ -6,9 +6,9 @@ import pytest
 from test_git_acquisition import run
 from test_git_acquisition import source_repo as source_repo
 
-from traceproof.artifacts import ArtifactStore
-from traceproof.intake import process, submit
-from traceproof.reports import get_report, publish_report, render_report
+from veriflow.artifacts import ArtifactStore
+from veriflow.intake import process, submit
+from veriflow.reports import get_report, publish_report, render_report
 
 
 def rewrite_csv(path, updates):

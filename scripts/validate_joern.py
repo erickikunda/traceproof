@@ -71,7 +71,7 @@ def main():
         "network_isolated": False,
         "llm_calls": 0,
         "rule_sha256": hashlib.sha256(
-            (ROOT / "src/traceproof/queries/joern-java-flow.sc").read_bytes()
+            (ROOT / "src/veriflow/queries/joern-java-flow.sc").read_bytes()
         ).hexdigest(),
     }
     expected = {
@@ -103,7 +103,7 @@ def main():
                 str(home / "joern"),
                 "-J-Xmx2g",
                 "--script",
-                str(ROOT / "src/traceproof/queries/joern-java-flow.sc"),
+                str(ROOT / "src/veriflow/queries/joern-java-flow.sc"),
                 "--param",
                 f"cpgFile={cpg}",
                 "--param",

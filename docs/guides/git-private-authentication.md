@@ -20,7 +20,7 @@ Kubernetes Secret projection symlinks are supported. Keep the file stable throug
 each row reads it anew, permitting operator rotation between separate acquisitions.
 
 ```sh
-traceproof acquire-git-csv /staging/repositories.csv /staging/new-batch \
+veriflow acquire-git-csv /staging/repositories.csv /staging/new-batch \
   --allowed-host git.example.invalid \
   --credential-file /secrets/git-reader.json \
   --ca-bundle /config/corporate-ca.pem

@@ -2,7 +2,7 @@ import copy
 
 import pytest
 
-from traceproof.scan_identity import analysis_identity
+from veriflow.scan_identity import analysis_identity
 
 
 def configuration():

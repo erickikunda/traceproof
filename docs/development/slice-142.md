@@ -26,7 +26,7 @@ lockfile of a scanned repository is parsed anywhere in the codebase, so the docu
 no package identities, no Package URLs, no resolved transitive dependencies and no license
 inventory. The `vulnerabilities` array is absent by construction; no vulnerability position
 is established. It is not a supply-chain attestation and is unsigned. It is unrelated to the
-container image SBOM discussed in the implementation plan, which describes TraceProof itself.
+container image SBOM discussed in the implementation plan, which describes VeriFlow itself.
 
 Next: tier 2 of the [SBOM and OSV export roadmap](../plans/sbom-osv-export.md) — a bounded
 dependency discovery stage emitting candidate components with explicit pinned/unpinned

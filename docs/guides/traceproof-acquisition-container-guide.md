@@ -10,10 +10,10 @@ an authorization boundary preventing an operator from overriding the entrypoint.
 
 ```sh
 uv build
-docker build -f containers/Containerfile.git-acquisition -t traceproof:git-acquisition-linux-poc .
+docker build -f containers/Containerfile.git-acquisition -t veriflow:git-acquisition-linux-poc .
 uv run python scripts/validate_acquisition_handoff.py \
-  --acquisition-image traceproof:git-acquisition-linux-poc \
-  --scanner-image traceproof:ocp-smoke-linux-poc work/acquisition-handoff
+  --acquisition-image veriflow:git-acquisition-linux-poc \
+  --scanner-image veriflow:ocp-smoke-linux-poc work/acquisition-handoff
 ```
 
 Use a fresh output directory. The rehearsal fetches the public zserge/jsmn repository and
@@ -26,7 +26,7 @@ the positive/negative scanner acceptance basis.
 ## Mount and stage contract
 
 Acquisition reads /input/repositories.csv (read-only) and writes /handoff/batch. Its entrypoint
-is `traceproof acquire-git-csv`; positional manifest/output arguments and --allowed-host are
+is `veriflow acquire-git-csv`; positional manifest/output arguments and --allowed-host are
 explicitly supplied. The same CSV/host/ref/time/content limits apply as local acquisition.
 For example, after setting up approved input and writable handoff mounts, the image arguments
 are `/input/repositories.csv /handoff/batch --allowed-host github.com --max-rows 2 --timeout 300`.
@@ -54,7 +54,7 @@ the original repository list. The rehearsal deliberately verifies this distincti
 ## Identity and operational limits
 
 The tested artifacts are recorded in containers/git-acquisition-image.json. The application
-input hash file and acquisition-packages.txt are inside /opt/traceproof. These are inventory
+input hash file and acquisition-packages.txt are inside /opt/veriflow. These are inventory
 records, not a full SBOM, source signature or bank approval. Tags are mutable; use verified
 image digests for handoff. Scanner and acquisition images may contain different application
 builds while sharing the qualified receipt/CSV contract; the exact tested pairing is recorded.

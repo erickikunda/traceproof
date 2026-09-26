@@ -1,4 +1,4 @@
-# TraceProof documentation
+# VeriFlow documentation
 
 Start with the [CLI user/operator guide](guides/cli-operator-guide.md) for the laptop workflow,
 status interpretation, reports and recovery. The API companion guide will ship with the

@@ -1,7 +1,7 @@
 # Slice 27: verified original SARIF export
 
 ```bash
-uv run traceproof get-sarif REPO_ID ATTEMPT_ID > results.sarif
+uv run veriflow get-sarif REPO_ID ATTEMPT_ID > results.sarif
 ```
 
 This read-only command returns the original SARIF bytes, without a JSON wrapper or
@@ -23,7 +23,7 @@ URI is fetched or executed. Viewer compatibility depends on the consumer; this s
 preserves CodeQL output rather than certifying a particular viewer or cloud upload.
 
 Partial output remains partial. Candidate alerts are not confirmed vulnerabilities,
-and an empty results array is not a clean verdict. Use the matching TraceProof report
+and an empty results array is not a clean verdict. Use the matching VeriFlow report
 for readiness, limitations and advisory/operator state; these are not injected into
 the original CodeQL SARIF. Historical files removed by retention cannot be recreated
 by this command. Local OS permissions remain the access boundary.

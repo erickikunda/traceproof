@@ -9,16 +9,16 @@ from test_joern_claims import review_decision
 from test_slice03 import captured_source as captured_source
 from test_triage import policy
 
-from traceproof import joern, pipeline
-from traceproof.bundles import build_bundle
-from traceproof.claims import assess_evidence
-from traceproof.joern_claims import CSHARP_POLICY, assess_review_evidence, review_preflight
-from traceproof.joern_csharp import PATCHED_SHA256
-from traceproof.persistence import ScanAttempt
-from traceproof.reports import get_report
-from traceproof.scan_advisory import AdvisoryOptions
-from traceproof.scanning import scan_report
-from traceproof.triage import set_budget, triage
+from veriflow import joern, pipeline
+from veriflow.bundles import build_bundle
+from veriflow.claims import assess_evidence
+from veriflow.joern_claims import CSHARP_POLICY, assess_review_evidence, review_preflight
+from veriflow.joern_csharp import PATCHED_SHA256
+from veriflow.persistence import ScanAttempt
+from veriflow.reports import get_report
+from veriflow.scan_advisory import AdvisoryOptions
+from veriflow.scanning import scan_report
+from veriflow.triage import set_budget, triage
 
 
 @pytest.fixture(params=["core", "mvc", "webapi"])
@@ -32,7 +32,7 @@ def csharp_bundle(request, store, captured_source, tmp_path, monkeypatch):
     (home / "lib").mkdir(parents=True)
     (home / "lib" / f"io.joern.joern-cli-{joern.VERSION}.jar").touch()
     monkeypatch.setattr(
-        "traceproof.joern_csharp.repaired_frontend",
+        "veriflow.joern_csharp.repaired_frontend",
         lambda *args: (
             ["trusted-tool"],
             {
@@ -56,7 +56,7 @@ def csharp_bundle(request, store, captured_source, tmp_path, monkeypatch):
                     {
                         "schema_version": "2",
                         "engine_id": "joern",
-                        "rule_id": "traceproof/joern-csharp-lookup-commandtext-v1",
+                        "rule_id": "veriflow/joern-csharp-lookup-commandtext-v1",
                         "represented_csharp_files": ["Controller.cs"],
                         "source_count": 1,
                         "sink_count": 1,
@@ -149,7 +149,7 @@ def test_cost_and_retry_controls(store, csharp_bundle, monkeypatch, stop):
     if stop == "evidence":
         altered = deepcopy(b)
         altered.pop("joern_native_audit")
-        monkeypatch.setattr("traceproof.triage.get_bundle", lambda *args: altered)
+        monkeypatch.setattr("veriflow.triage.get_bundle", lambda *args: altered)
     result = triage(store, b["bundle_id"], policy(), adapter, "csharp", review_policy=CSHARP_POLICY)
     assert (
         result["state"]

@@ -4,9 +4,9 @@ import pytest
 from test_dependency_discovery import snapshot as snapshot
 from test_osv_matching import database as database
 
-from traceproof.go_symbols import default_identifier, import_bindings
-from traceproof.osv_export import export_osv
-from traceproof.sbom_export import export_sbom
+from veriflow.go_symbols import default_identifier, import_bindings
+from veriflow.osv_export import export_osv
+from veriflow.sbom_export import export_sbom
 
 MODULE = "github.com/gin-gonic/gin"
 GOMOD = f"module github.com/example/app\nrequire {MODULE} v1.9.1\n"
@@ -70,11 +70,11 @@ def test_referenced_symbol_is_evidence(store, snapshot, database):
     source = f'package main\n\nimport "{MODULE}"\n\nfunc main() {{ gin.Parse() }}\n'
     repo, snapshot_id = snapshot({"go.mod": GOMOD, "main.go": source})
     found, properties, coverage = evidence_of(store, repo, snapshot_id, database([advisory()]))
-    assert properties["traceproof:go_symbol_evidence"] == "symbol_referenced"
-    assert properties["traceproof:go_symbols_referenced"] == "Parse"
+    assert properties["veriflow:go_symbol_evidence"] == "symbol_referenced"
+    assert properties["veriflow:go_symbols_referenced"] == "Parse"
     # Evidence prioritizes; it never adjudicates.
     assert found[0]["analysis"]["state"] == "in_triage"
-    assert coverage["traceproof:go_symbol_analysis"] == (
+    assert coverage["veriflow:go_symbol_analysis"] == (
         "package and symbol references; not reachability"
     )
 
@@ -83,7 +83,7 @@ def test_aliased_import_is_resolved(store, snapshot, database):
     source = f'package main\n\nimport g "{MODULE}"\n\nfunc main() {{ g.Parse() }}\n'
     repo, snapshot_id = snapshot({"go.mod": GOMOD, "main.go": source})
     _, properties, _ = evidence_of(store, repo, snapshot_id, database([advisory()]))
-    assert properties["traceproof:go_symbol_evidence"] == "symbol_referenced"
+    assert properties["veriflow:go_symbol_evidence"] == "symbol_referenced"
 
 
 def test_method_symbol_is_searched_by_its_receiver(store, snapshot, database):
@@ -92,16 +92,16 @@ def test_method_symbol_is_searched_by_its_receiver(store, snapshot, database):
     _, properties, _ = evidence_of(
         store, repo, snapshot_id, database([advisory(symbols=("Decoder.Decode",))])
     )
-    assert properties["traceproof:go_symbol_evidence"] == "symbol_referenced"
-    assert properties["traceproof:go_symbols_referenced"] == "Decoder.Decode"
+    assert properties["veriflow:go_symbol_evidence"] == "symbol_referenced"
+    assert properties["veriflow:go_symbols_referenced"] == "Decoder.Decode"
 
 
 def test_imported_without_the_named_symbol(store, snapshot, database):
     source = f'package main\n\nimport "{MODULE}"\n\nfunc main() {{ gin.Other() }}\n'
     repo, snapshot_id = snapshot({"go.mod": GOMOD, "main.go": source})
     _, properties, _ = evidence_of(store, repo, snapshot_id, database([advisory()]))
-    assert properties["traceproof:go_symbol_evidence"] == "package_imported"
-    assert "traceproof:go_symbols_referenced" not in properties
+    assert properties["veriflow:go_symbol_evidence"] == "package_imported"
+    assert "veriflow:go_symbols_referenced" not in properties
 
 
 def test_vulnerable_package_not_imported_is_not_a_safety_conclusion(store, snapshot, database):
@@ -110,7 +110,7 @@ def test_vulnerable_package_not_imported_is_not_a_safety_conclusion(store, snaps
     found, properties, _ = evidence_of(
         store, repo, snapshot_id, database([advisory(path=f"{MODULE}/render")])
     )
-    assert properties["traceproof:go_symbol_evidence"] == "package_not_imported"
+    assert properties["veriflow:go_symbol_evidence"] == "package_not_imported"
     # The candidate survives unchanged; only its priority differs.
     assert found[0]["analysis"]["state"] == "in_triage"
     assert [v["id"] for v in found] == ["GO-2023-0001"]
@@ -120,21 +120,21 @@ def test_advisory_without_symbol_data_is_named_as_such(store, snapshot, database
     source = f'package main\n\nimport "{MODULE}"\n\nfunc main() {{ gin.Parse() }}\n'
     repo, snapshot_id = snapshot({"go.mod": GOMOD, "main.go": source})
     _, properties, coverage = evidence_of(store, repo, snapshot_id, database([plain_advisory()]))
-    assert properties["traceproof:go_symbol_evidence"] == "no_symbol_data"
-    assert coverage["traceproof:go_advisories_with_symbol_data"] == "0"
+    assert properties["veriflow:go_symbol_evidence"] == "no_symbol_data"
+    assert coverage["veriflow:go_advisories_with_symbol_data"] == "0"
 
 
 def test_no_go_source_is_not_evaluated(store, snapshot, database):
     repo, snapshot_id = snapshot({"go.mod": GOMOD})
     _, properties, _ = evidence_of(store, repo, snapshot_id, database([advisory()]))
-    assert properties["traceproof:go_symbol_evidence"] == "not_evaluated"
+    assert properties["veriflow:go_symbol_evidence"] == "not_evaluated"
 
 
 def test_blank_import_yields_no_symbol_reference(store, snapshot, database):
     source = f'package main\n\nimport _ "{MODULE}"\n'
     repo, snapshot_id = snapshot({"go.mod": GOMOD, "main.go": source})
     _, properties, _ = evidence_of(store, repo, snapshot_id, database([advisory()]))
-    assert properties["traceproof:go_symbol_evidence"] == "package_imported"
+    assert properties["veriflow:go_symbol_evidence"] == "package_imported"
 
 
 def test_dot_imports_are_counted_as_unresolvable(store, snapshot, database):
@@ -142,15 +142,15 @@ def test_dot_imports_are_counted_as_unresolvable(store, snapshot, database):
     repo, snapshot_id = snapshot({"go.mod": GOMOD, "main.go": source})
     _, properties, coverage = evidence_of(store, repo, snapshot_id, database([advisory()]))
     # Symbols are in scope unqualified, so no reference is nameable.
-    assert properties["traceproof:go_symbol_evidence"] == "package_imported"
-    assert coverage["traceproof:go_dot_imports_unresolvable"] == "1"
+    assert properties["veriflow:go_symbol_evidence"] == "package_imported"
+    assert coverage["veriflow:go_dot_imports_unresolvable"] == "1"
 
 
 def test_symbol_match_does_not_cross_an_identifier_boundary(store, snapshot, database):
     source = f'package main\n\nimport "{MODULE}"\n\nfunc main() {{ gin.ParseAll() }}\n'
     repo, snapshot_id = snapshot({"go.mod": GOMOD, "main.go": source})
     _, properties, _ = evidence_of(store, repo, snapshot_id, database([advisory()]))
-    assert properties["traceproof:go_symbol_evidence"] == "package_imported"
+    assert properties["veriflow:go_symbol_evidence"] == "package_imported"
 
 
 def test_platform_constraints_are_recorded_not_applied(store, snapshot, database):
@@ -159,8 +159,8 @@ def test_platform_constraints_are_recorded_not_applied(store, snapshot, database
     path = database([advisory(goos=["windows"], goarch=["arm"])])
     _, properties, coverage = evidence_of(store, repo, snapshot_id, path)
     # The target platform is unknown, so a constraint narrows nothing.
-    assert properties["traceproof:go_symbol_evidence"] == "symbol_referenced"
-    assert coverage["traceproof:go_platform_filtering"] == "none"
+    assert properties["veriflow:go_symbol_evidence"] == "symbol_referenced"
+    assert coverage["veriflow:go_platform_filtering"] == "none"
 
 
 def test_non_go_ecosystems_get_no_symbol_evidence(store, snapshot, database):
@@ -173,7 +173,7 @@ def test_non_go_ecosystems_get_no_symbol_evidence(store, snapshot, database):
     repo, snapshot_id = snapshot({"package-lock.json": lock, "src/a.js": 'require("lodash");'})
     found, properties, _ = evidence_of(store, repo, snapshot_id, database([npm]))
     assert [v["id"] for v in found] == ["GHSA-npm"]
-    assert "traceproof:go_symbol_evidence" not in properties
+    assert "veriflow:go_symbol_evidence" not in properties
 
 
 def test_osv_export_carries_symbol_evidence_and_its_limits(store, snapshot, database):
@@ -182,13 +182,13 @@ def test_osv_export_carries_symbol_evidence_and_its_limits(store, snapshot, data
     path = database([advisory()])
     document = json.loads(export_osv(store, repo, snapshot_id, path, usage=True))
     package = document["results"][0]["packages"][0]
-    carried = package["vulnerabilities"][0]["traceproof"]
+    carried = package["vulnerabilities"][0]["veriflow"]
     assert carried["symbol_evidence"] == "symbol_referenced"
     assert carried["symbols_referenced"] == ["Parse"]
-    coverage = document["traceproof"]["go_symbol_coverage"]
+    coverage = document["veriflow"]["go_symbol_coverage"]
     assert coverage["call_graph_resolved"] is False
     assert coverage["third_party_source_available"] is False
-    assert any("unaffected" in line for line in document["traceproof"]["limitations"])
+    assert any("unaffected" in line for line in document["veriflow"]["limitations"])
 
 
 def test_symbol_evidence_is_deterministic(store, snapshot, database):

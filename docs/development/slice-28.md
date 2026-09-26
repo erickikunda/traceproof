@@ -7,8 +7,8 @@ Zero/negative automatic core selection is deliberately excluded so requests stay
 These are application policy bounds, not a statement about available machine capacity.
 
 ```bash
-uv run traceproof scan-run RUN_ID /absolute/approved.ql --threads 1 --ram-mb 4096
-uv run traceproof scan-import IMPORT_ID /absolute/approved.ql --limit 5 --threads 2 --ram-mb 4096
+uv run veriflow scan-run RUN_ID /absolute/approved.ql --threads 1 --ram-mb 4096
+uv run veriflow scan-import IMPORT_ID /absolute/approved.ql --limit 5 --threads 2 --ram-mb 4096
 ```
 
 Pipeline commands use the same settings for extraction and query execution. Individual

@@ -8,7 +8,7 @@ field model. The explicit content type provides HTML context; a generic send cal
 is not enough for this profile.
 
 ```sh
-traceproof --state-dir /path/to/state scan-run RUN_ID --engine joern \
+veriflow --state-dir /path/to/state scan-run RUN_ID --engine joern \
   --language javascript --joern-home /path/to/joern-cli \
   --joern-profile express-html-send-v1
 ```

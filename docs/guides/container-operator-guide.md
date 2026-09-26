@@ -3,7 +3,7 @@
 This is the first OCP preparation image, qualified locally for synthetic Python, Java/Spring and C#/classic ASP.NET
 source-only scan acceptance on Linux ARM64. It is not an OCP-certified deployment. No OpenShift
 installation is needed on the laptop. Docker Desktop and uv are required for the
-following commands; run from the TraceProof checkout.
+following commands; run from the VeriFlow checkout.
 
 ## Build
 
@@ -12,7 +12,7 @@ uv run python scripts/build_container.py
 ```
 
 Preparation downloads the checksum-pinned CodeQL 2.27.0 Linux ARM64 bundle into ignored
-work/container-inputs, downloads/verifies the pinned Linux JDK, builds the application wheel and builds traceproof:linux-poc.
+work/container-inputs, downloads/verifies the pinned Linux JDK, builds the application wheel and builds veriflow:linux-poc.
 The UBI9 Python 3.12 image is pinned by manifest digest in containers/Containerfile.
 Python runtime dependencies are installed from containers/requirements.lock with hash
 verification and wheels only. Build needs registry/PyPI/GitHub access; runtime does not.
@@ -106,7 +106,7 @@ verification. LLM calls remain untested in this network-disabled acceptance run.
 ### Python interpreter selection
 
 UBI's S2I shell startup normally prepends /opt/app-root/bin. The application image
-sets BASH_ENV=/dev/null, and validation uses the absolute TraceProof virtual-environment
+sets BASH_ENV=/dev/null, and validation uses the absolute VeriFlow virtual-environment
 interpreter for fixture scripts and package inventory. This avoids silently selecting
 a different Python environment when starting the container through bash.
 
@@ -115,7 +115,7 @@ a different Python environment when starting the container through bash.
 CodeQL build-mode=none can infer missing dependency artifacts and fetch them from
 Maven Central. Detailed javac-extractor logs from the historical macOS run show fetches;
 the offline Linux run logs show failed Spring artifact downloads and unresolved
-annotation symbols. The traceproof profile name dependency-free describes operator
+annotation symbols. The veriflow profile name dependency-free describes operator
 inputs, not extractor network behavior. Keep external network denied when testing
 untrusted/bank source and do not treat zero candidates as a clean verdict. Reports
 remain incomplete. Slice 50 supports --java-dependency-profile for approved pre-provisioned JARs. The
@@ -130,7 +130,7 @@ The Spring acceptance suites pass --java-dependency-profile automatically; other
 scans must select their own approved matching profile.
 
 ```sh
-traceproof scan-run RUN_ID JAVA_QUERY --language java --java-dependency-profile DEPENDENCY_ROOT/java-profile.json
+veriflow scan-run RUN_ID JAVA_QUERY --language java --java-dependency-profile DEPENDENCY_ROOT/java-profile.json
 uv run python scripts/pin_java_dependencies.py DEPENDENCY_ROOT --repository maven-repository --artifact org.example:library:jar:1.0
 ```
 
@@ -145,7 +145,7 @@ A profile is not a network sandbox or a complete dependency-resolution guarantee
 CodeQL can still attempt inferred downloads for other unresolved symbols; the container
 blocks those attempts. Even the passing fixture logs contain blocked fetch attempts.
 Keep Docker --network none or future OCP egress policy in place. Reports retain
-network_denial_verified=false because TraceProof does not attest the external Docker
+network_denial_verified=false because VeriFlow does not attest the external Docker
 policy; runtime.json/container-config.json are the separate local enforcement evidence.
 Reports remain incomplete; no general framework reachability or production readiness
 is inferred from the fixture results.
@@ -156,7 +156,7 @@ Preparation verifies Microsoft's published SHA-512 for the .NET 10.0.100 Linux A
 SDK and the pinned SHA-256 for Microsoft.NETFramework.ReferenceAssemblies.net48 1.0.3.
 Only reference DLLs are extracted from that package. An additional committed DLL
 inventory is checked at image build, before generating the SDK/reference profile.
-The generated profile is /opt/traceproof/csharp-dependencies/profile.json. It is
+The generated profile is /opt/veriflow/csharp-dependencies/profile.json. It is
 separate from the laptop's macOS SDK profile. Runtime rechecks the complete inventory.
 
 --suite csharp runs the raw socket/SQL fixture pair; --suite csharp-classic runs the
@@ -174,7 +174,7 @@ can run on OCP. No shared-PVC/SQLite durability or OCP SCC/SELinux testing is cl
 
 ### ASP.NET Core MVC (Slice 52)
 
-`--suite csharp-core` selects `/opt/traceproof/csharp-dependencies/core-profile.json`.
+`--suite csharp-core` selects `/opt/veriflow/csharp-dependencies/core-profile.json`.
 The image creates this profile from the already checksum-pinned .NET SDK 10.0.100,
 using its .NETCore.App.Ref and AspNetCore.App.Ref 10.0.0 reference packs. The SDK and
 reference files are inventoried and verified by the existing profile loader; runtime
@@ -203,7 +203,7 @@ network denial is external; the application does not claim to attest it.
 
 ### Classic ASP.NET Web API (Slice 54)
 
-`--suite csharp-webapi` selects `/opt/traceproof/csharp-dependencies/webapi-profile.json`.
+`--suite csharp-webapi` selects `/opt/veriflow/csharp-dependencies/webapi-profile.json`.
 This separate profile combines net48 with selected DLLs from Web API Core 5.3.0,
 Web API Client 6.0.0 and Json.NET 13.0.3. `containers/webapi-packages.json` records the
 NuGet URLs, package SHA-256s and exact DLL SHA-256s. Build preparation fetches and
@@ -223,7 +223,7 @@ is not executed; bank OCP validation remains a later acceptance gate.
 
 ### Classic ASP.NET MVC (Slice 55)
 
-`--suite csharp-mvc` selects `/opt/traceproof/csharp-dependencies/mvc-profile.json`.
+`--suite csharp-mvc` selects `/opt/veriflow/csharp-dependencies/mvc-profile.json`.
 It combines net48 with six selected DLLs from MVC 5.3.0, Web Pages 3.3.0 and Razor
 3.3.0. `containers/mvc-packages.json` pins official NuGet package URLs, archive hashes
 and individual assembly hashes. The shared classic profile builder verifies the exact
@@ -302,9 +302,9 @@ JDK TAR.GZ), then run:
 
 ```sh
 uv build
-docker build -f containers/Containerfile.joern -t traceproof:joern-linux-poc .
+docker build -f containers/Containerfile.joern -t veriflow:joern-linux-poc .
 uv run python scripts/validate_container.py work/joern-linux-check \
-  --suite joern --image traceproof:joern-linux-poc
+  --suite joern --image veriflow:joern-linux-poc
 ```
 
 The output directory must be new. The harness resolves the immutable image ID and runs
@@ -339,11 +339,11 @@ work/container-inputs/AstCreator.scala; the build helper checks its SHA-256.
 
 ```sh
 uv build
-docker image inspect traceproof:joern-linux-poc --format '{{.Id}}'
+docker image inspect veriflow:joern-linux-poc --format '{{.Id}}'
 docker build --network=none -f containers/Containerfile.joern-csharp \
-  -t traceproof:joern-csharp-linux-poc .
+  -t veriflow:joern-csharp-linux-poc .
 uv run python scripts/validate_container.py work/joern-csharp-linux-new \
-  --suite joern-csharp --image traceproof:joern-csharp-linux-poc
+  --suite joern-csharp --image veriflow:joern-csharp-linux-poc
 ```
 
 The recipe defaults to a local base tag; record/verify its immutable ID against the
@@ -377,9 +377,9 @@ throughput or validate PostgreSQL, cluster scheduling, or bank OCP deployment.
 ```sh
 uv build
 docker build --network=none -f containers/Containerfile.joern-python \
-  -t traceproof:joern-python-linux-poc .
+  -t veriflow:joern-python-linux-poc .
 uv run python scripts/validate_container.py work/joern-python-linux-new \
-  --suite joern-python --image traceproof:joern-python-linux-poc
+  --suite joern-python --image veriflow:joern-python-linux-poc
 ```
 
 Uses the same trusted local Joern base and records the final immutable image ID.
@@ -396,11 +396,11 @@ or throughput qualification.
 ```sh
 uv build
 docker build --network=none -f containers/Containerfile.joern-javascript \
-  -t traceproof:joern-javascript-linux-poc .
+  -t veriflow:joern-javascript-linux-poc .
 uv run python scripts/validate_container.py work/joern-js-linux-new \
-  --suite joern-javascript --image traceproof:joern-javascript-linux-poc
+  --suite joern-javascript --image veriflow:joern-javascript-linux-poc
 uv run python scripts/validate_container.py work/joern-ts-linux-new \
-  --suite joern-typescript --image traceproof:joern-javascript-linux-poc
+  --suite joern-typescript --image veriflow:joern-javascript-linux-poc
 ```
 
 The shared image uses the trusted local Joern base; each run records its immutable ID.
@@ -416,9 +416,9 @@ checks, not full framework, mixed-language, production capacity or OCP qualifica
 ```sh
 uv build
 docker build --network=none -f containers/Containerfile.joern-go \
-  -t traceproof:joern-go-linux-poc .
+  -t veriflow:joern-go-linux-poc .
 uv run python scripts/validate_container.py work/joern-go-linux-new \
-  --suite joern-go --image traceproof:joern-go-linux-poc
+  --suite joern-go --image veriflow:joern-go-linux-poc
 ```
 
 This local image layer uses the trusted Joern base; the runner records its immutable ID.
@@ -438,9 +438,9 @@ and `work/container-inputs/rust-src.tar.xz`. The image build checks both digests
 ```sh
 uv build
 docker build --network=none -f containers/Containerfile.joern-rust \
-  -t traceproof:joern-rust-linux-poc .
+  -t veriflow:joern-rust-linux-poc .
 uv run python scripts/validate_container.py work/joern-rust-linux-new \
-  --suite joern-rust --image traceproof:joern-rust-linux-poc
+  --suite joern-rust --image veriflow:joern-rust-linux-poc
 ```
 
 The Rust runtime uses digest-pinned UBI 10 Python 3.12 Minimal because the bundled
@@ -457,11 +457,11 @@ OCP deployment or production capacity. HTML/JSON and runtime evidence are export
 ```sh
 uv build
 docker build --network=none -f containers/Containerfile.joern-c-family \
-  -t traceproof:joern-c-family-linux-poc .
+  -t veriflow:joern-c-family-linux-poc .
 uv run python scripts/validate_container.py work/joern-c-linux-new \
-  --suite joern-c --image traceproof:joern-c-family-linux-poc
+  --suite joern-c --image veriflow:joern-c-family-linux-poc
 uv run python scripts/validate_container.py work/joern-cpp-linux-new \
-  --suite joern-cpp --image traceproof:joern-c-family-linux-poc
+  --suite joern-cpp --image veriflow:joern-c-family-linux-poc
 ```
 
 Run sequentially on the laptop. Each suite reuses five existing fixtures: single-file
@@ -476,9 +476,9 @@ are exported. No LLM calls, application build or production capacity/OCP qualifi
 ```sh
 uv build
 docker build --network=none -f containers/Containerfile.joern-pipeline \
-  -t traceproof:joern-pipeline-linux-poc .
+  -t veriflow:joern-pipeline-linux-poc .
 uv run python scripts/validate_container.py work/joern-pipeline-linux-new \
-  --suite joern-pipeline --image traceproof:joern-pipeline-linux-poc
+  --suite joern-pipeline --image veriflow:joern-pipeline-linux-poc
 ```
 
 The existing Python fixtures exercise scan-import, auto language selection, exact-attempt
@@ -493,9 +493,9 @@ in their own sections. No LLM calls, distributed scheduling or OCP qualification
 ```sh
 uv build
 docker build --network=none -f containers/Containerfile.joern-flask \
-  -t traceproof:joern-flask-linux-poc .
+  -t veriflow:joern-flask-linux-poc .
 uv run python scripts/validate_container.py work/joern-flask-linux-new \
-  --suite joern-flask --image traceproof:joern-flask-linux-poc
+  --suite joern-flask --image veriflow:joern-flask-linux-poc
 ```
 
 Eight cases cover direct and cross-file vulnerable/fixed pairs, renamed/aliased input,
@@ -512,11 +512,11 @@ base described above, then run the suites sequentially within Docker Desktop's m
 ```sh
 uv build
 docker build --network=none -f containers/Containerfile.joern-express \
-  -t traceproof:joern-express-poc .
+  -t veriflow:joern-express-poc .
 uv run python scripts/validate_container.py work/express-js-acceptance \
-  --suite joern-express-javascript --image traceproof:joern-express-poc
+  --suite joern-express-javascript --image veriflow:joern-express-poc
 uv run python scripts/validate_container.py work/express-ts-acceptance \
-  --suite joern-express-typescript --image traceproof:joern-express-poc
+  --suite joern-express-typescript --image veriflow:joern-express-poc
 ```
 
 Each suite exercises eight synthetic cases through CSV intake, automatic language
@@ -530,9 +530,9 @@ No LLM calls are made. Laptop Linux acceptance does not qualify deployment to ba
 ```sh
 uv build
 docker build --network=none -f containers/Containerfile.joern-go-http \
-  -t traceproof:joern-go-http-poc .
+  -t veriflow:joern-go-http-poc .
 uv run python scripts/validate_container.py work/go-http-acceptance \
-  --suite joern-go-http --image traceproof:joern-go-http-poc
+  --suite joern-go-http --image veriflow:joern-go-http-poc
 ```
 
 Use the pinned Joern base prepared above. Nine synthetic cases cover direct/cross-package
@@ -548,11 +548,11 @@ Linux acceptance; bank OCP deployment testing remains a separate deferred gate.
 ```sh
 uv build
 docker build --network=none -f containers/Containerfile.joern-argv \
-  -t traceproof:joern-argv-poc .
+  -t veriflow:joern-argv-poc .
 uv run python scripts/validate_container.py work/argv-c-acceptance \
-  --suite joern-argv-c --image traceproof:joern-argv-poc
+  --suite joern-argv-c --image veriflow:joern-argv-poc
 uv run python scripts/validate_container.py work/argv-cpp-acceptance \
-  --suite joern-argv-cpp --image traceproof:joern-argv-poc
+  --suite joern-argv-cpp --image veriflow:joern-argv-poc
 ```
 
 Use the pinned Joern base prepared above and run the suites sequentially. Each suite has
@@ -568,9 +568,9 @@ reports and immutable image identity. Actual bank OCP testing remains a deferred
 ```sh
 uv build
 docker build --network=none -f containers/Containerfile.joern-rust-env \
-  -t traceproof:joern-rust-env-poc .
+  -t veriflow:joern-rust-env-poc .
 uv run python scripts/validate_container.py work/rust-env-acceptance \
-  --suite joern-rust-env --image traceproof:joern-rust-env-poc
+  --suite joern-rust-env --image veriflow:joern-rust-env-poc
 ```
 
 This layer uses the previously prepared pinned Rust UBI 10 image and its /opt/rust
@@ -589,9 +589,9 @@ acceptance; bank OCP execution and base-image approval are deferred gates.
 ```sh
 uv build
 docker build --network=none -f containers/Containerfile.joern-spring-evidence \
-  -t traceproof:joern-spring-evidence-poc .
+  -t veriflow:joern-spring-evidence-poc .
 uv run python scripts/validate_container.py work/spring-evidence-acceptance \
-  --suite joern-spring-evidence --image traceproof:joern-spring-evidence-poc
+  --suite joern-spring-evidence --image veriflow:joern-spring-evidence-poc
 ```
 
 Seven existing Java fixtures exercise native discovery and report publication. Vulnerable
@@ -606,9 +606,9 @@ runner and deferred bank OCP gate apply.
 ```sh
 uv build
 docker build --network=none -f containers/Containerfile.joern-spring-advisory \
-  -t traceproof:joern-spring-advisory-poc .
+  -t veriflow:joern-spring-advisory-poc .
 uv run python scripts/validate_container.py work/spring-advisory-acceptance \
-  --suite joern-spring-advisory --image traceproof:joern-spring-advisory-poc
+  --suite joern-spring-advisory --image veriflow:joern-spring-advisory-poc
 ```
 
 Seven fresh Java scan cases are reused. The two positive cross-file candidates each receive
@@ -623,9 +623,9 @@ OCP acceptance remains deferred.
 ```sh
 uv build
 docker build --network=none -f containers/Containerfile.joern-workflow-advisory \
-  -t traceproof:joern-workflow-advisory-poc .
+  -t veriflow:joern-workflow-advisory-poc .
 uv run python scripts/validate_container.py work/workflow-advisory-acceptance \
-  --suite joern-workflow-advisory --image traceproof:joern-workflow-advisory-poc
+  --suite joern-workflow-advisory --image veriflow:joern-workflow-advisory-poc
 ```
 
 Seven native Java cases use the main scan-import path with preconfigured budgets and an
@@ -641,9 +641,9 @@ Using the locally prepared Joern base image:
 ```sh
 uv build
 docker build -f containers/Containerfile.joern-flask-advisory \
-  -t traceproof:joern-flask-advisory-linux-poc .
+  -t veriflow:joern-flask-advisory-linux-poc .
 uv run python scripts/validate_container.py --suite joern-flask-advisory \
-  --image traceproof:joern-flask-advisory-linux-poc work/flask-advisory-acceptance
+  --image veriflow:joern-flask-advisory-linux-poc work/flask-advisory-acceptance
 ```
 
 Choose a new output directory. Eight native fixture cases exercise discovery and three
@@ -659,11 +659,11 @@ Build the Joern acceptance layer with the updated hash-pinned Python requirement
 ```sh
 uv build
 docker build -f containers/Containerfile.joern-express-advisory \
-  -t traceproof:joern-express-advisory-linux-poc .
+  -t veriflow:joern-express-advisory-linux-poc .
 uv run python scripts/validate_container.py --suite joern-express-advisory-javascript \
-  --image traceproof:joern-express-advisory-linux-poc work/express-advisory-js
+  --image veriflow:joern-express-advisory-linux-poc work/express-advisory-js
 uv run python scripts/validate_container.py --suite joern-express-advisory-typescript \
-  --image traceproof:joern-express-advisory-linux-poc work/express-advisory-ts
+  --image veriflow:joern-express-advisory-linux-poc work/express-advisory-ts
 ```
 
 Choose new output directories and run the two suites sequentially on the laptop. The
@@ -675,14 +675,14 @@ acceptance does not replace target OCP testing.
 
 ### Repaired C# advisory acceptance (Slice 101)
 
-Using the previously prepared traceproof:joern-csharp-linux-poc image:
+Using the previously prepared veriflow:joern-csharp-linux-poc image:
 
 ```sh
 uv build
 docker build -f containers/Containerfile.joern-csharp-advisory \
-  -t traceproof:joern-csharp-advisory-linux-poc .
+  -t veriflow:joern-csharp-advisory-linux-poc .
 uv run python scripts/validate_container.py --suite joern-csharp-advisory \
-  --image traceproof:joern-csharp-advisory-linux-poc work/csharp-advisory-acceptance
+  --image veriflow:joern-csharp-advisory-linux-poc work/csharp-advisory-acceptance
 ```
 
 Choose a new output directory. The layer reuses the existing repair, installs the current
@@ -698,9 +698,9 @@ acceptance and does not qualify the image for the bank's OCP environment.
 ```sh
 uv build
 docker build -f containers/Containerfile.joern-go-advisory \
-  -t traceproof:joern-go-advisory-linux-poc .
+  -t veriflow:joern-go-advisory-linux-poc .
 uv run python scripts/validate_container.py --suite joern-go-advisory \
-  --image traceproof:joern-go-advisory-linux-poc work/go-advisory-acceptance
+  --image veriflow:joern-go-advisory-linux-poc work/go-advisory-acceptance
 ```
 
 Choose a new output directory. The layer uses the existing Joern base and the updated
@@ -712,14 +712,14 @@ Bank package-mirror and actual OCP acceptance remain separate work.
 
 ### Rust environment advisory acceptance (Slice 103)
 
-Use the existing traceproof:joern-rust-linux-poc base (UBI 10 and the trusted Rust toolchain):
+Use the existing veriflow:joern-rust-linux-poc base (UBI 10 and the trusted Rust toolchain):
 
 ```sh
 uv build
 docker build -f containers/Containerfile.joern-rust-advisory \
-  -t traceproof:joern-rust-advisory-linux-poc .
+  -t veriflow:joern-rust-advisory-linux-poc .
 uv run python scripts/validate_container.py --suite joern-rust-advisory \
-  --image traceproof:joern-rust-advisory-linux-poc work/rust-advisory-acceptance
+  --image veriflow:joern-rust-advisory-linux-poc work/rust-advisory-acceptance
 ```
 
 Choose a new output directory. Locked parser binaries are installed at image build time;
@@ -736,9 +736,9 @@ Build on the existing pinned Joern Linux base, then run the suites sequentially:
 
 ```sh
 uv build
-docker build -f containers/Containerfile.joern-argv-advisory -t traceproof:joern-argv-advisory-linux-poc .
-uv run python scripts/validate_container.py --suite joern-argv-advisory-c --image traceproof:joern-argv-advisory-linux-poc work/argv-c-advisory
-uv run python scripts/validate_container.py --suite joern-argv-advisory-cpp --image traceproof:joern-argv-advisory-linux-poc work/argv-cpp-advisory
+docker build -f containers/Containerfile.joern-argv-advisory -t veriflow:joern-argv-advisory-linux-poc .
+uv run python scripts/validate_container.py --suite joern-argv-advisory-c --image veriflow:joern-argv-advisory-linux-poc work/argv-c-advisory
+uv run python scripts/validate_container.py --suite joern-argv-advisory-cpp --image veriflow:joern-argv-advisory-linux-poc work/argv-cpp-advisory
 ```
 
 Each suite expects eight cases and three replay advisories, zero live calls. Use a fresh
@@ -753,7 +753,7 @@ manifest rendering, one-row CSV/archive input, local Docker rehearsal and deferr
 steps. This is C argv-to-system discovery only, with ephemeral SQLite and exact JSON/HTML
 exports. No Redis, LLM key or hosted API is required. Actual OCP admission/storage/network
 acceptance has not been performed. The smoke image retains its pinned base application
-version; rebuild that base explicitly when upgrading TraceProof.
+version; rebuild that base explicitly when upgrading VeriFlow.
 
 
 Slice 107 supersedes the C-only smoke selection above: the entrypoint, renderer and rehearsal

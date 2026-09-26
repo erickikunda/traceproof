@@ -1,7 +1,7 @@
 # Slice 30: bounded candidate triage orchestration
 
 ```bash
-uv run traceproof triage-attempt REPO_ID ATTEMPT_ID CONFIG_JSON BATCH_KEY --limit 5
+uv run veriflow triage-attempt REPO_ID ATTEMPT_ID CONFIG_JSON BATCH_KEY --limit 5
 ```
 
 Requires an existing per-run `triage-budget`. Selects candidates from an exact completed

@@ -3,7 +3,7 @@ import zipfile
 
 import pytest
 
-from traceproof.persistence import Store
+from veriflow.persistence import Store
 
 
 @pytest.fixture

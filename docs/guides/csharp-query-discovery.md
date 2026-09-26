@@ -7,7 +7,7 @@ Publication requires a recognized query-source syntax fact overlapping the first
 flow node. Missing, ambiguous or unsupported source facts withhold the whole path.
 
 ```sh
-traceproof --state-dir /path/to/state scan-run RUN_ID --engine joern \
+veriflow --state-dir /path/to/state scan-run RUN_ID --engine joern \
   --language csharp --joern-home /path/to/joern-cli \
   --joern-repair-dir /path/to/csharp-repair \
   --joern-profile csharp-query-commandtext-v1

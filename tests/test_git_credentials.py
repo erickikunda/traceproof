@@ -8,10 +8,10 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
 import pytest
 
-from traceproof.domain import TraceProofError
-from traceproof.git_acquisition import Git, acquire
-from traceproof.git_credentials import credential_environment, read_credentials
-from traceproof.git_transport import configure, transport_settings
+from veriflow.domain import VeriFlowError
+from veriflow.git_acquisition import Git, acquire
+from veriflow.git_credentials import credential_environment, read_credentials
+from veriflow.git_transport import configure, transport_settings
 
 
 def test_wrong_repository_fails_before_output(tmp_path):
@@ -19,7 +19,7 @@ def test_wrong_repository_fails_before_output(tmp_path):
     path.write_text(
         json.dumps(dict(url="https://approved.invalid/one", username="test", password="synthetic"))
     )
-    with pytest.raises(TraceProofError, match="does not match"):
+    with pytest.raises(VeriFlowError, match="does not match"):
         acquire(
             "https://approved.invalid/two",
             "refs/heads/main",
@@ -44,7 +44,7 @@ def test_wrong_repository_fails_before_output(tmp_path):
 def test_invalid_credentials_sanitized(tmp_path, value):
     path = tmp_path / "credential.json"
     path.write_text(json.dumps(value))
-    with pytest.raises(TraceProofError) as error:
+    with pytest.raises(VeriFlowError) as error:
         read_credentials(path)
     assert "secret" not in str(error.value)
 
@@ -150,7 +150,7 @@ def test_native_https_private_fetch(tmp_path):
                 )
                 assert b"Authorization" not in (root / "repo.git/config").read_bytes()
             else:
-                with pytest.raises(TraceProofError):
+                with pytest.raises(VeriFlowError):
                     git.call(*args)
         assert 200 in statuses and 401 in statuses
     finally:

@@ -2,9 +2,9 @@ import zipfile
 
 from test_indexing import captured
 
-from traceproof.java_index import build_java_index, framework_observations
-from traceproof.java_parser import parse
-from traceproof.persistence import exclusive_worker
+from veriflow.java_index import build_java_index, framework_observations
+from veriflow.java_parser import parse
+from veriflow.persistence import exclusive_worker
 
 SOURCE = b"""import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;

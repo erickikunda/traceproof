@@ -1,4 +1,4 @@
-# TraceProof intake: choose a source and retrieve its report
+# VeriFlow intake: choose a source and retrieve its report
 
 Current checkpoint: Slice 125. All paths converge on an archive snapshot and explicit
 scanner selection. Acquiring source, capturing source, scanning and exporting a report
@@ -62,9 +62,9 @@ latest checkout. The GCS general scanner image packages seven language selection
 For durable local CLI state, use report-history REPO_ID to find the report ID, then:
 
 ```sh
-traceproof --state-dir /path/to/state get-report REPO_ID --report-id REPORT_ID --format html
-traceproof --state-dir /path/to/state get-report REPO_ID --report-id REPORT_ID --format scan-csv
-traceproof --state-dir /path/to/state get-report REPO_ID --report-id REPORT_ID --format json
+veriflow --state-dir /path/to/state get-report REPO_ID --report-id REPORT_ID --format html
+veriflow --state-dir /path/to/state get-report REPO_ID --report-id REPORT_ID --format scan-csv
+veriflow --state-dir /path/to/state get-report REPO_ID --report-id REPORT_ID --format json
 ```
 
 Exact retrieval does not scan or invoke models. JSON is canonical; HTML is readable and

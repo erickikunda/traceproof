@@ -6,19 +6,19 @@ import json
 import zipfile
 from pathlib import Path
 
-from traceproof.artifacts import ArtifactStore
-from traceproof.batch_scan import scan_import
-from traceproof.bundles import build_bundle
-from traceproof.claims import bundle_engine, requirements
-from traceproof.intake import process, submit
-from traceproof.joern_claims import RUST_POLICY, assess_review_evidence
-from traceproof.models import Decision, ModelConfig, ReplayAdapter, Reply, Usage
-from traceproof.persistence import Store
-from traceproof.pipeline import scan_run
-from traceproof.reports import get_report, publish_report, render_report
-from traceproof.scan_advisory import AdvisoryOptions
-from traceproof.scanning import scan_report
-from traceproof.triage import set_budget, triage_report
+from veriflow.artifacts import ArtifactStore
+from veriflow.batch_scan import scan_import
+from veriflow.bundles import build_bundle
+from veriflow.claims import bundle_engine, requirements
+from veriflow.intake import process, submit
+from veriflow.joern_claims import RUST_POLICY, assess_review_evidence
+from veriflow.models import Decision, ModelConfig, ReplayAdapter, Reply, Usage
+from veriflow.persistence import Store
+from veriflow.pipeline import scan_run
+from veriflow.reports import get_report, publish_report, render_report
+from veriflow.scan_advisory import AdvisoryOptions
+from veriflow.scanning import scan_report
+from veriflow.triage import set_budget, triage_report
 
 
 def review_decision(bundle):

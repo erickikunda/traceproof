@@ -5,10 +5,10 @@ from test_reports import scanned as scanned
 from test_triage import evidence_fixture as evidence_fixture
 from typer.testing import CliRunner
 
-from traceproof.cli import app
-from traceproof.domain import TraceProofError
-from traceproof.persistence import ScanAttempt
-from traceproof.sarif_export import get_sarif
+from veriflow.cli import app
+from veriflow.domain import VeriFlowError
+from veriflow.persistence import ScanAttempt
+from veriflow.sarif_export import get_sarif
 
 
 def test_exact_bytes_scope_and_cli(store, scanned):
@@ -18,7 +18,7 @@ def test_exact_bytes_scope_and_cli(store, scanned):
     assert get_sarif(store, repo, attempt) == raw
     result = CliRunner().invoke(app, ["--state-dir", str(store.root), "get-sarif", repo, attempt])
     assert result.exit_code == 0 and result.stdout_bytes == raw
-    with pytest.raises(TraceProofError, match="belong"):
+    with pytest.raises(VeriFlowError, match="belong"):
         get_sarif(store, "other-repo", attempt)
     with store.transaction() as session:
         saved = session.get(ScanAttempt, attempt)
@@ -45,7 +45,7 @@ def test_unavailable_or_untrusted_artifact(store, scanned, tmp_path, monkeypatch
         path.unlink()
         os.mkfifo(path)
     elif failure == "oversized":
-        monkeypatch.setattr("traceproof.sarif_export.MAX_SARIF_BYTES", 1)
+        monkeypatch.setattr("veriflow.sarif_export.MAX_SARIF_BYTES", 1)
     else:
         with store.transaction() as session:
             saved = session.get(ScanAttempt, attempt)
@@ -64,5 +64,5 @@ def test_parent_link_rejected(store, scanned, tmp_path):
     moved = tmp_path / "moved"
     directory.rename(moved)
     directory.symlink_to(moved, target_is_directory=True)
-    with pytest.raises(TraceProofError, match="links"):
+    with pytest.raises(VeriFlowError, match="links"):
         get_sarif(store, repo, attempt)

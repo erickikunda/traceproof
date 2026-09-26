@@ -6,8 +6,8 @@ import zipfile
 import pytest
 from conftest import row
 
-from traceproof.artifacts import ArtifactStore
-from traceproof.domain import ArchiveLimits, IntakeSpec, TraceProofError
+from veriflow.artifacts import ArtifactStore
+from veriflow.domain import ArchiveLimits, IntakeSpec, VeriFlowError
 
 
 @pytest.mark.parametrize("kind", ["zip", "tar", "tar.gz"])
@@ -51,7 +51,7 @@ def test_unsafe_zip_paths_rejected(tmp_path, names):
         for name in names:
             out.writestr(name, b"x")
     store = ArtifactStore(tmp_path / "state")
-    with pytest.raises(TraceProofError):
+    with pytest.raises(VeriFlowError):
         store.capture(IntakeSpec(**row(archive)), tmp_path)
     assert list(store.root.iterdir()) == []
     assert not (tmp_path / "escape.py").exists()
@@ -67,7 +67,7 @@ def test_tar_special_entries_rejected(tmp_path, kind):
         item.type = kind
         item.linkname = "../../escape"
         out.addfile(item)
-    with pytest.raises(TraceProofError, match="links and special"):
+    with pytest.raises(VeriFlowError, match="links and special"):
         ArtifactStore(tmp_path / "state").capture(IntakeSpec(**row(archive)), tmp_path)
 
 
@@ -78,7 +78,7 @@ def test_zip_symlink_rejected(tmp_path):
         item.create_system = 3
         item.external_attr = (stat.S_IFLNK | 0o777) << 16
         out.writestr(item, "../../escape")
-    with pytest.raises(TraceProofError, match="links and special"):
+    with pytest.raises(VeriFlowError, match="links and special"):
         ArtifactStore(tmp_path / "state").capture(IntakeSpec(**row(archive)), tmp_path)
 
 
@@ -93,7 +93,7 @@ def test_zip_symlink_rejected(tmp_path):
     ],
 )
 def test_resource_limits(archive, tmp_path, limits):
-    with pytest.raises(TraceProofError, match="limit"):
+    with pytest.raises(VeriFlowError, match="limit"):
         ArtifactStore(tmp_path / "state", limits).capture(
             IntakeSpec(**row(archive)), archive.parent
         )
@@ -103,7 +103,7 @@ def test_ratio_limit(tmp_path):
     archive = tmp_path / "ratio.zip"
     with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED) as out:
         out.writestr("file.txt", "a" * 100_000)
-    with pytest.raises(TraceProofError, match="ratio"):
+    with pytest.raises(VeriFlowError, match="ratio"):
         ArtifactStore(tmp_path / "state", ArchiveLimits(max_compression_ratio=2)).capture(
             IntakeSpec(**row(archive)), tmp_path
         )
@@ -126,7 +126,7 @@ def test_integrity_verification_catches_tampering(tmp_path, archive, tamper):
         target = root / "source.archive"
         target.chmod(0o600)
         target.write_bytes(b"changed")
-    with pytest.raises(TraceProofError):
+    with pytest.raises(VeriFlowError):
         store.verify(manifest.snapshot_id)
 
 
@@ -146,7 +146,7 @@ def test_whitespace_path_cannot_diverge_from_manifest(tmp_path, name):
     archive = tmp_path / "spaces.zip"
     with zipfile.ZipFile(archive, "w") as out:
         out.writestr(name, "x")
-    with pytest.raises(TraceProofError, match="ambiguous"):
+    with pytest.raises(VeriFlowError, match="ambiguous"):
         ArtifactStore(tmp_path / "state").capture(IntakeSpec(**row(archive)), tmp_path)
 
 
@@ -168,7 +168,7 @@ def test_malformed_zip_metadata(tmp_path, mutation):
         struct.pack_into("<H", data, 8, 99)
         struct.pack_into("<H", data, central + 10, 99)
     archive.write_bytes(data)
-    with pytest.raises(TraceProofError):
+    with pytest.raises(VeriFlowError):
         ArtifactStore(tmp_path / "state").capture(IntakeSpec(**row(archive)), tmp_path)
 
 
@@ -177,5 +177,5 @@ def test_oversized_tar_metadata_rejected_before_read(tmp_path):
     item = tarfile.TarInfo("pax")
     item.type, item.size = tarfile.XHDTYPE, 65537
     archive.write_bytes(item.tobuf())
-    with pytest.raises(TraceProofError, match="metadata"):
+    with pytest.raises(VeriFlowError, match="metadata"):
         ArtifactStore(tmp_path / "state").capture(IntakeSpec(**row(archive)), tmp_path)

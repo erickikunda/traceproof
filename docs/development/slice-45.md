@@ -9,7 +9,7 @@ the existing pipeline; C# cannot inherit Python/Java indexing or completion gate
 ## Explicit execution boundary
 
 ```sh
-traceproof scan-run RUN_ID CSHARP_QUERY_PATH --language csharp --allow-csharp-downloads
+veriflow scan-run RUN_ID CSHARP_QUERY_PATH --language csharp --allow-csharp-downloads
 ```
 
 CodeQL's C# none mode may provision a .NET SDK and access NuGet. The local probes

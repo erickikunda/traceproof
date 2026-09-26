@@ -7,11 +7,11 @@ from conftest import row
 from sqlalchemy import func, inspect, select
 from typer.testing import CliRunner
 
-from traceproof.artifacts import ArtifactStore
-from traceproof.cli import app
-from traceproof.domain import TraceProofError
-from traceproof.intake import import_status, process, run_status, submit
-from traceproof.persistence import ImportItem, Run, Snapshot, exclusive_worker
+from veriflow.artifacts import ArtifactStore
+from veriflow.cli import app
+from veriflow.domain import VeriFlowError
+from veriflow.intake import import_status, process, run_status, submit
+from veriflow.persistence import ImportItem, Run, Snapshot, exclusive_worker
 
 
 def run_worker(store, batch):
@@ -37,8 +37,12 @@ def test_migration_repeatable(store):
         "evidence_bundles",
         "triage_budgets",
         "triage_calls",
+        "discovery_calls",
         "published_reports",
         "operator_reviews",
+        "rule_drafts",
+        "rule_registries",
+        "rule_approvals",
         "benchmark_scorecards",
     }
     with store.engine.connect() as conn:
@@ -68,7 +72,7 @@ def test_idempotency_and_conflict(store, archive, manifest):
     with store.transaction() as session:
         assert session.scalar(select(func.count()).select_from(Run)) == 1
     path.write_text(path.read_text() + "\n")
-    with pytest.raises(TraceProofError, match="different request"):
+    with pytest.raises(VeriFlowError, match="different request"):
         submit(store, path, archive.parent, "key")
 
 
@@ -120,7 +124,7 @@ def test_metadata_cannot_be_reassigned(store, archive, manifest):
 def test_invalid_manifest_headers(store, archive, tmp_path, text):
     path = tmp_path / "bad.csv"
     path.write_bytes(text.encode("latin1"))
-    with pytest.raises(TraceProofError):
+    with pytest.raises(VeriFlowError):
         submit(store, path, archive.parent, "key")
 
 
@@ -135,7 +139,7 @@ def test_extra_row_values_rejected_without_echoing(store, archive, manifest):
 
 def test_exclusive_local_worker(store):
     with exclusive_worker(store.root):
-        with pytest.raises(TraceProofError, match="already owns"):
+        with pytest.raises(VeriFlowError, match="already owns"):
             with exclusive_worker(store.root):
                 pass
     with exclusive_worker(store.root):
@@ -147,9 +151,9 @@ def test_process_death_after_artifact_publication_recovers(store, archive, manif
     program = """
 import os, sys
 from pathlib import Path
-from traceproof.persistence import Store, exclusive_worker
-from traceproof.artifacts import ArtifactStore
-from traceproof.intake import process
+from veriflow.persistence import Store, exclusive_worker
+from veriflow.artifacts import ArtifactStore
+from veriflow.intake import process
 store = Store(Path(sys.argv[1]))
 artifacts = ArtifactStore(store.root)
 capture = artifacts.capture

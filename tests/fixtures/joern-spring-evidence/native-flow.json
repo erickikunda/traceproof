@@ -1,7 +1,7 @@
 {
   "schema_version": "2",
   "engine_id": "joern",
-  "rule_id": "traceproof/joern-spring-get-jdbc-sql-v1",
+  "rule_id": "veriflow/joern-spring-get-jdbc-sql-v1",
   "source_count": 1,
   "sink_count": 1,
   "flow_count": 1,

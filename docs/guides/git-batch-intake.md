@@ -20,7 +20,7 @@ each row: no inherited credentials/proxy/custom CA config, submodules, LFS or
 symlink content; no checkout, build, scanner or model execution.
 
 ```sh
-traceproof acquire-git-csv /staging/repositories.csv /staging/acquired-batch \
+veriflow acquire-git-csv /staging/repositories.csv /staging/acquired-batch \
   --allowed-host github.com --max-rows 10 --timeout 900
 ```
 
@@ -91,7 +91,7 @@ and actual OCP acceptance remain pending; GCS uses its separate acquire-gcs path
 Both acquire-git and acquire-git-csv accept operator options:
 
 ```sh
-traceproof acquire-git-csv /staging/repositories.csv /staging/new-batch \
+veriflow acquire-git-csv /staging/repositories.csv /staging/new-batch \
   --allowed-host git.example.invalid \
   --ca-bundle /config/corporate-ca.pem \
   --proxy http://proxy.example.invalid:8080

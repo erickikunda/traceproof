@@ -4,10 +4,10 @@ Migration 0009 adds append-only import dispatch transitions. Existing imports de
 active at revision 0; migration does not rewrite their rows, runs, snapshots or reports.
 
 ```bash
-uv run traceproof init
-uv run traceproof import-control-status IMPORT_ID
-uv run traceproof import-control IMPORT_ID paused pause-1 "Maintenance" --expected-revision 0
-uv run traceproof import-control IMPORT_ID active resume-1 "Ready to continue" --expected-revision 1
+uv run veriflow init
+uv run veriflow import-control-status IMPORT_ID
+uv run veriflow import-control IMPORT_ID paused pause-1 "Maintenance" --expected-revision 0
+uv run veriflow import-control IMPORT_ID active resume-1 "Ready to continue" --expected-revision 1
 ```
 
 Use the current revision returned by status for each new transition. Request keys are

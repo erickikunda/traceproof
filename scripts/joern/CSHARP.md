@@ -24,7 +24,7 @@ Do not register this rule as a qualified C# scanner. In the tested source-only C
 FromQuery is absent from parameter annotations, HttpGet is unqualified, and DbConnection /
 command calls have unresolved signatures. A correct flow does not resolve those gaps.
 
-Next integration should evaluate reusing TraceProof's bounded C# syntax parser for explicit
+Next integration should evaluate reusing VeriFlow's bounded C# syntax parser for explicit
 attribute/import facts, binding those facts to graph nodes by source hash and location.
 Ambiguous or absent mappings must remain unsupported, and the new engine must receive its
 own qualification tests rather than inherit CodeQL policy by rule name or CWE. Rust remains

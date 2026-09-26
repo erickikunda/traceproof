@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from traceproof.go_http_parser import parse, parse_isolated
+from veriflow.go_http_parser import parse, parse_isolated
 
 BASE = (Path(__file__).parent / "fixtures/joern-go-http/vulnerable/main.go").read_bytes()
 
@@ -50,7 +50,7 @@ def test_bounds_and_bad_input(monkeypatch):
         parse(BASE.replace(b'import "net/http"', b'import . "net/http"'))["status"] == "dot_import"
     )
     assert parse(b"x" * (1024 * 1024 + 1))["status"] == "size_limit"
-    monkeypatch.setattr("traceproof.go_http_parser.MAX_NODES", 2)
+    monkeypatch.setattr("veriflow.go_http_parser.MAX_NODES", 2)
     assert parse(BASE)["status"] == "node_limit"
 
 

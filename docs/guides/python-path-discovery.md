@@ -9,7 +9,7 @@ fixtures. Existing system/eval profiles and default language selection are uncha
 After normal archive intake creates RUN_ID:
 
 ```sh
-traceproof --state-dir /path/to/state scan-run RUN_ID --engine joern --language python \
+veriflow --state-dir /path/to/state scan-run RUN_ID --engine joern --language python \
   --joern-home /path/to/joern-cli --joern-profile python-flask-path-v1
 ```
 

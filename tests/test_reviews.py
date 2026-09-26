@@ -7,12 +7,12 @@ from test_reports import scanned as scanned
 from test_triage import evidence_fixture as evidence_fixture
 from typer.testing import CliRunner
 
-from traceproof.bundles import build_bundle
-from traceproof.cli import app
-from traceproof.domain import TraceProofError
-from traceproof.persistence import Candidate, OperatorReview, TriageCall
-from traceproof.reports import get_report, publish_report, render_report
-from traceproof.reviews import ReviewRequest, read_review, record_review, review_history
+from veriflow.bundles import build_bundle
+from veriflow.cli import app
+from veriflow.domain import VeriFlowError
+from veriflow.persistence import Candidate, OperatorReview, TriageCall
+from veriflow.reports import get_report, publish_report, render_report
+from veriflow.reviews import ReviewRequest, read_review, record_review, review_history
 
 
 @pytest.fixture
@@ -36,7 +36,7 @@ def test_append_only_retry_and_stale_revision(store, review_fixture):
     assert first["revision"] == 1 and first["state"] == "confirmed"
     assert not first["reviewer_authenticated"] and not first["independently_verified"]
     assert record_review(store, repo, attempt, fingerprint, request, "one") == first
-    with pytest.raises(TraceProofError, match="Stale"):
+    with pytest.raises(VeriFlowError, match="Stale"):
         record_review(store, repo, attempt, fingerprint, request, "stale")
     next_request = request.model_copy(update={"state": "needs_review", "expected_revision": 1})
     second = record_review(store, repo, attempt, fingerprint, next_request, "two")
@@ -53,7 +53,7 @@ def test_append_only_retry_and_stale_revision(store, review_fixture):
 def test_key_conflict_and_ownership(store, review_fixture):
     repo, attempt, fingerprint, request = review_fixture
     record_review(store, repo, attempt, fingerprint, request, "one")
-    with pytest.raises(TraceProofError, match="different request"):
+    with pytest.raises(VeriFlowError, match="different request"):
         record_review(
             store,
             repo,
@@ -62,15 +62,15 @@ def test_key_conflict_and_ownership(store, review_fixture):
             request.model_copy(update={"state": "false_positive"}),
             "one",
         )
-    with pytest.raises(TraceProofError, match="belong"):
+    with pytest.raises(VeriFlowError, match="belong"):
         record_review(store, "other", attempt, fingerprint, request, "one")
-    with pytest.raises(TraceProofError, match="belong"):
+    with pytest.raises(VeriFlowError, match="belong"):
         review_history(store, repo, "other-attempt", fingerprint)
 
 
 def test_unknown_evidence_and_bundle_fail_without_writes(store, review_fixture):
     repo, attempt, fingerprint, request = review_fixture
-    with pytest.raises(TraceProofError, match="absent"):
+    with pytest.raises(VeriFlowError, match="absent"):
         record_review(
             store,
             repo,
@@ -79,7 +79,7 @@ def test_unknown_evidence_and_bundle_fail_without_writes(store, review_fixture):
             request.model_copy(update={"evidence_ids": ["E999"]}),
             "bad",
         )
-    with pytest.raises(TraceProofError, match="bundle"):
+    with pytest.raises(VeriFlowError, match="bundle"):
         record_review(
             store,
             repo,
@@ -93,7 +93,7 @@ def test_unknown_evidence_and_bundle_fail_without_writes(store, review_fixture):
 
 
 def test_partial_bundle_allows_deferral_but_not_definitive_assertion(store, evidence_fixture):
-    from traceproof.persistence import Run
+    from veriflow.persistence import Run
 
     run, attempt, fingerprint, _ = evidence_fixture(flow_count=20)
     with store.transaction() as session:
@@ -107,7 +107,7 @@ def test_partial_bundle_allows_deferral_but_not_definitive_assertion(store, evid
         evidence_ids=["E1"],
         expected_revision=0,
     )
-    with pytest.raises(TraceProofError, match="ready"):
+    with pytest.raises(VeriFlowError, match="ready"):
         record_review(store, repo, attempt, fingerprint, request, "blocked")
     deferred = request.model_copy(update={"state": "deferred", "evidence_ids": []})
     assert (
@@ -146,9 +146,9 @@ def test_corrupted_review_is_rejected_by_history_and_publication(store, review_f
     with store.transaction() as session:
         record = session.get(OperatorReview, review["review_id"])
         record.content = {**record.content, "state": "false_positive"}
-    with pytest.raises(TraceProofError, match="integrity"):
+    with pytest.raises(VeriFlowError, match="integrity"):
         review_history(store, repo, attempt, fingerprint)
-    with pytest.raises(TraceProofError, match="integrity"):
+    with pytest.raises(VeriFlowError, match="integrity"):
         publish_report(store, repo)
 
 
@@ -183,7 +183,7 @@ def test_cli_and_request_limit(store, review_fixture, tmp_path):
     history = runner.invoke(app, [*args, "review-history", repo, attempt, fingerprint])
     assert history.exit_code == 0 and json.loads(history.output)["current_revision"] == 1
     path.write_bytes(b" " * (16 * 1024 + 1))
-    with pytest.raises(TraceProofError, match="16 KiB"):
+    with pytest.raises(VeriFlowError, match="16 KiB"):
         read_review(path)
 
 
@@ -191,9 +191,9 @@ def test_duplicate_json_and_unvalidated_copy_are_rejected(store, review_fixture,
     repo, attempt, fingerprint, request = review_fixture
     path = tmp_path / "duplicate.json"
     path.write_text('{"state":"false_positive",' + request.model_dump_json()[1:])
-    with pytest.raises(TraceProofError, match="Invalid review"):
+    with pytest.raises(VeriFlowError, match="Invalid review"):
         read_review(path)
-    with pytest.raises(TraceProofError, match="Invalid review"):
+    with pytest.raises(VeriFlowError, match="Invalid review"):
         record_review(
             store,
             repo,

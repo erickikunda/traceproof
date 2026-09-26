@@ -6,7 +6,7 @@ candidates. Top-level requests aliases are recognized; obvious rebinding, foreig
 local requests modules and ambiguous same-line endpoints are withheld conservatively.
 
 ```sh
-traceproof --state-dir /path/to/state scan-run RUN_ID --engine joern --language python \
+veriflow --state-dir /path/to/state scan-run RUN_ID --engine joern --language python \
   --joern-home /path/to/joern-cli --joern-profile python-flask-ssrf-v1
 ```
 

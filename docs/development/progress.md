@@ -591,7 +591,7 @@ See [Slice 60](slice-60.md).
 
 Slice 59 separates CodeQL process execution from integrity checks and publication.
 All 484 tests pass. Joern is the preferred qualification candidate; it is not installed
-or runnable through TraceProof yet. Plan §18 supersedes the earlier queue: complete
+or runnable through VeriFlow yet. Plan §18 supersedes the earlier queue: complete
 engine-neutral contracts, qualify Java/Spring then C#/Rust early, compare Opengrep,
 and resume language expansion. C and C++ follow the existing language work plan.
 See [Slice 59](slice-59.md) for scope and remaining boundaries.
@@ -780,7 +780,7 @@ Java 21 JDK. Offline Spring is NOT qualified: the vulnerable case produces zero
 candidates with blocked inferred Maven downloads and unresolved annotations. Historical
 macOS Spring runs fetched dependencies despite source-only input. Next: pinned Java
 profiles and offline Spring requalification. Full builds and Linux C# remain open.
-Container suite selection and package inventories use TraceProof's virtual environment.
+Container suite selection and package inventories use VeriFlow's virtual environment.
 
 Slice 50 supplies pinned local Maven-layout JAR profiles for Java, records profile
 identity in reuse/reports and rechecks integrity after extraction. Six pinned Spring
@@ -921,3 +921,80 @@ The frontend does not resolve the API signature; runtime identity and directory
 escape remain unverified. Automatic selection retains separate reports. See
 [guide](../guides/csharp-file-discovery.md). No migration, new advisory or image
 promotion. Next assess bounded C# process execution with argument/option evidence.
+
+
+## Slice 142 — selectable Python index backend evaluation
+
+Kept the existing syntax inventory as the default and added an experimental, separately
+versioned Joern Python inventory. Operators can select either backend, compare both on the
+same immutable snapshot, and query either exact index record. The comparison reports parsed
+files, inventory counts, normalized overlap, elapsed Joern stages and CPG artifact size; it
+does not infer scanner quality or a security verdict. Native validation under the restricted
+Linux container profile showed equal file/function coverage on the synthetic fixture and
+different call normalization, which is the behavior the experiment is intended to expose.
+See the [architecture note](../architecture/index-backend-evaluation.md) and
+[operator guide](../guides/index-backend-comparison.md). Python is the only evaluation
+language in this slice; language-specific evidence gates and vulnerability profiles remain
+unchanged. No migration or image promotion.
+
+
+## Slice 143 — replay-first hybrid discovery contracts
+
+Added migration `0010` and a separate discovery-call ledger, strict bounded packet/proposal
+schemas, immutable snapshot/path/hash/line validation, idempotent replay recording and paginated
+retrieval. `discovery-replay` never invokes a provider or creates candidate rows; proposals retain
+`llm_discovery` provenance and `not_adjudicated` state for the later integration slice. A failed
+packet or proposal cannot alter the completed deterministic attempt. See the
+[operator guide](../guides/llm-discovery-replay.md) and
+[hybrid architecture](../architecture/hybrid-llm-discovery.md). Next: deterministic packet
+selection and opt-in scan orchestration with the shared run budget.
+
+
+## Slice 144 — deterministic packet selection and hybrid scan mode
+
+Added opt-in `scan-run --llm-discovery` orchestration for both CodeQL and Joern results. The
+deterministic scan always runs first. A versioned selector then builds one bounded packet from
+verified UTF-8 source using risk markers plus a deterministic lower-ranked audit sample and
+reports eligible/examined/deferred files. The current path requires an explicit replay response,
+records one simulated invocation and makes zero live calls. Selection or response failure retains
+the deterministic report and marks only hybrid exploration partial. Default scans reject stray
+discovery options and remain zero-call. See the
+[replay and hybrid operator guide](../guides/llm-discovery-replay.md). Next: live provider policy
+and shared budget accounting, followed by exploratory candidate persistence and adjudication.
+
+
+## Slice 145 — exploratory candidates through evidence and review
+
+Valid replay/hybrid proposals now create idempotent `llm_discovery` candidates on the exact
+deterministic attempt, with CWE, snapshot-bound primary/related locations, proposal digest and
+model-proposal provenance. Attempt counts reconcile deterministic and exploratory rows and hybrid
+publication creates a new immutable report version. The bundle builder reads these locations
+directly from the verified snapshot instead of pretending they came from SARIF. Existing bounded
+triage supports a separate exploratory quote/range gate that never claims semantic reachability or
+verification, and explicit operator review can confirm or reject the candidate. Reports expose
+origin/CWE and separate deterministic/LLM counts. Cross-origin semantic deduplication remains
+conservative. Next: live provider policy/shared accounting, then confirmed rule-gap packages and
+exact/batch approval.
+
+
+## Slice 145 extension — live discovery and shared accounting
+
+Added structured OpenAI Responses, Anthropic Messages and local Ollama discovery bodies/parsers
+using the existing strict model policy and an isolated no-retry transport subprocess. Live mode
+requires explicit source transmission, classification/endpoint allowlists, configured pricing and
+an existing run budget. Discovery and triage now share both monetary and request caps; missing
+usage retains the reservation and ambiguous transport outcomes remain unknown. Replay remains
+available and unchanged. `triage-report` and immutable repository reports include discovery usage
+without exposing source or model prose. No live endpoint was called during implementation.
+
+
+## Slice 146 — confirmed rule drafts and governed approval
+
+Added migration `0011`, immutable draft packages for confirmed `llm_discovery` candidates, and
+exact or CSV-batch approval into a content-addressed registry. Drafts bind query and fixture
+digests, candidate/review revision, engine, language, CWE, profile, and operator-attested test
+evidence. Approval rechecks artifacts and optimistic registry/review versions; request keys make
+exact retries idempotent. Operators can retrieve and integrity-check drafts and exact registry
+versions. See the [operator guide](../guides/rule-draft-approval.md). The POC exposes approved
+CodeQL paths for explicit use; automatic Joern registry activation and the 50-repository
+benchmark remain later work.

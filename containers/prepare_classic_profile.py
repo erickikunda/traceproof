@@ -5,14 +5,14 @@ import json
 import shutil
 from pathlib import Path
 
-from traceproof.csharp_dependencies import inventory, load_profile
+from veriflow.csharp_dependencies import inventory, load_profile
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("family", choices=("webapi", "mvc"))
 family = parser.parse_args().family
 
-root = Path("/opt/traceproof/csharp-dependencies")
-packages = json.loads(Path(f"/opt/traceproof/{family}-packages.json").read_text())
+root = Path("/opt/veriflow/csharp-dependencies")
+packages = json.loads(Path(f"/opt/veriflow/{family}-packages.json").read_text())
 expected = {Path(member).name: digest for p in packages for member, digest in p["files"].items()}
 if inventory(root / family) != expected:
     raise RuntimeError("Classic framework reference inventory mismatch")

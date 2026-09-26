@@ -16,7 +16,7 @@ QUERY = (
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("output", type=Path, help="New local output directory")
-    parser.add_argument("--image", default="traceproof:linux-poc")
+    parser.add_argument("--image", default="veriflow:linux-poc")
     parser.add_argument(
         "--suite",
         choices=[
@@ -69,16 +69,16 @@ def main():
     if args.suite in {"joern-javascript", "joern-typescript"}:
         language = args.suite.removeprefix("joern-")
         scan = (
-            "/opt/traceproof-venv/bin/python "
-            "/opt/traceproof/scripts/validate_joern_javascript_discovery.py "
+            "/opt/veriflow-venv/bin/python "
+            "/opt/veriflow/scripts/validate_joern_javascript_discovery.py "
             f"--language {language} --joern-home /opt/joern-cli --output /work/acceptance"
         )
         results_file = "case-results.json"
     elif args.suite in {"joern-c", "joern-cpp"}:
         language = args.suite.removeprefix("joern-")
         scan = (
-            "/opt/traceproof-venv/bin/python "
-            "/opt/traceproof/scripts/validate_joern_c_family_discovery.py "
+            "/opt/veriflow-venv/bin/python "
+            "/opt/veriflow/scripts/validate_joern_c_family_discovery.py "
             f"--language {language} --joern-home /opt/joern-cli --output /work/acceptance"
         )
         results_file = "case-results.json"
@@ -88,30 +88,30 @@ def main():
     }:
         language = args.suite.removeprefix("joern-express-")
         scan = (
-            "/opt/traceproof-venv/bin/python /opt/traceproof/scripts/validate_joern_express.py "
+            "/opt/veriflow-venv/bin/python /opt/veriflow/scripts/validate_joern_express.py "
             f"--language {language} --joern-home /opt/joern-cli --output /work/acceptance"
         )
         results_file = "case-results.json"
     elif args.suite in {"joern-express-advisory-javascript", "joern-express-advisory-typescript"}:
         language = args.suite.removeprefix("joern-express-advisory-")
         scan = (
-            "/opt/traceproof-venv/bin/python "
-            "/opt/traceproof/scripts/validate_joern_express_advisory.py "
+            "/opt/veriflow-venv/bin/python "
+            "/opt/veriflow/scripts/validate_joern_express_advisory.py "
             f"--language {language} --joern-home /opt/joern-cli --output /work/acceptance"
         )
         results_file = "case-results.json"
     elif args.suite in {"joern-argv-advisory-c", "joern-argv-advisory-cpp"}:
         language = args.suite.removeprefix("joern-argv-advisory-")
         scan = (
-            "/opt/traceproof-venv/bin/python "
-            "/opt/traceproof/scripts/validate_joern_argv_advisory.py "
+            "/opt/veriflow-venv/bin/python "
+            "/opt/veriflow/scripts/validate_joern_argv_advisory.py "
             f"--language {language} --joern-home /opt/joern-cli --output /work/acceptance"
         )
         results_file = "case-results.json"
     elif args.suite in {"joern-argv-c", "joern-argv-cpp"}:
         language = args.suite.removeprefix("joern-argv-")
         scan = (
-            "/opt/traceproof-venv/bin/python /opt/traceproof/scripts/validate_joern_argv.py "
+            "/opt/veriflow-venv/bin/python /opt/veriflow/scripts/validate_joern_argv.py "
             f"--language {language} --joern-home /opt/joern-cli --output /work/acceptance"
         )
         results_file = "case-results.json"
@@ -127,54 +127,54 @@ def main():
     }:
         profile = args.suite.removeprefix("joern-").replace("-", "_")
         scan = (
-            f"/opt/traceproof-venv/bin/python /opt/traceproof/scripts/validate_joern_{profile}.py "
+            f"/opt/veriflow-venv/bin/python /opt/veriflow/scripts/validate_joern_{profile}.py "
             "--joern-home /opt/joern-cli --output /work/acceptance"
         )
         results_file = "case-results.json"
     elif args.suite == "joern-csharp-advisory":
         scan = (
-            "/opt/traceproof-venv/bin/python "
-            "/opt/traceproof/scripts/validate_joern_csharp_advisory.py "
-            "--joern-home /opt/joern-cli --repair-dir /opt/traceproof/csharp-repair "
+            "/opt/veriflow-venv/bin/python "
+            "/opt/veriflow/scripts/validate_joern_csharp_advisory.py "
+            "--joern-home /opt/joern-cli --repair-dir /opt/veriflow/csharp-repair "
             "--output /work/acceptance"
         )
         results_file = "case-results.json"
     elif args.suite == "joern-rust-advisory":
         scan = (
-            "/opt/traceproof-venv/bin/python "
-            "/opt/traceproof/scripts/validate_joern_rust_advisory.py "
+            "/opt/veriflow-venv/bin/python "
+            "/opt/veriflow/scripts/validate_joern_rust_advisory.py "
             "--joern-home /opt/joern-cli --rust-home /opt/rust --output /work/acceptance"
         )
         results_file = "case-results.json"
     elif args.suite == "joern-rust-env":
         scan = (
-            "/opt/traceproof-venv/bin/python /opt/traceproof/scripts/validate_joern_rust_env.py "
+            "/opt/veriflow-venv/bin/python /opt/veriflow/scripts/validate_joern_rust_env.py "
             "--joern-home /opt/joern-cli --rust-home /opt/rust --output /work/acceptance"
         )
         results_file = "case-results.json"
     elif args.suite == "joern-rust":
         scan = (
-            "/opt/traceproof-venv/bin/python "
-            "/opt/traceproof/scripts/validate_joern_rust_discovery.py "
+            "/opt/veriflow-venv/bin/python "
+            "/opt/veriflow/scripts/validate_joern_rust_discovery.py "
             "--joern-home /opt/joern-cli --rust-home /opt/rust --output /work/acceptance"
         )
         results_file = "case-results.json"
     elif args.suite in {"joern-python", "joern-go"}:
         language = args.suite.removeprefix("joern-")
         scan = (
-            "/opt/traceproof-venv/bin/python "
-            f"/opt/traceproof/scripts/validate_joern_{language}_discovery.py "
+            "/opt/veriflow-venv/bin/python "
+            f"/opt/veriflow/scripts/validate_joern_{language}_discovery.py "
             "--joern-home /opt/joern-cli --output /work/acceptance"
         )
         results_file = "case-results.json"
     elif args.suite == "joern-csharp":
-        scan = "/opt/traceproof-venv/bin/python /opt/traceproof/joern_csharp_acceptance.py"
+        scan = "/opt/veriflow-venv/bin/python /opt/veriflow/joern_csharp_acceptance.py"
         results_file = "joern-csharp-results.json"
     elif args.suite == "joern":
-        scan = "/opt/traceproof-venv/bin/python /opt/traceproof/joern_acceptance.py"
+        scan = "/opt/veriflow-venv/bin/python /opt/veriflow/joern_acceptance.py"
         results_file = "joern-results.json"  # Joern writes case-results directly to /reports.
     elif args.suite == "python":
-        scan = f"traceproof acceptance-run /work/acceptance {QUERY} --timeout 300"
+        scan = f"veriflow acceptance-run /work/acceptance {QUERY} --timeout 300"
         results_file = "acceptance.json"
     elif args.suite in ("javascript", "typescript"):
         query = (
@@ -182,7 +182,7 @@ def main():
             "Security/CWE-094/CodeInjection.ql"
         )
         scan = (
-            f"/opt/traceproof-venv/bin/python /opt/traceproof/scripts/validate_{args.suite}.py "
+            f"/opt/veriflow-venv/bin/python /opt/veriflow/scripts/validate_{args.suite}.py "
             f"{query} /work/acceptance"
         )
         results_file = "validation.json"
@@ -200,9 +200,9 @@ def main():
         if args.suite in ("csharp-webapi", "csharp-mvc"):
             profile = args.suite.removeprefix("csharp-") + "-profile.json"
         scan = (
-            f"/opt/traceproof-venv/bin/python /opt/traceproof/scripts/validate_{script}.py "
+            f"/opt/veriflow-venv/bin/python /opt/veriflow/scripts/validate_{script}.py "
             f"'{query}' /work/acceptance --csharp-dependency-profile "
-            f"/opt/traceproof/csharp-dependencies/{profile}"
+            f"/opt/veriflow/csharp-dependencies/{profile}"
         )
         results_file = "validation.json"
     else:
@@ -212,17 +212,17 @@ def main():
             + query_name
         )
         scan = (
-            f"/opt/traceproof-venv/bin/python /opt/traceproof/scripts/validate_{args.suite}.py "
+            f"/opt/veriflow-venv/bin/python /opt/veriflow/scripts/validate_{args.suite}.py "
             f"{query} /work/acceptance"
         )
         if args.suite == "spring":
-            scan += " --java-dependency-profile /opt/traceproof/dependencies/java-profile.json"
+            scan += " --java-dependency-profile /opt/veriflow/dependencies/java-profile.json"
         if args.project_layout != "flat":
             scan += f" --java-profile source-only --project-layout {args.project_layout}"
         results_file = "validation.json"
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=False)
-    name = "traceproof-smoke-" + uuid.uuid4().hex[:12]
+    name = "veriflow-smoke-" + uuid.uuid4().hex[:12]
     inspected = json.loads(subprocess.check_output(["docker", "image", "inspect", args.image]))[0]
     if inspected["Architecture"] != "arm64" or inspected["Os"] != "linux":
         raise RuntimeError("This acceptance recipe requires a Linux ARM64 image")
@@ -270,8 +270,8 @@ def main():
         "\\( -name '*.html' -o -name '*.csv' -o -name '*.md' -o -name '*.json' \\) "
         "-exec cp {} /reports/ \\;\nfi\n"
         "}\ntrap export_artifacts EXIT\n"
-        "/opt/traceproof-venv/bin/python /opt/traceproof/runtime_probe.py > /reports/runtime.json\n"
-        "/opt/traceproof-venv/bin/python -m pip inspect > /reports/python-packages.json\n"
+        "/opt/veriflow-venv/bin/python /opt/veriflow/runtime_probe.py > /reports/runtime.json\n"
+        "/opt/veriflow-venv/bin/python -m pip inspect > /reports/python-packages.json\n"
         "rpm -qa | sort > /reports/os-packages.txt\n"
         "java -version > /reports/java-version.txt 2>&1\n"
         f"{scan} > /reports/cli.log 2>&1\n",

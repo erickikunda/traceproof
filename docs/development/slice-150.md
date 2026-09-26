@@ -36,7 +36,7 @@ and no schema change.
 **This is reference evidence, not reachability.** No call graph is resolved and third-party code
 remains absent from the snapshot, so nothing establishes that vulnerable code executes.
 `govulncheck` answers that question by building the whole program including dependencies;
-TraceProof has neither the dependencies nor the build. Only Go advisories carry symbol data, so
+VeriFlow has neither the dependencies nor the build. Only Go advisories carry symbol data, so
 npm and Maven matches are unaffected by this slice.
 
 Next: OSV acquisition container qualification, which remains the outstanding item from Slice 147.

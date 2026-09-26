@@ -1,18 +1,18 @@
 # Local qualification layer. Pass the inspected Joern base tag; record both image IDs.
-ARG JOERN_BASE=traceproof:joern-linux-poc
+ARG JOERN_BASE=veriflow:joern-linux-poc
 FROM ${JOERN_BASE}
 USER 0
-COPY dist/traceproof-0.1.0-py3-none-any.whl /tmp/traceproof-0.1.0-py3-none-any.whl
-RUN /opt/traceproof-venv/bin/pip install --no-index --no-deps --force-reinstall /tmp/traceproof-0.1.0-py3-none-any.whl
-COPY scripts/validate_joern.py scripts/validate_joern_csharp.py scripts/validate_joern_csharp_binding.py scripts/validate_joern_csharp_discovery.py scripts/validate_csharp_locations.py scripts/build_joern_csharp_repair.py /opt/traceproof/scripts/
-COPY scripts/joern /opt/traceproof/scripts/joern
-COPY tests/fixtures/csharp-core /opt/traceproof/tests/fixtures/csharp-core
-COPY tests/fixtures/csharp-mvc /opt/traceproof/tests/fixtures/csharp-mvc
-COPY tests/fixtures/csharp-webapi /opt/traceproof/tests/fixtures/csharp-webapi
-COPY tests/fixtures/joern-csharp-crossfile /opt/traceproof/tests/fixtures/joern-csharp-crossfile
-COPY tests/fixtures/joern-csharp-namespaced /opt/traceproof/tests/fixtures/joern-csharp-namespaced
-COPY tests/fixtures/joern-csharp-binding /opt/traceproof/tests/fixtures/joern-csharp-binding
-COPY work/container-inputs/AstCreator.scala /opt/traceproof/AstCreator.scala
-RUN python /opt/traceproof/scripts/build_joern_csharp_repair.py --joern-home /opt/joern-cli --source /opt/traceproof/AstCreator.scala --output /opt/traceproof/csharp-repair && chmod -R a+rX /opt/traceproof
-COPY containers/joern_csharp_acceptance.py /opt/traceproof/joern_csharp_acceptance.py
+COPY dist/veriflow-0.1.0-py3-none-any.whl /tmp/veriflow-0.1.0-py3-none-any.whl
+RUN /opt/veriflow-venv/bin/pip install --no-index --no-deps --force-reinstall /tmp/veriflow-0.1.0-py3-none-any.whl
+COPY scripts/validate_joern.py scripts/validate_joern_csharp.py scripts/validate_joern_csharp_binding.py scripts/validate_joern_csharp_discovery.py scripts/validate_csharp_locations.py scripts/build_joern_csharp_repair.py /opt/veriflow/scripts/
+COPY scripts/joern /opt/veriflow/scripts/joern
+COPY tests/fixtures/csharp-core /opt/veriflow/tests/fixtures/csharp-core
+COPY tests/fixtures/csharp-mvc /opt/veriflow/tests/fixtures/csharp-mvc
+COPY tests/fixtures/csharp-webapi /opt/veriflow/tests/fixtures/csharp-webapi
+COPY tests/fixtures/joern-csharp-crossfile /opt/veriflow/tests/fixtures/joern-csharp-crossfile
+COPY tests/fixtures/joern-csharp-namespaced /opt/veriflow/tests/fixtures/joern-csharp-namespaced
+COPY tests/fixtures/joern-csharp-binding /opt/veriflow/tests/fixtures/joern-csharp-binding
+COPY work/container-inputs/AstCreator.scala /opt/veriflow/AstCreator.scala
+RUN python /opt/veriflow/scripts/build_joern_csharp_repair.py --joern-home /opt/joern-cli --source /opt/veriflow/AstCreator.scala --output /opt/veriflow/csharp-repair && chmod -R a+rX /opt/veriflow
+COPY containers/joern_csharp_acceptance.py /opt/veriflow/joern_csharp_acceptance.py
 USER 1001:0

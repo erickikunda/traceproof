@@ -9,16 +9,16 @@ from test_joern_claims import review_decision
 from test_slice03 import captured_source as captured_source
 from test_triage import policy
 
-from traceproof import joern, pipeline
-from traceproof.bundles import build_bundle
-from traceproof.claims import assess_evidence
-from traceproof.domain import TraceProofError
-from traceproof.joern_claims import RUST_POLICY, assess_review_evidence, review_preflight
-from traceproof.models import request_body
-from traceproof.reports import get_report
-from traceproof.scan_advisory import AdvisoryOptions
-from traceproof.scanning import scan_report
-from traceproof.triage import set_budget, triage
+from veriflow import joern, pipeline
+from veriflow.bundles import build_bundle
+from veriflow.claims import assess_evidence
+from veriflow.domain import VeriFlowError
+from veriflow.joern_claims import RUST_POLICY, assess_review_evidence, review_preflight
+from veriflow.models import request_body
+from veriflow.reports import get_report
+from veriflow.scan_advisory import AdvisoryOptions
+from veriflow.scanning import scan_report
+from veriflow.triage import set_budget, triage
 
 
 @pytest.fixture
@@ -30,7 +30,7 @@ def rust_bundle(store, captured_source, tmp_path, monkeypatch):
             "Cargo.toml": (fixtures / "joern-rust-env/vulnerable/Cargo.toml").read_text(),
         }
     )
-    monkeypatch.setattr("traceproof.joern_rust.trusted_toolchain", lambda *args: tmp_path)
+    monkeypatch.setattr("veriflow.joern_rust.trusted_toolchain", lambda *args: tmp_path)
     home = tmp_path / "tools"
     (home / "lib").mkdir(parents=True)
     (home / "lib" / f"io.joern.joern-cli-{joern.VERSION}.jar").touch()
@@ -142,7 +142,7 @@ def test_opt_in_cost_gates_and_idempotency(store, rust_bundle, monkeypatch, stop
     if stop == "evidence":
         altered = deepcopy(b)
         altered.pop("joern_native_audit")
-        monkeypatch.setattr("traceproof.triage.get_bundle", lambda *args: altered)
+        monkeypatch.setattr("veriflow.triage.get_bundle", lambda *args: altered)
     result = triage(store, b["bundle_id"], policy(), adapter, "rust", review_policy=RUST_POLICY)
     assert (
         result["state"]
@@ -163,9 +163,9 @@ def test_opt_in_cost_gates_and_idempotency(store, rust_bundle, monkeypatch, stop
 def test_main_workflow_and_policy_scope(store, rust_bundle, tmp_path):
     b = rust_bundle
     advisory = AdvisoryOptions(policy(), adapter_for(b), "workflow", RUST_POLICY)
-    with pytest.raises(TraceProofError, match="profile"):
+    with pytest.raises(VeriFlowError, match="profile"):
         advisory.validate_scope("rust", None)
-    with pytest.raises(TraceProofError, match="profile"):
+    with pytest.raises(VeriFlowError, match="profile"):
         advisory.validate_scope("java", "rust-env-shell-v1")
     set_budget(store, b["run_id"], 100000)
     result = pipeline.scan_run(
@@ -187,7 +187,7 @@ def test_main_workflow_and_policy_scope(store, rust_bundle, tmp_path):
 def test_policy_in_provider_request_and_cli(store, rust_bundle, tmp_path):
     from typer.testing import CliRunner
 
-    from traceproof.cli import app
+    from veriflow.cli import app
 
     b = rust_bundle
     body = request_body(b, policy(), review_policy=RUST_POLICY)
@@ -219,7 +219,7 @@ def test_eight_node_crossfile_path_is_retained(store, captured_source, tmp_path,
             if p.is_file()
         }
     )
-    monkeypatch.setattr("traceproof.joern_rust.trusted_toolchain", lambda *args: tmp_path)
+    monkeypatch.setattr("veriflow.joern_rust.trusted_toolchain", lambda *args: tmp_path)
     home = tmp_path / "tools"
     (home / "lib").mkdir(parents=True)
     (home / "lib" / f"io.joern.joern-cli-{joern.VERSION}.jar").touch()

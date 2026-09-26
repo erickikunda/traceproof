@@ -7,9 +7,9 @@ import pytest
 from test_acquisition_provenance import rewrite_csv
 from test_gcs_acquisition import Reader, execute
 
-from traceproof.artifacts import ArtifactStore
-from traceproof.intake import process, submit
-from traceproof.reports import get_report, publish_report, render_report
+from veriflow.artifacts import ArtifactStore
+from veriflow.intake import process, submit
+from veriflow.reports import get_report, publish_report, render_report
 
 
 def handoff(tmp_path):

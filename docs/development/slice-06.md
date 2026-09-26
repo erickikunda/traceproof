@@ -46,13 +46,13 @@ historical decisions are not rewritten. Version 2 bundles still support the orig
 direct-source checks but lack line counts needed for this new mapping.
 
 ```bash
-uv run traceproof build-bundle ATTEMPT_ID CANDIDATE_FINGERPRINT
-uv run traceproof evidence-policy py/code-injection
-uv run traceproof check-evidence NEW_BUNDLE_ID /absolute/decision.json
+uv run veriflow build-bundle ATTEMPT_ID CANDIDATE_FINGERPRINT
+uv run veriflow evidence-policy py/code-injection
+uv run veriflow check-evidence NEW_BUNDLE_ID /absolute/decision.json
 # Optional explicit replay uses the existing per-run budget:
-uv run traceproof triage NEW_BUNDLE_ID examples/triage-replay-config.json new-request-key \
+uv run veriflow triage NEW_BUNDLE_ID examples/triage-replay-config.json new-request-key \
   --replay /absolute/replay-response.json
-uv run traceproof triage-report RUN_ID
+uv run veriflow triage-report RUN_ID
 ```
 
 ## Validation

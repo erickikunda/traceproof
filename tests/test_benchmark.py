@@ -8,11 +8,11 @@ from test_reports import scanned as scanned
 from test_triage import evidence_fixture as evidence_fixture
 from typer.testing import CliRunner
 
-from traceproof.benchmark import check_benchmark
-from traceproof.bundles import canonical
-from traceproof.cli import app
-from traceproof.domain import TraceProofError
-from traceproof.persistence import Run, Snapshot, TriageCall
+from veriflow.benchmark import check_benchmark
+from veriflow.bundles import canonical
+from veriflow.cli import app
+from veriflow.domain import VeriFlowError
+from veriflow.persistence import Run, Snapshot, TriageCall
 
 
 @pytest.fixture
@@ -87,37 +87,37 @@ def test_contract_check_does_not_evaluate_or_echo_answers(documents):
 def test_bad_labels_rejected_without_echoing_values(documents, field, value):
     _, labels, write = documents
     labels["labels"][0][field] = value
-    with pytest.raises(TraceProofError):
+    with pytest.raises(VeriFlowError):
         check_benchmark(*write())
 
 
 def test_manifest_pin_and_duplicate_units(documents):
     manifest, labels, write = documents
     labels["manifest_sha256"] = "c" * 64
-    with pytest.raises(TraceProofError, match="pinned"):
+    with pytest.raises(VeriFlowError, match="pinned"):
         check_benchmark(*write())
     labels["manifest_sha256"] = hashlib.sha256(canonical(manifest)).hexdigest()
     labels["labels"].append({**labels["labels"][0], "label_id": "second"})
-    with pytest.raises(TraceProofError, match="Invalid"):
+    with pytest.raises(VeriFlowError, match="Invalid"):
         check_benchmark(*write())
     labels["labels"].pop()
     manifest["repositories"].append(copy.deepcopy(manifest["repositories"][0]))
-    with pytest.raises(TraceProofError, match="Invalid"):
+    with pytest.raises(VeriFlowError, match="Invalid"):
         check_benchmark(*write())
 
 
 def test_extra_fields_duplicate_json_keys_and_size_limit(documents):
     manifest, _, write = documents
     manifest["answers"] = "NEVER ECHO THIS"
-    with pytest.raises(TraceProofError) as error:
+    with pytest.raises(VeriFlowError) as error:
         check_benchmark(*write())
     assert "NEVER ECHO THIS" not in str(error.value)
     path, _ = write()
     path.write_text('{"schema_version":"1","schema_version":"2"}')
-    with pytest.raises(TraceProofError, match="Invalid"):
+    with pytest.raises(VeriFlowError, match="Invalid"):
         check_benchmark(path)
     path.write_bytes(b" " * (1024 * 1024 + 1))
-    with pytest.raises(TraceProofError, match="1 MiB"):
+    with pytest.raises(VeriFlowError, match="1 MiB"):
         check_benchmark(path)
 
 

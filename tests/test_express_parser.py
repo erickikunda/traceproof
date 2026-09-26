@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from traceproof.express_parser import parse, parse_isolated
+from veriflow.express_parser import parse, parse_isolated
 
 BASE = (Path(__file__).parent / "fixtures/joern-express/javascript/vulnerable/app.js").read_bytes()
 
@@ -53,5 +53,5 @@ def test_parser_bounds_and_bad_input(monkeypatch):
     assert parse(b"const (", "typescript")["status"] == "syntax_error"
     assert parse(BASE, "other")["status"] == "unsupported_language"
     assert parse(b"x" * (1024 * 1024 + 1), "javascript")["status"] == "size_limit"
-    monkeypatch.setattr("traceproof.express_parser.MAX_NODES", 2)
+    monkeypatch.setattr("veriflow.express_parser.MAX_NODES", 2)
     assert parse(BASE, "javascript")["status"] == "node_limit"

@@ -11,7 +11,7 @@ System.Diagnostics.Process.Start("/bin/sh", "-c \"" + input + "\"");
 ```
 
 ```sh
-traceproof --state-dir /path/to/state scan-run RUN_ID --engine joern \
+veriflow --state-dir /path/to/state scan-run RUN_ID --engine joern \
   --language csharp --joern-home /path/to/joern-cli \
   --joern-repair-dir /path/to/csharp-repair \
   --joern-profile csharp-query-shell-start-v1

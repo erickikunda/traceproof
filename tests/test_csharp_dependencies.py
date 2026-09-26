@@ -4,8 +4,8 @@ import pytest
 from test_reports import scanned as scanned
 from test_triage import evidence_fixture as evidence_fixture
 
-from traceproof.csharp_dependencies import environment, inventory, load_profile
-from traceproof.domain import TraceProofError
+from veriflow.csharp_dependencies import environment, inventory, load_profile
+from veriflow.domain import VeriFlowError
 
 
 def profile(tmp_path):
@@ -51,7 +51,7 @@ def test_tampered_dependency_inventory_rejected(tmp_path, change):
     else:
         target.unlink()
         target.symlink_to(tmp_path / "sdk/dotnet")
-    with pytest.raises(TraceProofError):
+    with pytest.raises(VeriFlowError):
         load_profile(path)
 
 
@@ -60,13 +60,13 @@ def test_outside_profile_root_rejected(tmp_path):
     data = json.loads(path.read_text())
     data["sdk"]["directory"] = "../outside"
     path.write_text(json.dumps(data))
-    with pytest.raises(TraceProofError):
+    with pytest.raises(VeriFlowError):
         load_profile(path)
 
 
 def test_changed_profile_does_not_reuse_old_attempt(store, scanned, tmp_path, monkeypatch):
-    from traceproof import pipeline
-    from traceproof.persistence import ScanAttempt
+    from veriflow import pipeline
+    from veriflow.persistence import ScanAttempt
 
     path = profile(tmp_path)
     with store.transaction() as session:
@@ -83,10 +83,10 @@ def test_changed_profile_does_not_reuse_old_attempt(store, scanned, tmp_path, mo
     query.write_text("// query")
 
     def preflight(*args):
-        raise TraceProofError("Reached extraction preflight")
+        raise VeriFlowError("Reached extraction preflight")
 
     monkeypatch.setattr(pipeline, "verified_source", preflight)
-    with pytest.raises(TraceProofError, match="Reached extraction"):
+    with pytest.raises(VeriFlowError, match="Reached extraction"):
         pipeline.scan_run(
             store,
             scanned[1],
@@ -105,20 +105,20 @@ def test_sdk_version_mismatch_stops_before_extraction(
 
     from test_indexing import captured
 
-    from traceproof.codeql import extract
-    from traceproof.persistence import exclusive_worker
+    from veriflow.codeql import extract
+    from veriflow.persistence import exclusive_worker
 
     path = profile(tmp_path)
     with zipfile.ZipFile(archive, "w") as out:
         out.writestr("C.cs", "class C {}")
     run = captured(store, archive, manifest)
-    monkeypatch.setattr("traceproof.codeql.shutil.which", lambda _: "/trusted/codeql")
+    monkeypatch.setattr("veriflow.codeql.shutil.which", lambda _: "/trusted/codeql")
     monkeypatch.setattr(
-        "traceproof.codeql.subprocess.run",
+        "veriflow.codeql.subprocess.run",
         lambda *a, **k: subprocess.CompletedProcess(a, 0, stdout=b"wrong-version\n"),
     )
     monkeypatch.setattr(
-        "traceproof.codeql.subprocess.Popen", lambda *a, **k: pytest.fail("extraction launched")
+        "veriflow.codeql.subprocess.Popen", lambda *a, **k: pytest.fail("extraction launched")
     )
     with exclusive_worker(store.root):
         result = extract(
@@ -139,22 +139,22 @@ def test_isolation_failure_is_durable_and_launches_no_extractor(
 
     from test_indexing import captured
 
-    from traceproof.codeql import extract, extraction_status
-    from traceproof.persistence import exclusive_worker
+    from veriflow.codeql import extract, extraction_status
+    from veriflow.persistence import exclusive_worker
 
     path = profile(tmp_path)
     with zipfile.ZipFile(archive, "w") as out:
         out.writestr("C.cs", "class C {}")
     run = captured(store, archive, manifest)
-    monkeypatch.setattr("traceproof.codeql.shutil.which", lambda _: "/trusted/codeql")
-    monkeypatch.setattr("traceproof.codeql.offline_command", lambda _: ["/sandbox"])
+    monkeypatch.setattr("veriflow.codeql.shutil.which", lambda _: "/trusted/codeql")
+    monkeypatch.setattr("veriflow.codeql.offline_command", lambda _: ["/sandbox"])
 
     def denied(*args, **kwargs):
         raise subprocess.CalledProcessError(71, args[0])
 
-    monkeypatch.setattr("traceproof.codeql.subprocess.run", denied)
+    monkeypatch.setattr("veriflow.codeql.subprocess.run", denied)
     monkeypatch.setattr(
-        "traceproof.codeql.subprocess.Popen", lambda *a, **k: pytest.fail("extraction launched")
+        "veriflow.codeql.subprocess.Popen", lambda *a, **k: pytest.fail("extraction launched")
     )
     with exclusive_worker(store.root):
         result = extract(
@@ -166,8 +166,8 @@ def test_isolation_failure_is_durable_and_launches_no_extractor(
 
 
 def test_offline_request_does_not_reuse_network_enabled_scan(store, scanned, tmp_path, monkeypatch):
-    from traceproof import pipeline
-    from traceproof.persistence import ScanAttempt
+    from veriflow import pipeline
+    from veriflow.persistence import ScanAttempt
 
     path = profile(tmp_path)
     with store.transaction() as session:
@@ -185,10 +185,10 @@ def test_offline_request_does_not_reuse_network_enabled_scan(store, scanned, tmp
     query.write_text("// query")
 
     def preflight(*args):
-        raise TraceProofError("Reached extraction preflight")
+        raise VeriFlowError("Reached extraction preflight")
 
     monkeypatch.setattr(pipeline, "verified_source", preflight)
-    with pytest.raises(TraceProofError, match="Reached extraction"):
+    with pytest.raises(VeriFlowError, match="Reached extraction"):
         pipeline.scan_run(
             store,
             scanned[1],

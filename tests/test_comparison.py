@@ -5,10 +5,10 @@ from test_reports import scanned as scanned
 from test_triage import evidence_fixture as evidence_fixture
 from typer.testing import CliRunner
 
-from traceproof.cli import app
-from traceproof.comparison import compare_reports, render_comparison
-from traceproof.domain import TraceProofError
-from traceproof.reports import publish_report
+from veriflow.cli import app
+from veriflow.comparison import compare_reports, render_comparison
+from veriflow.domain import VeriFlowError
+from veriflow.reports import publish_report
 
 
 @pytest.fixture
@@ -39,7 +39,7 @@ def pair(monkeypatch):
     after = copy.deepcopy(before)
     after["created_at"] = "2026-01-02"
     monkeypatch.setattr(
-        "traceproof.comparison.get_report",
+        "veriflow.comparison.get_report",
         lambda store, repo, identity: before if identity == "before" else after,
     )
     return before, after
@@ -158,7 +158,7 @@ def test_markdown_escapes_candidate_text(pair):
     text = render_comparison(result, "markdown")
     assert "<script>" not in text and "[x](https://bad)" not in text
     assert result["comparison_id"] in text
-    with pytest.raises(TraceProofError, match="format"):
+    with pytest.raises(VeriFlowError, match="format"):
         render_comparison(result, "unsupported")
 
 
@@ -168,7 +168,7 @@ def test_exact_published_reports_and_cli(store, scanned):
     identity = report["report_id"]
     result = compare_reports(store, repo, identity, identity)
     assert result["group_counts"]["observed_in_both"] == 1
-    with pytest.raises(TraceProofError, match="belong"):
+    with pytest.raises(VeriFlowError, match="belong"):
         compare_reports(store, "other-repo", identity, identity)
     output = CliRunner().invoke(
         app,

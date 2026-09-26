@@ -6,11 +6,11 @@ import sys
 import zipfile
 from pathlib import Path
 
-from traceproof.artifacts import ArtifactStore
-from traceproof.intake import process, submit
-from traceproof.persistence import Store
-from traceproof.pipeline import scan_run
-from traceproof.reports import get_report, render_report
+from veriflow.artifacts import ArtifactStore
+from veriflow.intake import process, submit
+from veriflow.persistence import Store
+from veriflow.pipeline import scan_run
+from veriflow.reports import get_report, render_report
 
 language = sys.argv[1]
 ext = "js" if language == "javascript" else "ts"

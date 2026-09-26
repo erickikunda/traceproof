@@ -9,12 +9,12 @@ from test_reports import scanned as scanned
 from test_triage import evidence_fixture as evidence_fixture
 from typer.testing import CliRunner
 
-from traceproof.batch_reports import import_reports, render_import_reports
-from traceproof.cli import app
-from traceproof.domain import TraceProofError
-from traceproof.intake import submit
-from traceproof.persistence import ImportItem, PublishedReport, Run, ScanAttempt
-from traceproof.reports import publish_report
+from veriflow.batch_reports import import_reports, render_import_reports
+from veriflow.cli import app
+from veriflow.domain import VeriFlowError
+from veriflow.intake import submit
+from veriflow.persistence import ImportItem, PublishedReport, Run, ScanAttempt
+from veriflow.reports import publish_report
 
 
 def test_exact_import_run_and_no_stale_fallback(store, scanned):
@@ -56,7 +56,7 @@ def test_exact_import_run_and_no_stale_fallback(store, scanned):
     with store.transaction() as session:
         saved = session.get(PublishedReport, failed["report_id"])
         saved.content = {**saved.content, "candidate_count": 999}
-    with pytest.raises(TraceProofError, match="integrity"):
+    with pytest.raises(VeriFlowError, match="integrity"):
         import_reports(store, batch)
 
 
@@ -76,9 +76,9 @@ def test_intake_gaps_pages_and_csv(store, archive, manifest):
     assert exported[0]["repo_id"] == "' =formula" and exported[0]["candidate_count"] == ""
     empty = import_reports(store, batch, offset=100)
     assert empty["items"] == [] and len(render_import_reports(empty, "csv").splitlines()) == 1
-    with pytest.raises(TraceProofError, match="Import not found"):
+    with pytest.raises(VeriFlowError, match="Import not found"):
         import_reports(store, "missing")
-    with pytest.raises(TraceProofError, match="pagination"):
+    with pytest.raises(VeriFlowError, match="pagination"):
         import_reports(store, batch, limit=0)
-    with pytest.raises(TraceProofError, match="Format"):
+    with pytest.raises(VeriFlowError, match="Format"):
         render_import_reports(first, "html")

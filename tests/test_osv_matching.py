@@ -5,12 +5,12 @@ import pytest
 from test_dependency_discovery import snapshot as snapshot
 from typer.testing import CliRunner
 
-from traceproof.bundles import canonical
-from traceproof.cli import app
-from traceproof.domain import TraceProofError
-from traceproof.osv_export import export_osv
-from traceproof.osv_matching import semver_key
-from traceproof.sbom_export import export_sbom
+from veriflow.bundles import canonical
+from veriflow.cli import app
+from veriflow.domain import VeriFlowError
+from veriflow.osv_export import export_osv
+from veriflow.osv_matching import semver_key
+from veriflow.sbom_export import export_sbom
 
 LOCK = {
     "lockfileVersion": 3,
@@ -120,7 +120,7 @@ def test_exact_version_list_matches(store, snapshot, database):
     assert found[0]["analysis"]["state"] == "in_triage"
     assert found[0]["affects"][0]["ref"] == "pkg:npm/lodash@4.17.20|pinned"
     assert found[0]["references"] == [{"id": "CVE-2020-0001", "source": {"name": "OSV"}}]
-    assert properties["traceproof:osv_reachability_analysis"] == "none"
+    assert properties["veriflow:osv_reachability_analysis"] == "none"
 
 
 @pytest.mark.parametrize(
@@ -160,8 +160,8 @@ def test_unevaluable_range_is_a_gap_not_a_clean_result(store, snapshot, database
     found, properties = vulnerabilities_of(store, repo, snapshot_id, database([record]))
     assert found == []
     # The component must not be counted as cleanly evaluated.
-    assert "partially_evaluated=1" in properties["traceproof:osv_component_states"]
-    assert "range_type_ECOSYSTEM_npm=1" in properties["traceproof:osv_evaluation_gaps"]
+    assert "partially_evaluated=1" in properties["veriflow:osv_component_states"]
+    assert "range_type_ECOSYSTEM_npm=1" in properties["veriflow:osv_evaluation_gaps"]
 
 
 def test_semver_range_over_a_maven_qualifier_is_a_gap(store, snapshot, database):
@@ -179,8 +179,8 @@ def test_semver_range_over_a_maven_qualifier_is_a_gap(store, snapshot, database)
     )
     found, properties = vulnerabilities_of(store, repo, snapshot_id, path)
     assert found == []
-    assert "version_not_semver=1" in properties["traceproof:osv_evaluation_gaps"]
-    assert "partially_evaluated=1" in properties["traceproof:osv_component_states"]
+    assert "version_not_semver=1" in properties["veriflow:osv_evaluation_gaps"]
+    assert "partially_evaluated=1" in properties["veriflow:osv_component_states"]
 
 
 def ecosystem_range(introduced, fixed=None, last_affected=None):
@@ -224,8 +224,8 @@ def test_maven_ecosystem_ranges_are_evaluated(store, snapshot, database, version
         assert found[0]["properties"][0]["value"] == "maven_range"
     else:
         # Fully evaluated now, not a gap.
-        assert "evaluated_no_match=1" in properties["traceproof:osv_component_states"]
-        assert properties["traceproof:osv_evaluation_gaps"] == ""
+        assert "evaluated_no_match=1" in properties["veriflow:osv_component_states"]
+        assert properties["veriflow:osv_evaluation_gaps"] == ""
 
 
 def test_maven_ordering_is_not_applied_to_npm(store, snapshot, database):
@@ -233,7 +233,7 @@ def test_maven_ordering_is_not_applied_to_npm(store, snapshot, database):
     record = osv("GHSA-eco-npm", "npm", "lodash", **ecosystem_range("4.0.0", "4.17.21"))
     found, properties = vulnerabilities_of(store, repo, snapshot_id, database([record]))
     assert found == []
-    assert "range_type_ECOSYSTEM_npm=1" in properties["traceproof:osv_evaluation_gaps"]
+    assert "range_type_ECOSYSTEM_npm=1" in properties["veriflow:osv_evaluation_gaps"]
 
 
 def test_semver_typed_range_is_evaluated_for_any_ecosystem(store, snapshot, database):
@@ -271,7 +271,7 @@ def test_withdrawn_record_never_matches(store, snapshot, database):
     record["withdrawn"] = "2026-01-01T00:00:00Z"
     found, properties = vulnerabilities_of(store, repo, snapshot_id, database([record]))
     assert found == []
-    assert properties["traceproof:osv_records_loaded"] == "0"
+    assert properties["veriflow:osv_records_loaded"] == "0"
 
 
 def test_unresolved_version_is_never_evaluated(store, snapshot, database):
@@ -279,8 +279,8 @@ def test_unresolved_version_is_never_evaluated(store, snapshot, database):
     path = database([osv("GHSA-list", "npm", "lodash", versions=["4.17.20"])])
     found, properties = vulnerabilities_of(store, repo, snapshot_id, path)
     assert found == []
-    assert "not_evaluated=1" in properties["traceproof:osv_component_states"]
-    assert "component_state_no_version=1" in properties["traceproof:osv_evaluation_gaps"]
+    assert "not_evaluated=1" in properties["veriflow:osv_component_states"]
+    assert "component_state_no_version=1" in properties["veriflow:osv_evaluation_gaps"]
 
 
 def test_npm_name_case_is_normalized(store, snapshot, database):
@@ -294,14 +294,14 @@ def test_unmatched_component_is_reported_as_evaluated(store, snapshot, database)
     repo, snapshot_id = snapshot({"package-lock.json": LOCK})
     path = database([osv("GHSA-other", "npm", "lodash", versions=["3.0.0"])])
     _, properties = vulnerabilities_of(store, repo, snapshot_id, path)
-    assert "evaluated_no_match=2" in properties["traceproof:osv_component_states"]
-    assert properties["traceproof:osv_evaluation_gaps"] == ""
+    assert "evaluated_no_match=2" in properties["veriflow:osv_component_states"]
+    assert properties["veriflow:osv_evaluation_gaps"] == ""
 
 
 def test_matching_requires_packages(store, snapshot, database):
     repo, snapshot_id = snapshot({"package-lock.json": LOCK})
     path = database([osv("GHSA-list", "npm", "lodash", versions=["4.17.20"])])
-    with pytest.raises(TraceProofError, match="requires --packages"):
+    with pytest.raises(VeriFlowError, match="requires --packages"):
         export_sbom(store, repo, snapshot_id, database=path)
 
 
@@ -309,7 +309,7 @@ def test_database_integrity_is_enforced(store, snapshot, database, tmp_path):
     repo, snapshot_id = snapshot({"package-lock.json": LOCK})
     path = database([osv("GHSA-list", "npm", "lodash", versions=["4.17.20"])])
     (tmp_path / "osv" / "records" / "GHSA-list.json").write_text('{"id": "GHSA-tampered"}')
-    with pytest.raises(TraceProofError, match="integrity mismatch"):
+    with pytest.raises(VeriFlowError, match="integrity mismatch"):
         export_sbom(store, repo, snapshot_id, packages=True, database=path)
 
 
@@ -317,7 +317,7 @@ def test_added_record_breaks_the_pinned_inventory(store, snapshot, database, tmp
     repo, snapshot_id = snapshot({"package-lock.json": LOCK})
     path = database([osv("GHSA-list", "npm", "lodash", versions=["4.17.20"])])
     (tmp_path / "osv" / "records" / "extra.json").write_text('{"id": "GHSA-extra"}')
-    with pytest.raises(TraceProofError, match="record count"):
+    with pytest.raises(VeriFlowError, match="record count"):
         export_sbom(store, repo, snapshot_id, packages=True, database=path)
 
 
@@ -328,7 +328,7 @@ def test_added_record_breaks_the_pinned_inventory(store, snapshot, database, tmp
 def test_invalid_profile_is_refused(store, snapshot, database, override):
     repo, snapshot_id = snapshot({"package-lock.json": LOCK})
     path = database([osv("GHSA-list", "npm", "lodash", versions=["4.17.20"])], **override)
-    with pytest.raises(TraceProofError, match="Invalid OSV database profile"):
+    with pytest.raises(VeriFlowError, match="Invalid OSV database profile"):
         export_sbom(store, repo, snapshot_id, packages=True, database=path)
 
 
@@ -347,8 +347,8 @@ def test_osv_export_groups_by_declaring_file(store, snapshot, database):
         "purl": "pkg:npm/lodash@4.17.20",
     }
     assert package["vulnerabilities"][0]["id"] == "GHSA-list"
-    assert package["traceproof"]["match_bases"] == ["version_list"]
-    assert document["traceproof"]["snapshot_id"] == snapshot_id
+    assert package["veriflow"]["match_bases"] == ["version_list"]
+    assert document["veriflow"]["snapshot_id"] == snapshot_id
 
 
 def test_empty_osv_result_states_its_limits(store, snapshot, database):
@@ -356,9 +356,9 @@ def test_empty_osv_result_states_its_limits(store, snapshot, database):
     path = database([])
     document = json.loads(export_osv(store, repo, snapshot_id, path))
     assert document["results"] == []
-    assert any("never means" in line for line in document["traceproof"]["limitations"])
-    assert document["traceproof"]["osv_coverage"]["reachability_analysis"] == "none"
-    assert document["traceproof"]["dependency_coverage"]["transitive_resolved"] is False
+    assert any("never means" in line for line in document["veriflow"]["limitations"])
+    assert document["veriflow"]["osv_coverage"]["reachability_analysis"] == "none"
+    assert document["veriflow"]["dependency_coverage"]["transitive_resolved"] is False
 
 
 def test_osv_matching_is_deterministic_and_exposed_on_the_cli(store, snapshot, database):
@@ -385,7 +385,7 @@ def test_usage_evidence_never_changes_the_analysis_state(store, snapshot, databa
         # Usage prioritizes; it never adjudicates.
         assert found[0]["analysis"]["state"] == "in_triage"
         properties = {p["name"]: p["value"] for p in found[0]["properties"]}
-        assert properties["traceproof:usage_state"] == expected
+        assert properties["veriflow:usage_state"] == expected
 
 
 def test_osv_export_carries_usage_and_states_its_limits(store, snapshot, database):
@@ -393,13 +393,13 @@ def test_osv_export_carries_usage_and_states_its_limits(store, snapshot, databas
     path = database([osv("GHSA-list", "npm", "lodash", versions=["4.17.20"])])
     document = json.loads(export_osv(store, repo, snapshot_id, path, usage=True))
     package = document["results"][0]["packages"][0]
-    assert package["traceproof"]["usage"]["state"] == "not_observed"
-    coverage = document["traceproof"]["usage_coverage"]
+    assert package["veriflow"]["usage"]["state"] == "not_observed"
+    coverage = document["veriflow"]["usage_coverage"]
     assert coverage["analysis"] == "import evidence only; not reachability"
     assert coverage["call_graph_resolved"] is False
     assert coverage["vulnerable_symbol_matching"] == "none"
     assert coverage["third_party_source_available"] is False
-    assert any("never clears" in line for line in document["traceproof"]["limitations"])
+    assert any("never clears" in line for line in document["veriflow"]["limitations"])
 
 
 GOMOD = "module github.com/example/app\nrequire github.com/gin-gonic/gin v1.9.1\n"
@@ -436,8 +436,8 @@ def test_go_semver_ranges_use_the_stripped_version(store, snapshot, database, bo
     found, properties = vulnerabilities_of(store, repo, snapshot_id, path)
     assert bool(found) is expected
     if not expected:
-        assert "evaluated_no_match=1" in properties["traceproof:osv_component_states"]
-        assert properties["traceproof:osv_evaluation_gaps"] == ""
+        assert "evaluated_no_match=1" in properties["veriflow:osv_component_states"]
+        assert properties["veriflow:osv_evaluation_gaps"] == ""
 
 
 def test_replaced_module_is_never_matched(store, snapshot, database):
@@ -447,4 +447,4 @@ def test_replaced_module_is_never_matched(store, snapshot, database):
     found, properties = vulnerabilities_of(store, repo, snapshot_id, path)
     # The declared version is not what a build resolves, so it is never evaluated.
     assert found == []
-    assert "component_state_no_version=1" in properties["traceproof:osv_evaluation_gaps"]
+    assert "component_state_no_version=1" in properties["veriflow:osv_evaluation_gaps"]

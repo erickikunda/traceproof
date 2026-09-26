@@ -6,7 +6,7 @@ from test_dependency_discovery import snapshot as snapshot
 from test_osv_matching import database as database
 from test_osv_matching import osv
 
-from traceproof.sbom_export import export_sbom
+from veriflow.sbom_export import export_sbom
 
 NS = 'xmlns="http://maven.apache.org/POM/4.0.0"'
 
@@ -54,10 +54,10 @@ def test_literal_versions_are_declared_not_pinned(store, snapshot):
     assert spring["version"] == "5.3.9"
     properties = properties_of(spring)
     # Maven has no lockfile; a literal version is a declaration, never a pin.
-    assert properties["traceproof:resolution"] == "declared_version"
-    assert properties["traceproof:version_source"] == "literal"
+    assert properties["veriflow:resolution"] == "declared_version"
+    assert properties["veriflow:version_source"] == "literal"
     junit = found["pkg:maven/junit/junit@4.13.2"]
-    assert properties_of(junit)["traceproof:declared_scopes"] == "test"
+    assert properties_of(junit)["veriflow:declared_scopes"] == "test"
 
 
 def test_local_property_is_interpolated_and_marked(store, snapshot):
@@ -84,8 +84,8 @@ def test_local_property_is_interpolated_and_marked(store, snapshot):
     found = libraries(store, repo, snapshot_id)
     spring = found["pkg:maven/org.springframework/spring-web@5.3.9"]
     # An interpolated version is not a literal one; say which the POM actually stated.
-    assert properties_of(spring)["traceproof:version_source"] == "properties"
-    assert properties_of(spring)["traceproof:resolution"] == "declared_version"
+    assert properties_of(spring)["veriflow:version_source"] == "properties"
+    assert properties_of(spring)["veriflow:resolution"] == "declared_version"
     assert "pkg:maven/com.example/sibling@2.1.0" in found
 
 
@@ -108,8 +108,8 @@ def test_unresolvable_property_never_invents_a_version(store, snapshot):
     component = libraries(store, repo, snapshot_id)["pkg:maven/org.springframework/spring-web"]
     assert "version" not in component
     properties = properties_of(component)
-    assert properties["traceproof:resolution"] == "unresolved_version"
-    assert properties["traceproof:version_source"] == "inherited_or_managed_elsewhere"
+    assert properties["veriflow:resolution"] == "unresolved_version"
+    assert properties["veriflow:version_source"] == "inherited_or_managed_elsewhere"
 
 
 def test_dependency_management_supplies_a_local_version(store, snapshot):
@@ -134,7 +134,7 @@ def test_dependency_management_supplies_a_local_version(store, snapshot):
         }
     )
     component = libraries(store, repo, snapshot_id)["pkg:maven/org.slf4j/slf4j-api@2.0.7"]
-    assert properties_of(component)["traceproof:version_source"] == "dependency_management"
+    assert properties_of(component)["veriflow:version_source"] == "dependency_management"
 
 
 def test_imported_bom_is_counted_not_resolved(store, snapshot):
@@ -163,7 +163,7 @@ def test_imported_bom_is_counted_not_resolved(store, snapshot):
     found = libraries(store, repo, snapshot_id)
     starter = found["pkg:maven/org.springframework.boot/spring-boot-starter-web"]
     assert "version" not in starter
-    notes = coverage_of(store, repo, snapshot_id)["traceproof:ecosystem_notes"]
+    notes = coverage_of(store, repo, snapshot_id)["veriflow:ecosystem_notes"]
     assert "maven_bom_imports_unresolved=1" in notes
 
 
@@ -192,7 +192,7 @@ def test_parent_and_profile_dependencies_are_recorded_as_gaps(store, snapshot):
             )
         }
     )
-    notes = coverage_of(store, repo, snapshot_id)["traceproof:ecosystem_notes"]
+    notes = coverage_of(store, repo, snapshot_id)["veriflow:ecosystem_notes"]
     assert "maven_poms_with_parent=1" in notes
     assert "maven_profile_dependencies_ignored=1" in notes
     found = libraries(store, repo, snapshot_id)
@@ -221,8 +221,8 @@ def test_version_range_is_not_a_version(store, snapshot):
     component = libraries(store, repo, snapshot_id)["pkg:maven/org.slf4j/slf4j-api"]
     assert "version" not in component
     properties = properties_of(component)
-    assert properties["traceproof:resolution"] == "declared_range"
-    assert properties["traceproof:version_constraint"] == "[1.7,2.0)"
+    assert properties["veriflow:resolution"] == "declared_range"
+    assert properties["veriflow:version_constraint"] == "[1.7,2.0)"
 
 
 def test_optional_dependency_is_marked_not_dropped(store, snapshot):
@@ -242,7 +242,7 @@ def test_optional_dependency_is_marked_not_dropped(store, snapshot):
         }
     )
     component = libraries(store, repo, snapshot_id)["pkg:maven/org.slf4j/slf4j-api@2.0.7"]
-    assert properties_of(component)["traceproof:declared_scopes"] == "optional,provided"
+    assert properties_of(component)["veriflow:declared_scopes"] == "optional,provided"
 
 
 @pytest.mark.parametrize(
@@ -256,7 +256,7 @@ def test_optional_dependency_is_marked_not_dropped(store, snapshot):
 def test_entity_declarations_are_refused(store, snapshot, body):
     repo, snapshot_id = snapshot({"pom.xml": f'<?xml version="1.0"?>{body}{LITERAL}'})
     coverage = coverage_of(store, repo, snapshot_id)
-    assert coverage["traceproof:dependency_files_skipped"] == "maven:doctype_refused=1"
+    assert coverage["veriflow:dependency_files_skipped"] == "maven:doctype_refused=1"
     assert not libraries(store, repo, snapshot_id)
 
 
@@ -270,7 +270,7 @@ def test_entity_expansion_never_reaches_the_parser(store, snapshot):
     repo, snapshot_id = snapshot({"pom.xml": billion})
     # Refused before parsing, not merely parsed to nothing.
     coverage = coverage_of(store, repo, snapshot_id)
-    assert coverage["traceproof:dependency_files_skipped"] == "maven:doctype_refused=1"
+    assert coverage["veriflow:dependency_files_skipped"] == "maven:doctype_refused=1"
     assert not libraries(store, repo, snapshot_id)
 
 
@@ -281,15 +281,15 @@ def test_malformed_and_foreign_xml_are_skipped(store, snapshot):
             "module/pom.xml": '<settings xmlns="http://maven.apache.org/POM/4.0.0"/>',
         }
     )
-    skipped = coverage_of(store, repo, snapshot_id)["traceproof:dependency_files_skipped"]
+    skipped = coverage_of(store, repo, snapshot_id)["veriflow:dependency_files_skipped"]
     assert "maven:not_xml=1" in skipped and "maven:unrecognized_shape=1" in skipped
 
 
 def test_build_output_poms_are_ignored(store, snapshot):
     repo, snapshot_id = snapshot({"pom.xml": LITERAL, "target/classes/pom.xml": LITERAL})
     coverage = coverage_of(store, repo, snapshot_id)
-    assert coverage["traceproof:excluded_declarations_ignored"] == "1"
-    assert coverage["traceproof:dependency_files_parsed"] == "maven=1"
+    assert coverage["veriflow:excluded_declarations_ignored"] == "1"
+    assert coverage["veriflow:dependency_files_parsed"] == "maven=1"
 
 
 def test_namespaceless_pom_is_read(store, snapshot):
@@ -314,10 +314,10 @@ def test_both_ecosystems_coexist(store, snapshot):
         {"pom.xml": LITERAL, "package.json": {"dependencies": {"lodash": "^4.17.0"}}}
     )
     coverage = coverage_of(store, repo, snapshot_id)
-    assert coverage["traceproof:dependency_ecosystems"] == "maven,npm"
-    assert coverage["traceproof:dependency_files_parsed"] == "maven=1,npm=1"
+    assert coverage["veriflow:dependency_ecosystems"] == "maven,npm"
+    assert coverage["veriflow:dependency_files_parsed"] == "maven=1,npm=1"
     assert (
-        coverage["traceproof:dependency_resolution_counts"] == "declared_range=1,declared_version=2"
+        coverage["veriflow:dependency_resolution_counts"] == "declared_range=1,declared_version=2"
     )
     found = libraries(store, repo, snapshot_id)
     assert "pkg:npm/lodash" in found and "pkg:maven/junit/junit@4.13.2" in found
@@ -379,6 +379,6 @@ def test_real_range_only_advisories_need_maven_ordering(
     found = document.get("vulnerabilities", [])
     assert bool(found) is affected
     properties = {p["name"]: p["value"] for p in document["metadata"]["properties"]}
-    assert properties["traceproof:osv_evaluation_gaps"] == ""
+    assert properties["veriflow:osv_evaluation_gaps"] == ""
     if affected:
         assert {p["value"] for p in found[0]["properties"]} >= {"maven_range"}

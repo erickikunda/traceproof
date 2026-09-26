@@ -6,7 +6,7 @@ the existing repaired frontend and source-span/query-fact gate. Action and param
 names are unrestricted within those syntax checks.
 
 ```sh
-traceproof --state-dir /path/to/state scan-run RUN_ID --engine joern \
+veriflow --state-dir /path/to/state scan-run RUN_ID --engine joern \
   --language csharp --joern-home /path/to/joern-cli \
   --joern-repair-dir /path/to/csharp-repair \
   --joern-profile csharp-query-file-read-v1

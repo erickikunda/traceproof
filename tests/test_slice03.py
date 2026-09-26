@@ -7,16 +7,16 @@ import pytest
 from conftest import row
 from typer.testing import CliRunner
 
-from traceproof.artifacts import ArtifactStore
-from traceproof.calls import call_context
-from traceproof.cli import app
-from traceproof.domain import TraceProofError
-from traceproof.evidence import source_evidence
-from traceproof.indexing import build_index, coverage_report, verified_source
-from traceproof.intake import process, submit
-from traceproof.persistence import CodeqlAttempt, ScanAttempt, SourceIndex
-from traceproof.sarif import MAX_SARIF_BYTES, normalize
-from traceproof.scanning import analyze, scan_report
+from veriflow.artifacts import ArtifactStore
+from veriflow.calls import call_context
+from veriflow.cli import app
+from veriflow.domain import VeriFlowError
+from veriflow.evidence import source_evidence
+from veriflow.indexing import build_index, coverage_report, verified_source
+from veriflow.intake import process, submit
+from veriflow.persistence import CodeqlAttempt, ScanAttempt, SourceIndex
+from veriflow.sarif import MAX_SARIF_BYTES, normalize
+from veriflow.scanning import analyze, scan_report
 
 
 @pytest.fixture
@@ -96,13 +96,13 @@ def test_evidence_bounds_encoding_and_tamper(store, captured_source):
         ("app.py", 1, 4, None),
         ("app.py", 1, 1, "0" * 64),
     ]:
-        with pytest.raises(TraceProofError):
+        with pytest.raises(VeriFlowError):
             source_evidence(store, run, path, start, end, digest)
     _, _, tree = verified_source(store, run)
     path = tree / "app.py"
     path.chmod(0o600)
     path.write_text("changed")
-    with pytest.raises(TraceProofError):
+    with pytest.raises(VeriFlowError):
         source_evidence(store, run, "app.py", 1, 1)
 
 
@@ -112,7 +112,7 @@ def test_historical_index_selection(store, captured_source):
     with store.transaction() as session:
         session.get(SourceIndex, report["index_id"]).version = "old-parser"
     assert coverage_report(store, run, report["index_id"]) == report
-    with pytest.raises(TraceProofError):
+    with pytest.raises(VeriFlowError):
         coverage_report(store, run)
 
 
@@ -172,7 +172,7 @@ def test_sarif_dedupe_diagnostics_and_limits(store, captured_source):
     assert len(candidates) == 1 and summary["raw_result_count"] == 2
     assert summary["diagnostic_errors"] == 1 and not summary["execution_complete"]
     for raw in [b"{}", b"[]", b"not json", b" " * (MAX_SARIF_BYTES + 1)]:
-        with pytest.raises(TraceProofError):
+        with pytest.raises(VeriFlowError):
             normalize(raw, manifest, tree)
 
 
@@ -224,7 +224,7 @@ sys.exit(7 if {mode!r} == 'failed' else 0)
 """)
     fake.chmod(0o700)
     monkeypatch.setenv("TEST_SECRET", "do-not-forward")
-    monkeypatch.setattr("traceproof.codeql_scanner.shutil.which", lambda _: str(fake))
+    monkeypatch.setattr("veriflow.codeql_scanner.shutil.which", lambda _: str(fake))
     report = analyze(store, extraction_id, query, timeout=1)
     assert report["status"] == status
     assert report["candidate_count"] == count
@@ -256,7 +256,7 @@ sys.exit(7 if {mode!r} == 'failed' else 0)
 
 def test_evidence_response_budget(store, captured_source):
     run = captured_source({"app.py": "#" + "x" * 33000 + "\ndef f(): pass"})
-    with pytest.raises(TraceProofError, match="32 KiB"):
+    with pytest.raises(VeriFlowError, match="32 KiB"):
         source_evidence(store, run, "app.py", 1, 1)
 
 
@@ -271,7 +271,7 @@ def test_sarif_negative_index_and_missing_execution_status(store, captured_sourc
     result.pop("ruleId")
     result["ruleIndex"] = -1
     document["runs"][0]["tool"]["driver"]["rules"] = [{"id": "a"}]
-    with pytest.raises(TraceProofError):
+    with pytest.raises(VeriFlowError):
         normalize(json.dumps(document).encode(), manifest, tree)
 
 

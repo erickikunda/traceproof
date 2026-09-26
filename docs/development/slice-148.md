@@ -18,7 +18,7 @@ framework wiring, service loaders and configuration-driven instantiation all lea
 first-party source. A vulnerability's CycloneDX `analysis.state` stays `in_triage` whatever the
 usage state, which is asserted by test for both observed and unobserved cases.
 
-Detection is lexical rather than parsed and says so in `traceproof:usage_detection_method`, so a
+Detection is lexical rather than parsed and says so in `veriflow:usage_detection_method`, so a
 specifier inside a comment or string can be reported. Over-reporting is the conservative
 direction: it says investigate, where under-reporting would say clear. Installed and build
 directories are excluded as not first-party, and minified or bundled JavaScript is excluded

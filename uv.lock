@@ -826,62 +826,6 @@ wheels = [
 ]
 
 [[package]]
-name = "traceproof"
-version = "0.1.0"
-source = { editable = "." }
-dependencies = [
-    { name = "alembic" },
-    { name = "pydantic" },
-    { name = "sqlalchemy" },
-    { name = "tree-sitter" },
-    { name = "tree-sitter-c" },
-    { name = "tree-sitter-c-sharp" },
-    { name = "tree-sitter-cpp" },
-    { name = "tree-sitter-go" },
-    { name = "tree-sitter-java" },
-    { name = "tree-sitter-javascript" },
-    { name = "tree-sitter-rust" },
-    { name = "tree-sitter-typescript" },
-    { name = "typer" },
-]
-
-[package.optional-dependencies]
-gcs = [
-    { name = "google-cloud-storage" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "pytest" },
-    { name = "ruff" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "alembic", specifier = ">=1.16,<2" },
-    { name = "google-cloud-storage", marker = "extra == 'gcs'", specifier = ">=3.4,<4" },
-    { name = "pydantic", specifier = ">=2.11,<3" },
-    { name = "sqlalchemy", specifier = ">=2.0.41,<2.1" },
-    { name = "tree-sitter", specifier = ">=0.25,<0.26" },
-    { name = "tree-sitter-c", specifier = ">=0.24,<0.25" },
-    { name = "tree-sitter-c-sharp", specifier = ">=0.23,<0.24" },
-    { name = "tree-sitter-cpp", specifier = ">=0.23,<0.24" },
-    { name = "tree-sitter-go", specifier = ">=0.25,<0.26" },
-    { name = "tree-sitter-java", specifier = ">=0.23,<0.24" },
-    { name = "tree-sitter-javascript", specifier = ">=0.25,<0.26" },
-    { name = "tree-sitter-rust", specifier = ">=0.24,<0.25" },
-    { name = "tree-sitter-typescript", specifier = ">=0.23,<0.24" },
-    { name = "typer", specifier = ">=0.16,<1" },
-]
-provides-extras = ["gcs"]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "pytest", specifier = ">=8.4,<10" },
-    { name = "ruff", specifier = ">=0.12,<1" },
-]
-
-[[package]]
 name = "tree-sitter"
 version = "0.25.2"
 source = { registry = "https://pypi.org/simple" }
@@ -1078,4 +1022,60 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/53/0c/06f8b233b8fd13b9e5ee11424ef85419ba0d8ba0b3138bf360be2ff56953/urllib3-2.7.0.tar.gz", hash = "sha256:231e0ec3b63ceb14667c67be60f2f2c40a518cb38b03af60abc813da26505f4c", size = 433602, upload-time = "2026-05-07T16:13:18.596Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/7f/3e/5db95bcf282c52709639744ca2a8b149baccf648e39c8cc87553df9eae0c/urllib3-2.7.0-py3-none-any.whl", hash = "sha256:9fb4c81ebbb1ce9531cce37674bbc6f1360472bc18ca9a553ede278ef7276897", size = 131087, upload-time = "2026-05-07T16:13:17.151Z" },
+]
+
+[[package]]
+name = "veriflow"
+version = "0.1.0"
+source = { editable = "." }
+dependencies = [
+    { name = "alembic" },
+    { name = "pydantic" },
+    { name = "sqlalchemy" },
+    { name = "tree-sitter" },
+    { name = "tree-sitter-c" },
+    { name = "tree-sitter-c-sharp" },
+    { name = "tree-sitter-cpp" },
+    { name = "tree-sitter-go" },
+    { name = "tree-sitter-java" },
+    { name = "tree-sitter-javascript" },
+    { name = "tree-sitter-rust" },
+    { name = "tree-sitter-typescript" },
+    { name = "typer" },
+]
+
+[package.optional-dependencies]
+gcs = [
+    { name = "google-cloud-storage" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "pytest" },
+    { name = "ruff" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "alembic", specifier = ">=1.16,<2" },
+    { name = "google-cloud-storage", marker = "extra == 'gcs'", specifier = ">=3.4,<4" },
+    { name = "pydantic", specifier = ">=2.11,<3" },
+    { name = "sqlalchemy", specifier = ">=2.0.41,<2.1" },
+    { name = "tree-sitter", specifier = ">=0.25,<0.26" },
+    { name = "tree-sitter-c", specifier = ">=0.24,<0.25" },
+    { name = "tree-sitter-c-sharp", specifier = ">=0.23,<0.24" },
+    { name = "tree-sitter-cpp", specifier = ">=0.23,<0.24" },
+    { name = "tree-sitter-go", specifier = ">=0.25,<0.26" },
+    { name = "tree-sitter-java", specifier = ">=0.23,<0.24" },
+    { name = "tree-sitter-javascript", specifier = ">=0.25,<0.26" },
+    { name = "tree-sitter-rust", specifier = ">=0.24,<0.25" },
+    { name = "tree-sitter-typescript", specifier = ">=0.23,<0.24" },
+    { name = "typer", specifier = ">=0.16,<1" },
+]
+provides-extras = ["gcs"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "pytest", specifier = ">=8.4,<10" },
+    { name = "ruff", specifier = ">=0.12,<1" },
 ]

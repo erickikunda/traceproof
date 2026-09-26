@@ -1,7 +1,7 @@
 # Slice 67 — Restricted Linux Joern runtime
 
-Added `containers/Containerfile.joern` and a separate `traceproof:joern-linux-poc` image.
-It uses digest-pinned UBI 9 Python 3.12, the locked TraceProof wheel dependencies, Joern
+Added `containers/Containerfile.joern` and a separate `veriflow:joern-linux-poc` image.
+It uses digest-pinned UBI 9 Python 3.12, the locked VeriFlow wheel dependencies, Joern
 4.0.625 Linux ARM64 and Temurin 21.0.12.1+1. Both tool archives are checked during build;
 pins are recorded in `containers/joern-toolchain.json`. No CodeQL or .NET tooling is
 included in this runtime. Download/build networking is separate from scan execution.

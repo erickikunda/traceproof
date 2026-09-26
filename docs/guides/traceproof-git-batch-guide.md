@@ -20,7 +20,7 @@ each row: no private credentials, inherited proxy/custom CA config, submodules, 
 symlink content; no checkout, build, scanner or model execution.
 
 ```sh
-traceproof acquire-git-csv /staging/repositories.csv /staging/acquired-batch \
+veriflow acquire-git-csv /staging/repositories.csv /staging/acquired-batch \
   --allowed-host github.com --max-rows 10 --timeout 900
 ```
 

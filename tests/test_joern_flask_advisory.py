@@ -9,16 +9,16 @@ from test_joern_claims import review_decision
 from test_slice03 import captured_source as captured_source
 from test_triage import policy
 
-from traceproof import joern, pipeline
-from traceproof.bundles import build_bundle
-from traceproof.claims import assess_evidence
-from traceproof.domain import TraceProofError
-from traceproof.joern_claims import FLASK_POLICY, assess_review_evidence, review_preflight
-from traceproof.models import request_body
-from traceproof.reports import get_report
-from traceproof.scan_advisory import AdvisoryOptions
-from traceproof.scanning import scan_report
-from traceproof.triage import set_budget, triage
+from veriflow import joern, pipeline
+from veriflow.bundles import build_bundle
+from veriflow.claims import assess_evidence
+from veriflow.domain import VeriFlowError
+from veriflow.joern_claims import FLASK_POLICY, assess_review_evidence, review_preflight
+from veriflow.models import request_body
+from veriflow.reports import get_report
+from veriflow.scan_advisory import AdvisoryOptions
+from veriflow.scanning import scan_report
+from veriflow.triage import set_budget, triage
 
 
 @pytest.fixture
@@ -135,7 +135,7 @@ def test_opt_in_cost_gates_and_idempotency(store, flask_bundle, monkeypatch, sto
     if stop == "evidence":
         altered = deepcopy(b)
         altered.pop("joern_native_audit")
-        monkeypatch.setattr("traceproof.triage.get_bundle", lambda *args: altered)
+        monkeypatch.setattr("veriflow.triage.get_bundle", lambda *args: altered)
     result = triage(store, b["bundle_id"], policy(), adapter, "flask", review_policy=FLASK_POLICY)
     assert (
         result["state"]
@@ -156,9 +156,9 @@ def test_opt_in_cost_gates_and_idempotency(store, flask_bundle, monkeypatch, sto
 def test_main_workflow_and_policy_scope(store, flask_bundle, tmp_path):
     b = flask_bundle
     advisory = AdvisoryOptions(policy(), adapter_for(b), "workflow", FLASK_POLICY)
-    with pytest.raises(TraceProofError, match="profile"):
+    with pytest.raises(VeriFlowError, match="profile"):
         advisory.validate_scope("python", None)
-    with pytest.raises(TraceProofError, match="profile"):
+    with pytest.raises(VeriFlowError, match="profile"):
         advisory.validate_scope("java", "python-flask-system-v1")
     set_budget(store, b["run_id"], 100000)
     result = pipeline.scan_run(
@@ -179,7 +179,7 @@ def test_main_workflow_and_policy_scope(store, flask_bundle, tmp_path):
 def test_policy_in_provider_request_and_cli(store, flask_bundle, tmp_path):
     from typer.testing import CliRunner
 
-    from traceproof.cli import app
+    from veriflow.cli import app
 
     b = flask_bundle
     body = request_body(b, policy(), review_policy=FLASK_POLICY)

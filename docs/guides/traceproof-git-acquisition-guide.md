@@ -7,7 +7,7 @@ allowed hosts is accepted. Use an immutable 40-character commit when available; 
 or tag refs are resolved once and the resulting commit is recorded.
 
 ```sh
-traceproof acquire-git https://github.com/octocat/Hello-World.git refs/heads/master \
+veriflow acquire-git https://github.com/octocat/Hello-World.git refs/heads/master \
   /absolute/work/acquired-repo hello-world poc public --allowed-host github.com
 ```
 

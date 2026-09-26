@@ -6,8 +6,8 @@ import pytest
 from test_reports import scanned as scanned
 from test_triage import evidence_fixture as evidence_fixture
 
-from traceproof.domain import TraceProofError
-from traceproof.java_dependencies import java_environment, load_java_profile
+from veriflow.domain import VeriFlowError
+from veriflow.java_dependencies import java_environment, load_java_profile
 
 
 def profile(tmp_path):
@@ -41,7 +41,7 @@ def test_local_classpath_is_generated_without_remote_feed(tmp_path):
     with (attempt / "java-classpath.csv").open() as handle:
         rows = list(csv.reader(handle))
     assert rows == [
-        ["org.example:web:jar:1.0", "traceproof-local", (tmp_path / "repository").as_uri()]
+        ["org.example:web:jar:1.0", "veriflow-local", (tmp_path / "repository").as_uri()]
     ]
     assert env["CODEQL_EXTRACTOR_JAVA_OPTION_BUILDLESS_DEPENDENCY_DIR"] == str(
         attempt / "java-dependency-cache"
@@ -60,7 +60,7 @@ def test_inventory_changes_rejected(tmp_path, change):
     else:
         jar.unlink()
         jar.symlink_to(path)
-    with pytest.raises(TraceProofError):
+    with pytest.raises(VeriFlowError):
         load_java_profile(path)
 
 
@@ -79,13 +79,13 @@ def test_invalid_profile_rejected(tmp_path, change):
     else:
         data["artifacts"] = ["org.example:other:jar:1.0"]
     path.write_text(json.dumps(data))
-    with pytest.raises(TraceProofError):
+    with pytest.raises(VeriFlowError):
         load_java_profile(path)
 
 
 def test_profile_change_prevents_reuse(store, scanned, tmp_path, monkeypatch):
-    from traceproof import pipeline
-    from traceproof.persistence import ScanAttempt
+    from veriflow import pipeline
+    from veriflow.persistence import ScanAttempt
 
     path, _ = profile(tmp_path)
     with store.transaction() as session:
@@ -102,10 +102,10 @@ def test_profile_change_prevents_reuse(store, scanned, tmp_path, monkeypatch):
     query.write_text("// query")
 
     def preflight(*args):
-        raise TraceProofError("Reached extraction preflight")
+        raise VeriFlowError("Reached extraction preflight")
 
     monkeypatch.setattr(pipeline, "verified_source", preflight)
-    with pytest.raises(TraceProofError, match="Reached extraction"):
+    with pytest.raises(VeriFlowError, match="Reached extraction"):
         pipeline.scan_run(
             store,
             scanned[1],
@@ -124,17 +124,17 @@ def test_dependency_mutation_during_extraction_is_not_accepted(
 
     from test_indexing import captured
 
-    from traceproof.codeql import extract, extraction_status
-    from traceproof.persistence import exclusive_worker
+    from veriflow.codeql import extract, extraction_status
+    from veriflow.persistence import exclusive_worker
 
     path, jar = profile(tmp_path)
     with zipfile.ZipFile(archive, "w") as out:
         out.writestr("C.java", "class C {}")
     run = captured(store, archive, manifest)
-    monkeypatch.setattr("traceproof.codeql.build_java_index", lambda *a: {"syntax_gate": "ready"})
-    monkeypatch.setattr("traceproof.codeql.shutil.which", lambda _: "/trusted/codeql")
+    monkeypatch.setattr("veriflow.codeql.build_java_index", lambda *a: {"syntax_gate": "ready"})
+    monkeypatch.setattr("veriflow.codeql.shutil.which", lambda _: "/trusted/codeql")
     monkeypatch.setattr(
-        "traceproof.codeql.subprocess.run",
+        "veriflow.codeql.subprocess.run",
         lambda *a, **k: subprocess.CompletedProcess(a, 0, stdout=b'{"version":"2.27.0"}'),
     )
 
@@ -147,7 +147,7 @@ def test_dependency_mutation_during_extraction_is_not_accepted(
         assert "CODEQL_JAVA_EXTRACTOR_STANDALONE_CLASSPATH_FILE" in kwargs["env"]
         return Process()
 
-    monkeypatch.setattr("traceproof.codeql.subprocess.Popen", launch)
+    monkeypatch.setattr("veriflow.codeql.subprocess.Popen", launch)
     with exclusive_worker(store.root):
         result = extract(store, run, language="java", java_dependency_profile=path)
     assert result["status"] == "integrity_failed"

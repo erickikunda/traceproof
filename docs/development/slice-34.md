@@ -1,9 +1,9 @@
 # Slice 34: CodeQL extraction-attempt discovery
 
 ```bash
-uv run traceproof extraction-history REPO_ID --limit 20
-uv run traceproof extraction-history REPO_ID --run-id RUN_ID
-uv run traceproof codeql-status EXTRACTION_ATTEMPT_ID
+uv run veriflow extraction-history REPO_ID --limit 20
+uv run veriflow extraction-history REPO_ID --run-id RUN_ID
+uv run veriflow codeql-status EXTRACTION_ATTEMPT_ID
 ```
 
 This read-only history complements query `scan-history`. It includes stored extraction

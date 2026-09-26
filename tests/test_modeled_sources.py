@@ -4,8 +4,8 @@ import copy
 
 import pytest
 
-from traceproof.claims import assess_evidence
-from traceproof.models import Decision
+from veriflow.claims import assess_evidence
+from veriflow.models import Decision
 
 SOURCE = (
     "from flask import Flask, request\napp = Flask(__name__)\n"

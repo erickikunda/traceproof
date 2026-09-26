@@ -4,9 +4,9 @@ Migration 0008 adds a fixed request limit to each run's triage budget, independe
 monetary pricing. This bounds zero-cost local Ollama/replay work and durable ledger growth.
 
 ```bash
-uv run traceproof init
-uv run traceproof triage-budget RUN_ID 0 --max-requests 20
-uv run traceproof triage-report RUN_ID
+uv run veriflow init
+uv run veriflow triage-budget RUN_ID 0 --max-requests 20
+uv run veriflow triage-report RUN_ID
 ```
 
 New budgets default to 100 requests unless explicitly configured (0–10000). Zero disables

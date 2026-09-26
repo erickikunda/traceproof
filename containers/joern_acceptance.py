@@ -6,14 +6,14 @@ import shutil
 import zipfile
 from pathlib import Path
 
-from traceproof.artifacts import ArtifactStore
-from traceproof.bundles import build_bundle
-from traceproof.claims import bundle_engine, requirements
-from traceproof.intake import process, submit
-from traceproof.joern import discover
-from traceproof.persistence import Store
-from traceproof.reports import publish_report, render_report
-from traceproof.scanning import scan_report
+from veriflow.artifacts import ArtifactStore
+from veriflow.bundles import build_bundle
+from veriflow.claims import bundle_engine, requirements
+from veriflow.intake import process, submit
+from veriflow.joern import discover
+from veriflow.persistence import Store
+from veriflow.reports import publish_report, render_report
+from veriflow.scanning import scan_report
 
 root = Path("/work/acceptance")
 root.mkdir()
@@ -34,7 +34,7 @@ try:
     }.items():
         archive = root / f"{name}.zip"
         with zipfile.ZipFile(archive, "w") as out:
-            for file in (Path("/opt/traceproof/fixtures") / name).glob("*.java"):
+            for file in (Path("/opt/veriflow/fixtures") / name).glob("*.java"):
                 out.write(file, file.name)
         row = dict(
             repo_id=name,

@@ -34,7 +34,7 @@ Pre-provision approved SDK and references under a common directory, then pin the
 
 ```sh
 uv run python scripts/pin_csharp_dependencies.py DEPENDENCY_ROOT --sdk dotnet --references references/net48 --sdk-version 10.0.100 --codeql-version 2.27.0
-traceproof scan-run RUN_ID CSHARP_QUERY_PATH --language csharp --allow-csharp-downloads --csharp-dependency-profile DEPENDENCY_ROOT/profile.json
+veriflow scan-run RUN_ID CSHARP_QUERY_PATH --language csharp --allow-csharp-downloads --csharp-dependency-profile DEPENDENCY_ROOT/profile.json
 uv run python scripts/validate_csharp_classic.py CSHARP_QUERY_PATH NEW_OUTPUT_DIRECTORY --csharp-dependency-profile DEPENDENCY_ROOT/profile.json
 ```
 

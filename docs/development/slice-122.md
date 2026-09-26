@@ -18,8 +18,8 @@ Ruff pass. No application changes, migration, image push or OCP operation. Full 
 Slice 121 remains the application baseline (1,035 passed); native packaging checks cover this slice.
 
 Repeat: uv build; build containers/Containerfile.gcs-acquisition as
-traceproof:gcs-acquisition-linux-poc; build containers/Containerfile.ocp-smoke as
-traceproof:ocp-smoke-gcs-linux-poc; run uv run python scripts/validate_gcs_handoff.py NEW_OUTPUT.
+veriflow:gcs-acquisition-linux-poc; build containers/Containerfile.ocp-smoke as
+veriflow:ocp-smoke-gcs-linux-poc; run uv run python scripts/validate_gcs_handoff.py NEW_OUTPUT.
 The fixture mocks SDK responses, not a real GCS service, authentication or HTTP exchange.
 
 Next: consolidate operator intake guidance/readiness across Git, PVC and GCS, and identify

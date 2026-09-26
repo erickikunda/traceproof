@@ -6,7 +6,7 @@ exactly three elements: literal sh, /bin/sh, bash or /bin/bash; literal -c; and 
 text. The sink must resolve to java.lang.Runtime.exec(String[]).
 
 ```sh
-traceproof --state-dir /path/to/state scan-run RUN_ID --engine joern \
+veriflow --state-dir /path/to/state scan-run RUN_ID --engine joern \
   --language java --joern-home /path/to/joern-cli \
   --joern-profile java-spring-runtime-shell-v1
 ```

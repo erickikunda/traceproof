@@ -1,6 +1,6 @@
 # Slice 131 — Python SQL-text breadth
 
-Adds python-flask-sql-v1 / traceproof/joern-python-flask-sql-v1, CWE-89, using the bounded
+Adds python-flask-sql-v1 / veriflow/joern-python-flask-sql-v1, CWE-89, using the bounded
 sqlite3.connect(literal).execute(query[, parameters]) shape. The flow sink is SQL text,
 never the parameter collection. Isolated import/binding selection reuses existing Flask
 sources without weakening command/path/SSRF profiles. Cursor variables/other drivers are

@@ -7,11 +7,11 @@ from pathlib import Path
 
 from sqlalchemy import select
 
-from traceproof.bundles import canonical
-from traceproof.evaluation import render_scorecard
-from traceproof.persistence import Run, ScanAttempt, Snapshot, Store
-from traceproof.reports import publish_report
-from traceproof.scorecards import get_scorecard, publish_scorecard
+from veriflow.bundles import canonical
+from veriflow.evaluation import render_scorecard
+from veriflow.persistence import Run, ScanAttempt, Snapshot, Store
+from veriflow.reports import publish_report
+from veriflow.scorecards import get_scorecard, publish_scorecard
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--state", type=Path, required=True)
@@ -72,7 +72,7 @@ try:
         query_sha256=report["query_sha256"],
         scanner_version=report["scanner"]["version"],
         profile="standard",
-        rule_ids=["traceproof/joern-rust-lookup-arg-v1"],
+        rule_ids=["veriflow/joern-rust-lookup-arg-v1"],
         reports=[dict(repo_id="vulnerable", report_id=report["report_id"])],
     )
     paths = []

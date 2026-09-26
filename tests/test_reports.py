@@ -9,12 +9,12 @@ from test_triage import FakeAdapter, policy
 from test_triage import evidence_fixture as evidence_fixture
 from typer.testing import CliRunner
 
-from traceproof.bundles import build_bundle
-from traceproof.cli import app
-from traceproof.domain import TraceProofError
-from traceproof.persistence import Candidate, PublishedReport, Run, ScanAttempt
-from traceproof.reports import get_report, publish_report, render_report, report_history
-from traceproof.triage import set_budget, triage
+from veriflow.bundles import build_bundle
+from veriflow.cli import app
+from veriflow.domain import VeriFlowError
+from veriflow.persistence import Candidate, PublishedReport, Run, ScanAttempt
+from veriflow.reports import get_report, publish_report, render_report, report_history
+from veriflow.triage import set_budget, triage
 
 
 @pytest.fixture
@@ -60,7 +60,7 @@ def test_new_failed_attempt_never_falls_back(store, scanned):
                 report={"status": "failed", "candidate_count": None},
             )
         )
-    with pytest.raises(TraceProofError, match="Latest attempt"):
+    with pytest.raises(VeriFlowError, match="Latest attempt"):
         get_report(store, repo)
     failed = publish_report(store, repo)
     assert failed["analysis_status"] == "failed" and failed["candidate_count"] is None
@@ -69,8 +69,8 @@ def test_new_failed_attempt_never_falls_back(store, scanned):
 
 
 def test_explicit_completed_selection_discloses_newer_work(store, scanned):
-    from traceproof.indexing import build_index
-    from traceproof.reports import resolve_report
+    from veriflow.indexing import build_index
+    from veriflow.reports import resolve_report
 
     repo, run, attempt, _ = scanned
     build_index(store, run)
@@ -125,13 +125,13 @@ def test_explicit_completed_selection_discloses_newer_work(store, scanned):
 
 
 def test_selection_rejects_invalid_mode_and_missing_repo(store, scanned):
-    from traceproof.reports import resolve_report
+    from veriflow.reports import resolve_report
 
     repo, _, _, _ = scanned
     assert resolve_report(store, repo, "latest-completed")["selected_report_id"] is None
-    with pytest.raises(TraceProofError, match="selection"):
+    with pytest.raises(VeriFlowError, match="selection"):
         resolve_report(store, repo, "silent-fallback")
-    with pytest.raises(TraceProofError, match="not found"):
+    with pytest.raises(VeriFlowError, match="not found"):
         resolve_report(store, "other")
 
 
@@ -149,7 +149,7 @@ def test_new_run_without_analysis_has_explicit_report(store, scanned):
                 snapshot_id=None,
             )
         )
-    with pytest.raises(TraceProofError, match="No published report"):
+    with pytest.raises(VeriFlowError, match="No published report"):
         get_report(store, repo)
     current = publish_report(store, repo)
     assert current["analysis_status"] == "not_started" and current["run_state"] == "failed"
@@ -160,16 +160,16 @@ def test_new_run_without_analysis_has_explicit_report(store, scanned):
 def test_ownership_and_integrity(store, scanned):
     repo, _, _, _ = scanned
     report = publish_report(store, repo)
-    with pytest.raises(TraceProofError, match="belong"):
+    with pytest.raises(VeriFlowError, match="belong"):
         get_report(store, "other", report["report_id"])
-    with pytest.raises(TraceProofError, match="belong"):
+    with pytest.raises(VeriFlowError, match="belong"):
         get_report(store, repo, report["report_id"], "other-run")
-    with pytest.raises(TraceProofError, match="Attempt"):
+    with pytest.raises(VeriFlowError, match="Attempt"):
         publish_report(store, repo, attempt_id="other-attempt")
     with store.transaction() as session:
         record = session.get(PublishedReport, report["report_id"])
         record.content = {**record.content, "candidate_count": 0}
-    with pytest.raises(TraceProofError, match="integrity"):
+    with pytest.raises(VeriFlowError, match="integrity"):
         get_report(store, repo, report["report_id"])
 
 
@@ -178,7 +178,7 @@ def test_count_mismatch_fails_without_publication(store, scanned):
     with store.transaction() as session:
         record = session.get(ScanAttempt, attempt)
         record.report = {**record.report, "candidate_count": 2}
-    with pytest.raises(TraceProofError, match="reconcile"):
+    with pytest.raises(VeriFlowError, match="reconcile"):
         publish_report(store, repo)
     with store.transaction() as session:
         assert session.scalar(select(func.count()).select_from(PublishedReport)) == 0
@@ -232,8 +232,8 @@ def test_zero_candidates_is_not_clean_and_csv_retains_scan(store, scanned):
 
 
 def test_report_size_limit_is_atomic(store, scanned, monkeypatch):
-    monkeypatch.setattr("traceproof.reports.MAX_REPORT_BYTES", 20)
-    with pytest.raises(TraceProofError, match="8 MiB"):
+    monkeypatch.setattr("veriflow.reports.MAX_REPORT_BYTES", 20)
+    with pytest.raises(VeriFlowError, match="8 MiB"):
         publish_report(store, scanned[0])
     with store.transaction() as session:
         assert session.scalar(select(func.count()).select_from(PublishedReport)) == 0
@@ -242,7 +242,7 @@ def test_report_size_limit_is_atomic(store, scanned, monkeypatch):
 def test_report_cli_and_migration(store, scanned):
     runner = CliRunner()
     base = ["--state-dir", str(store.root)]
-    assert json.loads(runner.invoke(app, [*base, "init"]).output)["schema"] == "0009"
+    assert json.loads(runner.invoke(app, [*base, "init"]).output)["schema"] == "0011"
     result = runner.invoke(app, [*base, "publish-report", scanned[0]])
     assert result.exit_code == 0, result.output
     identity = json.loads(result.output)["report_id"]

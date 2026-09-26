@@ -10,11 +10,11 @@ from pathlib import Path
 
 from ocp_smoke import PROFILES, archive_manifest
 
-from traceproof.artifacts import ArtifactStore, open_scoped_source
-from traceproof.batch_scan import scan_import
-from traceproof.intake import process, submit
-from traceproof.persistence import Store
-from traceproof.reports import get_report, render_report
+from veriflow.artifacts import ArtifactStore, open_scoped_source
+from veriflow.batch_scan import scan_import
+from veriflow.intake import process, submit
+from veriflow.persistence import Store
+from veriflow.reports import get_report, render_report
 
 
 def checkpoint(output, summary):
@@ -75,7 +75,7 @@ def run(input_root, work_root, reports_root, execution_id, language, max_rows=10
             query_timeout=180,
         )
         if language == "csharp":
-            options["joern_repair_dir"] = Path("/opt/traceproof/csharp-repair")
+            options["joern_repair_dir"] = Path("/opt/veriflow/csharp-repair")
         if language == "rust":
             options["rust_home"] = Path("/opt/rust")
         for index, item in enumerate(intake["items"]):

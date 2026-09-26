@@ -3,7 +3,7 @@
 **System design, version 0.3 — 11 September 2026**
 **Implementation checkpoint:** through Slice 131. This document separates the implemented laptop POC from the proposed enterprise architecture. It is not an approved Wells Fargo architecture.
 
-**Revision 0.3:** Records the Joern-first scanner strategy, bounded nine-language profiles, optional advisory policies, Ollama, separate Git acquisition and offline archive scanning, durable provenance, and local OpenShift preparation. PostgreSQL orchestration, Redis coordination, GCS, hosted API, bank OCP execution and fleet qualification remain future work. The [implementation plan](../plans/implementation-plan.md) governs delivery order; [progress](../development/progress.md) and slice records retain acceptance evidence. Section 0 is the current checkpoint; production mechanisms in later sections are design requirements unless explicitly marked implemented.
+**Revision 0.4:** Records the Joern-first scanner strategy, bounded nine-language profiles, optional advisory policies, the planned opt-in hybrid LLM discovery and governed rule-gap feedback loop, Ollama, separate Git acquisition and offline archive scanning, durable provenance, and local OpenShift preparation. PostgreSQL orchestration, Redis coordination, GCS, hosted API, bank OCP execution and fleet qualification remain future work. The [implementation plan](../plans/implementation-plan.md) governs delivery order; [progress](../development/progress.md) and slice records retain acceptance evidence. Section 0 is the current checkpoint; production mechanisms in later sections are design requirements unless explicitly marked implemented.
 
 ## 0. Leadership walkthrough
 
@@ -18,7 +18,7 @@ still take precedence when they block useful operation.
 
 ### Current architecture and delivery status
 
-TraceProof is a Python CLI application with SQLite and local artifacts, bounded scanner execution, evidence gates, budgeted optional model advice, and immutable reports. **Redis is not a POC dependency.** The enterprise target remains PostgreSQL with isolated OpenShift jobs; local database locking does not implement distributed leases or fleet scheduling.
+VeriFlow is a Python CLI application with SQLite and local artifacts, bounded scanner execution, evidence gates, budgeted optional model advice, and immutable reports. **Redis is not a POC dependency.** The enterprise target remains PostgreSQL with isolated OpenShift jobs; local database locking does not implement distributed leases or fleet scheduling.
 
 | Area | Implemented and locally tested | Remaining acceptance |
 |---|---|---|
@@ -629,6 +629,14 @@ Start with a **15% reservation of the investigation token budget for exploration
 
 Do not use a cheap model’s dismissal as a permanent exclusion. It may rank candidates, identify required context or recommend escalation. Maintain random audits of dismissals and nonselected areas. Preserve deterministic candidates regardless of whether the LLM agrees.
 
+The opt-in hybrid discovery contract and its governed path from a confirmed exploratory gap to
+a reviewed deterministic rule are specified in
+[Hybrid deterministic and LLM candidate discovery](hybrid-llm-discovery.md). The LLM stage is
+additive: it cannot suppress deterministic candidates, activate generated queries, or convert
+incomplete exploration into a clean result. Exact and batch CLI approval create a new immutable
+approved rule-registry version after confirmation, digest, fixture, test and reviewer checks;
+future scans may use it, while existing scans retain their pinned rule-set identity.
+
 Cross-repository flow is a later capability: join service/API/message contracts using versioned deployment manifests and identity assumptions. Mark speculative joins as inferred. Source from two unrelated commits does not establish a real deployed attack path.
 
 ## 8. True positives and false-positive reduction
@@ -991,7 +999,7 @@ Keep a release scorecard per language, framework and weakness class. A new model
 
 ## 16. Maintainability and implementation structure
 
-The implemented package is **src/traceproof/**, a modular application rather than separate microservices. Key boundaries include intake/git_acquisition/git_batch/acquisition_provenance; pipeline/joern_pipeline/scanning/scanner; language-specific parsers and claim gates; bundles/triage/scan_advisory; persistence/artifacts; reports/comparison/evaluation; and the Typer CLI. Query assets live with the application; fixture and native validation scripts record scoped acceptance. Container runners and OpenShift manifests are separate deployment assets.
+The implemented package is **src/veriflow/**, a modular application rather than separate microservices. Key boundaries include intake/git_acquisition/git_batch/acquisition_provenance; pipeline/joern_pipeline/scanning/scanner; language-specific parsers and claim gates; bundles/triage/scan_advisory; persistence/artifacts; reports/comparison/evaluation; and the Typer CLI. Query assets live with the application; fixture and native validation scripts record scoped acceptance. Container runners and OpenShift manifests are separate deployment assets.
 
 Keep these boundaries explicit as the code grows. A generic backend contract must not hide scanner-specific preparation, limitations or evidence strength. Future hosted API and distributed controllers should call the same domain services rather than duplicate CLI logic. Do not present a proposed directory layout as implemented code.
 

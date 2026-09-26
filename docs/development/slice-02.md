@@ -6,8 +6,8 @@ evidence references and optional CodeQL extraction diagnostics. M2 is not comple
 
 ## User workflow
 
-1. Upgrade storage with `traceproof init`; existing intake runs and snapshots survive.
-2. Run `traceproof index-run RUN_ID` against a captured snapshot.
+1. Upgrade storage with `veriflow init`; existing intake runs and snapshots survive.
+2. Run `veriflow index-run RUN_ID` against a captured snapshot.
 3. Inspect `query-index RUN_ID --kind symbols` or `--kind calls`.
 4. Retrieve `repo-report REPO_ID`, optionally with `--run-id RUN_ID` or `--format markdown`.
 5. Optionally run `codeql-extract RUN_ID` and retrieve `codeql-status ATTEMPT_ID` later.

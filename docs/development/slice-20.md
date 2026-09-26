@@ -1,8 +1,8 @@
 # Slice 20: saved benchmark regression comparison
 
 ```bash
-uv run traceproof benchmark-compare DATASET_ID BASELINE_SCORECARD_ID CURRENT_SCORECARD_ID
-uv run traceproof benchmark-compare DATASET_ID BASELINE_SCORECARD_ID CURRENT_SCORECARD_ID --format markdown
+uv run veriflow benchmark-compare DATASET_ID BASELINE_SCORECARD_ID CURRENT_SCORECARD_ID
+uv run veriflow benchmark-compare DATASET_ID BASELINE_SCORECARD_ID CURRENT_SCORECARD_ID --format markdown
 ```
 
 Comparison retrieves exact immutable scorecards with dataset and integrity checks. It

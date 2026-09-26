@@ -6,15 +6,15 @@ import json
 import zipfile
 from pathlib import Path
 
-from traceproof.artifacts import ArtifactStore
-from traceproof.batch_scan import scan_import
-from traceproof.bundles import build_bundle
-from traceproof.claims import bundle_engine, requirements
-from traceproof.intake import process, submit
-from traceproof.persistence import Store
-from traceproof.pipeline import scan_run
-from traceproof.reports import publish_report, render_report
-from traceproof.scanning import scan_report
+from veriflow.artifacts import ArtifactStore
+from veriflow.batch_scan import scan_import
+from veriflow.bundles import build_bundle
+from veriflow.claims import bundle_engine, requirements
+from veriflow.intake import process, submit
+from veriflow.persistence import Store
+from veriflow.pipeline import scan_run
+from veriflow.reports import publish_report, render_report
+from veriflow.scanning import scan_report
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--joern-home", type=Path, required=True)

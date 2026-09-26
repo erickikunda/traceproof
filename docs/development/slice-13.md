@@ -4,7 +4,7 @@ This slice adds an explicitly selected second live provider to bounded candidate
 
 ## Operator configuration
 
-Use the existing `traceproof triage` command with a JSON model configuration. Set `provider` to `anthropic`, `model` to an approved model identifier, `endpoint` to the approved HTTPS Messages endpoint, and `allowed_endpoint_hosts` to its exact hostname. Explicitly set `api_key_env` to `TRACEPROOF_ANTHROPIC_API_KEY` (the backward-compatible default remains the OpenAI variable). Supply that environment variable outside the configuration file. Set approved classifications, nonzero operator-supplied pricing, and `allow_source_transmission: true` only when transmission is authorized. No live model or tariff is selected by this slice.
+Use the existing `veriflow triage` command with a JSON model configuration. Set `provider` to `anthropic`, `model` to an approved model identifier, `endpoint` to the approved HTTPS Messages endpoint, and `allowed_endpoint_hosts` to its exact hostname. Explicitly set `api_key_env` to `TRACEPROOF_ANTHROPIC_API_KEY` (the backward-compatible default remains the OpenAI variable). Supply that environment variable outside the configuration file. Set approved classifications, nonzero operator-supplied pricing, and `allow_source_transmission: true` only when transmission is authorized. No live model or tariff is selected by this slice.
 
 The adapter uses Messages authentication and `output_config.format` JSON schema. Wire schema bounds are expressed in descriptions; the original strict local Decision model enforces them on receipt. Only a single text block from a completed assistant message is accepted. Refusal and truncation abstain; unexpected blocks never execute tools.
 

@@ -356,13 +356,13 @@ keep recall-preserving ablations separate from cheaper-but-less-complete configu
 
 Local `codeql resolve languages --format=json` on CodeQL 2.27.0 lists `java`, `csharp`,
 `javascript`, `rust` and `go`. This establishes extractor presence only, not installed query
-packs, usable build dependencies or qualified TraceProof adapters. TypeScript uses CodeQL's
+packs, usable build dependencies or qualified VeriFlow adapters. TypeScript uses CodeQL's
 JavaScript extractor. Validate these details at L0 against the pinned local toolchain and
 record supported framework/runtime versions in the capability matrix.
 
 Primary references: [CodeQL supported languages/frameworks](https://codeql.github.com/docs/codeql-overview/supported-languages-and-frameworks/)
 and [compiled-language build modes](https://docs.github.com/en/code-security/concepts/code-scanning/codeql/codeql-for-compiled-languages).
-Vendor support is a starting point; TraceProof's fixture-qualified scope is the release claim.
+Vendor support is a starting point; VeriFlow's fixture-qualified scope is the release claim.
 
 ```mermaid
 flowchart LR
@@ -839,7 +839,7 @@ feasibility probe: vulnerable/fixed/disconnected flows 1/0/0. Source-file/line r
 are retained and fixture hashes checked. The source/sink selectors are fixture-specific;
 Spring/JDBC semantics remain unqualified. Next implement durable discovery-only adapter
 results and normalization, then framework models and restricted Linux tests. Joern is
-not yet selectable via TraceProof scan commands. See Slice 63 for exact limits/timings.
+not yet selectable via VeriFlow scan commands. See Slice 63 for exact limits/timings.
 
 S3 progress (Slice 64): explicit experimental Joern command now persists scan attempts,
 graphs/logs, source-bound SARIF candidates and normal published reports. Real durable
@@ -1383,3 +1383,63 @@ and argument splitting remain unverified. Separate automatic-selection reports;
 no new advisory, migration or image promotion. See
 [guide](../guides/csharp-shell-discovery.md). Next broaden Go HTTP file-path discovery
 to improve language/API breadth beyond the existing shell profile.
+
+
+## Slice 142 — selectable Python index backend evaluation
+
+Preserve syntax indexing as the production-compatible default while adding an opt-in,
+separately versioned Joern Python inventory. Provide a same-snapshot comparison command,
+exact index selection for retrieval, neutral coverage/overlap/cost metrics, and an operator
+guide. Treat this as an evaluation seam rather than a scanner migration: do not remove the
+language-specific syntax evidence gates or change vulnerability discovery behavior. Use the
+50-repository benchmark only after the inventory contract and acceptance thresholds are
+agreed. Decide whether to evaluate more languages from measured Python results rather than
+assuming one frontend decision applies to all languages.
+
+
+## Slice 143 — hybrid LLM discovery contracts and replay
+
+Add strict versioned schemas for bounded source packets and exploratory candidate proposals.
+Reuse the existing provider policy boundary and run budget ledger, but use a distinct prompt,
+schema and request identity. Validate all proposed paths, hashes, lines and evidence citations
+against the immutable snapshot. Store provenance and invalid-output diagnostics. Default scans
+remain deterministic and make zero discovery-model calls. Acceptance uses replay only and proves
+that provider failure cannot erase or downgrade deterministic candidates.
+
+
+## Slice 144 — bounded packet selection and scan orchestration
+
+Add an explicit `scan-run` hybrid option that executes after deterministic Joern or CodeQL
+discovery. Select bounded packets from language/symbol/entry-point/security-API inventory plus a
+recorded lower-ranked sample. Enforce packet, token, request and monetary limits. Report eligible,
+examined and deferred coverage; budget or deadline stops are partial. Include discovery policy in
+scan identity and skip/reuse decisions.
+
+
+## Slice 145 — exploratory candidates through adjudication
+
+Persist valid proposals as `llm_discovery` candidates, deduplicate without losing origin, and
+route them through immutable evidence bundles, existing triage gates and explicit operator
+reviews. Reports separate deterministic, exploratory, merged, confirmed, rejected and unresolved
+counts. LLM confidence is ranking metadata and never a confirmation or suppression authority.
+
+
+## Slice 146 — confirmed rule gaps, draft packages and approval
+
+Allow a confirmed LLM-origin candidate to create a classified rule-gap record and export a draft
+Joern/profile or CodeQL-query package with positive, fixed and misleading fixtures. Generated
+scanner code remains inactive until an operator invokes `approve-rule-draft` for one exact draft
+or `approve-rule-drafts` with a mounted CSV manifest. Approval binds the draft digest, confirmed
+candidate/review revision, reviewer rationale, test evidence and expected registry version. It
+creates a new immutable, content-addressed approved rule-registry version for future non-LLM
+scans; it never rewrites an existing scan. Batch processing records every row independently and
+is idempotent. Promotion requires human review, deterministic tests, benchmark deltas, performance
+evidence, versioned provenance and rollback metadata.
+
+
+## Slice 147 — benchmark and portfolio policy
+
+Run deterministic baseline versus hybrid discovery on the 50-repository ground truth and held-out
+projects. Measure candidate recall, confirmed marginal true positives, false-positive workload,
+tokens, configured cost and latency. Define which repositories receive hybrid exploration within
+the 1,000-repository/day target; incomplete exploration must remain visible as coverage debt.

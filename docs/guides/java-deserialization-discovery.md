@@ -7,7 +7,7 @@ shape is Base64 decoding into ByteArrayInputStream, then ObjectInputStream and
 readObject. A cross-file helper is included in native fixture validation.
 
 ```sh
-traceproof --state-dir /path/to/state scan-run RUN_ID --engine joern \
+veriflow --state-dir /path/to/state scan-run RUN_ID --engine joern \
   --language java --joern-home /path/to/joern-cli \
   --joern-profile java-spring-object-read-v1
 ```

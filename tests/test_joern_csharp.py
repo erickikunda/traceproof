@@ -5,10 +5,10 @@ from types import SimpleNamespace
 import pytest
 from test_slice03 import captured_source as captured_source
 
-from traceproof import joern, joern_csharp
-from traceproof.domain import TraceProofError
-from traceproof.reports import publish_report
-from traceproof.scanning import scan_report
+from veriflow import joern, joern_csharp
+from veriflow.domain import VeriFlowError
+from veriflow.reports import publish_report
+from veriflow.scanning import scan_report
 
 
 def test_whole_ambiguous_path_withheld(tmp_path):
@@ -23,12 +23,12 @@ def test_whole_ambiguous_path_withheld(tmp_path):
 
 
 def test_invalid_reference_cannot_become_partial_path(tmp_path):
-    with pytest.raises(TraceProofError):
+    with pytest.raises(VeriFlowError):
         joern_csharp.map_output({"paths": [[{"file": "../A.cs"}]]}, tmp_path, [])
 
 
 def test_missing_repair_and_artifact_tooling_rejected(store, tmp_path):
-    with pytest.raises(TraceProofError):
+    with pytest.raises(VeriFlowError):
         joern_csharp.repaired_frontend(store, tmp_path, tmp_path)
 
 
@@ -51,7 +51,7 @@ def test_csharp_durable_discovery_and_raw_mapping(store, captured_source, tmp_pa
                     {
                         "schema_version": "2",
                         "engine_id": "joern",
-                        "rule_id": "traceproof/joern-csharp-lookup-commandtext-v1",
+                        "rule_id": "veriflow/joern-csharp-lookup-commandtext-v1",
                         "represented_csharp_files": ["A.cs"],
                         "source_count": 1,
                         "sink_count": 1,

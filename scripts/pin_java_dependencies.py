@@ -5,8 +5,8 @@ import json
 import tempfile
 from pathlib import Path
 
-from traceproof.csharp_dependencies import inventory
-from traceproof.java_dependencies import load_java_profile
+from veriflow.csharp_dependencies import inventory
+from veriflow.java_dependencies import load_java_profile
 
 
 def main():

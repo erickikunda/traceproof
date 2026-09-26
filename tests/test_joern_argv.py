@@ -3,9 +3,9 @@ import json
 import pytest
 from test_slice03 import captured_source as captured_source
 
-from traceproof import joern, pipeline
-from traceproof.domain import TraceProofError
-from traceproof.scanning import scan_report
+from veriflow import joern, pipeline
+from veriflow.domain import VeriFlowError
+from veriflow.scanning import scan_report
 
 
 @pytest.mark.parametrize("language,extension", [("c", "c"), ("cpp", "cpp")])
@@ -25,7 +25,7 @@ def test_argv_profile_publication_and_retry(
                     {
                         "schema_version": "2",
                         "engine_id": "joern",
-                        "rule_id": f"traceproof/joern-{language}-argv-system-v1",
+                        "rule_id": f"veriflow/joern-{language}-argv-system-v1",
                         f"represented_{language}_files": [filename],
                         "source_count": 1,
                         "sink_count": 1,
@@ -54,7 +54,7 @@ def test_argv_profile_publication_and_retry(
 
 @pytest.mark.parametrize("language", ["python", "java", "go", "javascript"])
 def test_argv_rejects_other_languages(store, language):
-    with pytest.raises(TraceProofError, match="profile/language"):
+    with pytest.raises(VeriFlowError, match="profile/language"):
         joern.discover(
             store,
             "unused",

@@ -7,7 +7,7 @@ It does not establish complete coverage, vulnerability adjudication or model acc
 ## Real acceptance workflow
 
 ```bash
-uv run traceproof acceptance-run work/acceptance-001 /absolute/CodeInjection.ql --timeout 300
+uv run veriflow acceptance-run work/acceptance-001 /absolute/CodeInjection.ql --timeout 300
 ```
 
 The output directory must not exist. The command creates isolated state and three

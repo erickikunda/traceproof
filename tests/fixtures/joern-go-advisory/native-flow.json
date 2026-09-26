@@ -1,7 +1,7 @@
 {
   "schema_version": "2",
   "engine_id": "joern",
-  "rule_id": "traceproof/joern-go-http-shell-v1",
+  "rule_id": "veriflow/joern-go-http-shell-v1",
   "represented_go_files": [
     "main.go"
   ],
